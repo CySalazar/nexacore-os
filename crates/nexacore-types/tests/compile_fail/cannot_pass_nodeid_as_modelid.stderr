@@ -1,0 +1,13 @@
+error[E0308]: mismatched types
+ --> tests/compile_fail/cannot_pass_nodeid_as_modelid.rs:9:23
+  |
+9 |     requires_model_id(node);
+  |     ----------------- ^^^^ expected `ModelId`, found `NodeId`
+  |     |
+  |     arguments to this function are incorrect
+  |
+note: function defined here
+ --> tests/compile_fail/cannot_pass_nodeid_as_modelid.rs:4:4
+  |
+4 | fn requires_model_id(_m: nexacore_types::ModelId) {}
+  |    ^^^^^^^^^^^^^^^^^ ---------------------------

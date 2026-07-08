@@ -1,0 +1,13 @@
+#!/usr/bin/env ncscript
+// hello.oss — minimal ncScript program (NCIP-Script-030 § S12).
+//
+// No `#![capabilities(...)]` header: this script is PURE. Its ambient authority
+// is empty (§ S6, § S7) — it cannot touch the filesystem, network, AI runtime,
+// config store, processes, clock, or RNG. `print` writes to the script's own
+// stdout, which is host-provided I/O context and is NOT a privileged capability.
+
+fn main() -> Result<(), Error> {
+    let who = "NexaCore";
+    print("hello, " + who);
+    Ok(())
+}

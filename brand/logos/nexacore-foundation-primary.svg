@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NexaCore Foundation — Primary lockup (sibling identity, Mozilla-style)
+  Direction: C — Civic Tech / Generational
+  Usage: foundation-published materials (website, annual report, press, grants outside NL)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 120" role="img" aria-label="NexaCore Foundation">
+  <defs><style>
+    .word-nexacore { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; }
+    .word-foundation { font-family: 'Inter', sans-serif; font-weight: 500; letter-spacing: 0.18em; }
+    .tagline { font-family: 'Inter', sans-serif; font-weight: 400; }
+  </style></defs>
+  <g transform="translate(24,30)">
+    <circle cx="30" cy="30" r="26" fill="none" stroke="#0F4C5C" stroke-width="1.5" opacity="0.35"/>
+    <circle cx="30" cy="4" r="4" fill="#0F4C5C"/>
+    <circle cx="52.5" cy="17" r="4" fill="#0F4C5C"/>
+    <circle cx="52.5" cy="43" r="4" fill="#0F4C5C"/>
+    <circle cx="30" cy="56" r="4" fill="#0F4C5C"/>
+    <circle cx="7.5" cy="43" r="4" fill="#0F4C5C"/>
+    <circle cx="7.5" cy="17" r="4" fill="#0F4C5C"/>
+    <circle cx="30" cy="30" r="5" fill="#C03221"/>
+  </g>
+  <text x="108" y="56" class="word-nexacore" font-size="36" fill="#0F4C5C" letter-spacing="-0.5">NexaCore</text>
+  <text x="222" y="55" class="word-foundation" font-size="22" fill="#1F2421">FOUNDATION</text>
+  <text x="110" y="80" class="tagline" font-size="11" fill="#1F2421" letter-spacing="0.5">Stewarding NexaCore OS in the public interest</text>
+</svg>

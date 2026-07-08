@@ -1,0 +1,49 @@
+# =============================================================================
+# nexacore-driver-wifi — Wi-Fi driver + WPA2/WPA3 supplicant core (WS2-11)
+# =============================================================================
+# First-party Wi-Fi support for NexaCore OS: an Intel iwlwifi-class chipset
+# driver (user-space, NCIP-Driver-Framework-013 § S5) plus a WPA2/WPA3 (SAE)
+# supplicant. Specified by the WS2-11 workstream.
+#
+# This crate is the **host-testable core**: the iwlwifi register / host-command
+# map, 802.11 management-frame parsing (scan/beacon/probe/auth/assoc), the
+# EAPOL 4-way handshake state machine, SAE (WPA3) message framing, and the
+# PTK/GTK key hierarchy + CCMP nonce construction — all `no_std + alloc`,
+# dep-free, byte-exact.
+#
+# Out of scope here (rig / device / vetted-crypto seams):
+#   - firmware (uCode) load via DmaMap, TX/RX queue rings, IrqAttach (device);
+#   - the actual PRF / EAPOL-Key MIC (HMAC-SHA1 / AES-CMAC) and AES-CCMP data
+#     encryption — `nexacore-crypto` has SHA-256/HKDF/BLAKE3 but no SHA-1 /
+#     PBKDF2-SHA1 / AES-CCMP, so those are behind traits (`Prf`/`KeyMic`),
+#     mirroring the WS5-06 FPE and WS10 cert seam-gating;
+#   - the SAE elliptic-curve / hunting-and-pecking crypto (vetted EC lib);
+#   - real-laptop-HW association + DHCP (WS2-11.12, HW-only).
+#
+# Pattern mirrors `nexacore-driver-ahci` / `nexacore-driver-tpm`: a dep-free
+# `no_std + alloc` library compiled in the default workspace matrix; the
+# runtime image + syscall path arrive in a follow-up.
+# =============================================================================
+
+[package]
+name             = "nexacore-driver-wifi"
+description      = "NexaCore OS Wi-Fi driver + WPA2/WPA3 supplicant core — iwlwifi regs, 802.11 frames, EAPOL/SAE (WS2-11)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# Dep-free: the scaffold shapes only its own byte structures; the vetted
+# crypto (HMAC-SHA1 PRF, AES-CCMP) is injected through traits by the caller.
+
+[dev-dependencies]

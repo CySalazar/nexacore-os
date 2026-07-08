@@ -1,0 +1,37 @@
+# =============================================================================
+# nexacore-driver-pack — TOML manifest test fixture
+# =============================================================================
+# Mirror of `test-manifest.json` in TOML form, used by the TASK-007
+# follow-through tests that exercise the TOML parser path
+# (NCIP-Driver-Framework-013 § R4 canonical developer-side format).
+#
+# The schema mirrors the serde shape of `PackManifestJson` 1:1; any
+# divergence here vs the JSON fixture is a deserialization shape
+# mismatch caught at `from_toml` time.
+# =============================================================================
+
+[meta]
+name               = "nexacore-driver-test"
+version            = "0.1.0"
+nexacore_issuer_pubkey = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
+
+[capabilities]
+mmio_regions = [
+    { MmioRegion = { phys_base = 4294967296, len = 65536 } },
+    { MmioRegion = { phys_base = 4295032832, len = 4096 } },
+    { MmioRegion = { phys_base = 4295036928, len = 4096 } },
+]
+dma_windows = [
+    { DmaWindow = { iova_base = 0, len = 4294967296 } },
+]
+irq_lines = [
+    { IrqLine = 33 },
+    { IrqLine = 34 },
+]
+pci_devices = []
+
+[matchers]
+pci_vendor_device = [
+    { vendor = 6900, device = 4161 },
+]
+acpi_hid = []

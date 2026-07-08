@@ -1,0 +1,45 @@
+# =============================================================================
+# nexacore-aicheck-image — bare-metal TASK-11 AI syscall self-test client
+# =============================================================================
+#
+# `no_std + no_main` ELF the kernel spawns as a Ring 3 process to validate
+# the AI syscall path end to end (TASK-11, DE-G6, ADR-0032): it issues
+# `AiInvoke (80)` and prints the response that came back through the
+# kernel→nexacore-runtime two-channel IPC relay, then exercises the negative
+# paths on real hardware (invalid user pointer → EFAULT with no kernel #PF,
+# undersized output buffer → ENOSPC).
+#
+# No dependencies and no heap: the kernel builds the AiSyscallRequest from
+# the syscall arguments, so the client only needs inline-asm syscall stubs
+# (same approach as nexacore-netcheck-image).
+#
+# Built out-of-workspace via:
+#   cargo build --manifest-path crates/nexacore-aicheck-image/Cargo.toml \
+#               --target x86_64-unknown-none --release
+# =============================================================================
+
+[package]
+name         = "nexacore-aicheck-image"
+description  = "Bare-metal TASK-11 AI syscall self-test client for NexaCore OS"
+version      = "0.2.0"
+edition      = "2024"
+rust-version = "1.85"
+authors      = ["cySalazar <hello@nexacoreos.com>"]
+license      = "Apache-2.0"
+repository   = "https://github.com/CySalazar/nexacore-os"
+homepage     = "https://nexacoreos.com"
+publish      = false
+
+[[bin]]
+name = "nexacore-aicheck-image"
+path = "src/main.rs"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+lto           = true
+codegen-units = 1
+panic         = "abort"
+strip         = "debuginfo"
+opt-level     = "z"

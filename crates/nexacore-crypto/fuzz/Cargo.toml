@@ -1,0 +1,62 @@
+# =============================================================================
+# nexacore-crypto fuzz harness (cargo-fuzz)
+# =============================================================================
+# Scaffolding for `cargo-fuzz` based fuzzing of `nexacore-crypto`'s public
+# entry points. This crate is NOT a member of the NexaCore OS workspace —
+# `cargo-fuzz` requires the harness to live in its own ephemeral
+# package with `bin` targets. See the workspace root `Cargo.toml`'s
+# `[workspace] exclude` list.
+#
+# Status (P1 closure): scaffolding only. The fuzz targets below
+# document the API surfaces that MUST be hardened against arbitrary
+# input. Actual coverage runs land in P3 (cryptographer review).
+#
+# Usage (requires Rust nightly + the cargo-fuzz subcommand):
+#
+#   rustup toolchain install nightly
+#   cargo install cargo-fuzz
+#   cd crates/nexacore-crypto
+#   cargo +nightly fuzz run aead_open
+#   cargo +nightly fuzz run signing_verify
+#
+# Add new targets under `fuzz_targets/` and register them in this
+# manifest's `[[bin]]` blocks.
+# =============================================================================
+
+[package]
+name = "nexacore-crypto-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "Apache-2.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+nexacore-crypto = { path = ".." }
+nexacore-types  = { path = "../../nexacore-types" }
+
+# Prevent these binary targets from being rebuilt on every workspace
+# `cargo build` — they live outside the workspace.
+[[bin]]
+name = "aead_open"
+path = "fuzz_targets/aead_open.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "signing_verify"
+path = "fuzz_targets/signing_verify.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "kex_dh"
+path = "fuzz_targets/kex_dh.rs"
+test = false
+doc = false
+bench = false

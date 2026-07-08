@@ -1,0 +1,32 @@
+# =============================================================================
+# nexacore-config — typed system configuration store (dconf/gsettings class)
+# =============================================================================
+# A schema-driven, hierarchical, capability-gated configuration store with
+# per-user overrides, atomic multi-key transactions, and real-time
+# watch/notify (WS17-01). `no_std + alloc`, zero production dependencies.
+#
+# Persistence is abstracted behind the `ConfigBackend` trait; the production
+# backend is VFS-backed (WS3-02) once the VFS lands. A `MemoryBackend` is
+# provided for host tests and early bring-up.
+# =============================================================================
+
+[package]
+name             = "nexacore-config"
+description      = "Typed, hierarchical, capability-gated system configuration store for NexaCore OS."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+
+[dev-dependencies]

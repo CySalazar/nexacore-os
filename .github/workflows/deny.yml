@@ -1,0 +1,45 @@
+# =============================================================================
+# NexaCore OS — dependency hygiene gate (`cargo deny`) — WS13-04.5
+# =============================================================================
+# Re-enables `cargo deny check` as a hard CI gate (P7.2): advisories, bans,
+# licenses, and sources must all pass on every dependency-graph change. The
+# policy lives in `deny.toml` (bans `multiple-versions = "warn"` until the
+# post-1.0 single-version sweep; license allow-list incl. the Unicode-DFS-2016
+# exception). Verified to exit 0 locally (WS13-04.6).
+# =============================================================================
+
+name: deny
+
+on:
+  push:
+    branches: ["main", "rebrand/**"]
+    paths:
+      - "**/Cargo.toml"
+      - "Cargo.lock"
+      - "deny.toml"
+      - ".github/workflows/deny.yml"
+  pull_request:
+    paths:
+      - "**/Cargo.toml"
+      - "Cargo.lock"
+      - "deny.toml"
+      - ".github/workflows/deny.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  cargo-deny:
+    name: cargo deny check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run cargo-deny
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          # All four checks are hard gates; the warn/deny severity per check is
+          # configured in deny.toml, not here.
+          command: check advisories bans licenses sources

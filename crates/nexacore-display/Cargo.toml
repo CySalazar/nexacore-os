@@ -1,0 +1,53 @@
+# =============================================================================
+# nexacore-display — Userspace compositor + window manager (TASK-19, DE-C2/DE-C3)
+# =============================================================================
+# Host-testable compositor core for NexaCore OS.  `no_std + alloc` so it compiles
+# for both the developer host and `x86_64-unknown-none` (the Ring-3 image).
+#
+# Design: ADR-0041 — compositor owns a `DamageRegion`; `composite()` paints
+# ONLY dirty rects back-to-front.  Window manager tracks z-order, focus, and
+# input routing.  The bootable image sibling (`crates/nexacore-display-image`,
+# workspace-excluded) maps the framebuffer via `nexacore-usys::display` and drives
+# this crate; it is deliberately NOT created by TASK-19.
+# =============================================================================
+
+[package]
+name             = "nexacore-display"
+description      = "NexaCore OS userspace compositor + window manager (ADR-0041, TASK-19, DE-C2/DE-C3)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+# `nexacore-types` provides `DisplayInputEvent` (TASK-18 / ADR-0040) and the
+# canonical wire encoding helpers.  `default-features = false` strips the
+# `id-generation` feature (which pulls `getrandom` + `uuid`), keeping the
+# crate clean for `x86_64-unknown-none`.  The `version` field is required by
+# `cargo-deny`'s wildcard-ban policy (deny.toml `wildcards = "deny"`).
+[dependencies]
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+# `thiserror` v2 with `default-features = false` uses `core::error::Error`
+# (Rust 1.81+) and is fully `no_std`-compatible on our MSRV 1.85.
+# Already pinned at workspace level; no new dependency.
+thiserror  = { workspace = true }
+# `libm` supplies `powf` for the sRGB/Display-P3 transfer functions in
+# `color.rs` (WS7-02); pure-software and `no_std`-native, already vetted at
+# the workspace level (used by `nexacore-hal`).
+libm       = { workspace = true }
+
+[dev-dependencies]
+# Real brand fonts, to validate the glyf parser + AA rasterizer end-to-end on
+# actual type (composite/accented glyphs) rather than only synthetic fonts.
+nexacore-fonts = { workspace = true }

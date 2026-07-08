@@ -1,0 +1,727 @@
+# =============================================================================
+# NexaCore OS — Workspace Cargo.toml
+# =============================================================================
+# Root manifest for the NexaCore OS Rust workspace.
+#
+# This workspace organizes NexaCore OS into a set of cooperating crates following
+# the architecture described in /docs/02-architecture.md.
+#
+# Layering (bottom to top):
+#   - Foundational (no_std-capable):  nexacore-types, nexacore-crypto, nexacore-capability,
+#                                     nexacore-tee
+#   - Kernel:                         nexacore-kernel
+#   - Hardware Abstraction:           nexacore-hal
+#   - System services:                nexacore-runtime, nexacore-mesh, nexacore-tokenization
+#   - User-facing:                    nexacore-sdk, nexacore-agent, nexacore-shell
+#
+# All crates inherit shared metadata via [workspace.package] and shared
+# dependency versions via [workspace.dependencies] to keep the workspace
+# coherent across the 25-year horizon described in /docs/01-vision.md.
+# =============================================================================
+
+[workspace]
+resolver = "3"
+members = [
+    "crates/nexacore-types",
+    "crates/nexacore-crypto",
+    "crates/nexacore-capability",
+    "crates/nexacore-tee",
+    "crates/nexacore-kernel",
+    "crates/nexacore-hal",
+    "crates/nexacore-runtime",
+    "crates/nexacore-mesh",
+    "crates/nexacore-pkg",
+    "crates/nexacore-workflow",
+    "crates/nexacore-context",
+    "crates/nexacore-init",
+    "crates/nexacore-tokenization",
+    "crates/nexacore-sdk",
+    "crates/nexacore-agent",
+    "crates/nexacore-shell",
+    # `nexacore-container` is the userspace container engine specified in
+    # NCIP-Container-006. Unlike the foundational `no_std + alloc` crates,
+    # it is std-enabled (it runs as a host userspace service with KVM
+    # ioctls, OCI image cache, subprocess management for virtio backends).
+    "crates/nexacore-container",
+    # `nexacore-fs` is the filesystem service skeleton (TASK-011, NCIP-FS-018).
+    # Phase-1: BLK channel registration + stub `NotImplemented` responses.
+    # Phase-2: native NCFS host.
+    "crates/nexacore-fs",
+    # `nexacore-fatfs` is the read-only FAT12/16/32 reader (WS3-05.4/.5) — the
+    # compat FS member needed for the UEFI ESP and USB media. Dependency-free,
+    # no_std, strictly read-only.
+    "crates/nexacore-fatfs",
+    # `nexacore-extfs` is the read-only ext2/3/4 reader (WS3-05.2/.3) — the ext
+    # member of the compat FS set (superblock/BGD/inode + extent tree).
+    # Dependency-free, no_std, strictly read-only.
+    "crates/nexacore-extfs",
+    # `nexacore-ntfs` is the read-only NTFS reader (WS3-05.6/.7) — the NTFS
+    # member of the compat FS set (boot-sector geometry, MFT FILE records +
+    # attributes, update-sequence fixups, data-run decode). no_std, read-only.
+    "crates/nexacore-ntfs",
+    # `nexacore-installer` is the installer core (WS11-03): disk-geometry model,
+    # spec-correct GPT partitioning (protective MBR + CRC32 headers + entry
+    # array), and a 1-MiB-aligned ESP+NCFS partition plan. Dependency-free, no_std.
+    "crates/nexacore-installer",
+    # `nexacore-driver-shared` is the common SDK helper crate for all first-party
+    # user-space drivers (P6.7.8.10, NCIP-013 § S5.3 step 8).  It is dep-free
+    # (`no_std`, zero production dependencies) and provides the capability
+    # deposit window parser plus the well-known constants every driver needs.
+    # Must be a workspace member so `cargo build --workspace`, `cargo clippy`,
+    # `cargo test`, and `cargo doc` all cover it in the default matrix.
+    "crates/nexacore-driver-shared",
+    # First-party user-space drivers (NCIP-Driver-Framework-013 § R3, phased
+    # delivery in NCIP-Driver-Net-015 / NCIP-Driver-NVMe-014 / NCIP-Driver-TEE-016).
+    # Each driver crate is `no_std + alloc` so its logic compiles cleanly in
+    # the workspace matrix (clippy / test / cargo doc); the bootable image
+    # sibling that turns each lib into a no_main ELF (loaded by the kernel
+    # via `DriverLoad`, NCIP-013 § S5) lives in a separate excluded crate
+    # added when each driver enters bring-up (`*-image`, sibling to the lib
+    # the same way `kernel-runner` is the bootable sibling of `nexacore-kernel`).
+    "crates/nexacore-driver-net-virtio",
+    "crates/nexacore-driver-nvme",
+    "crates/nexacore-driver-e1000e",
+    # `nexacore-driver-ahci` is the AHCI/SATA driver crate (WS2-07): host-testable
+    # HBA register map, H2D Register-FIS construction, and IDENTIFY DEVICE parsing
+    # are `no_std + alloc`; MMIO/DMA/IRQ bring-up + BLK provider land on the rig.
+    "crates/nexacore-driver-ahci",
+    # `nexacore-driver-tpm` is the TPM 2.0 driver crate (WS2-15): host-testable
+    # TIS/CRB register maps + TPM2 command serialization (PCR_Extend, Quote) are
+    # `no_std + alloc`; the MMIO locality/transfer path lands on the rig (swtpm).
+    "crates/nexacore-driver-tpm",
+    # `nexacore-driver-gpu` is the virtio-gpu driver crate (WS2-09): host-testable
+    # virtio-gpu control/cursor command codecs + 3D context + display/mode select
+    # + KMS scaffold are `no_std + alloc`; the virtqueue/IRQ/scanout-present path
+    # lands on the rig.
+    "crates/nexacore-driver-gpu",
+    # `nexacore-driver-audio` is the audio stack crate (WS2-10): host-testable
+    # HDA CORB/RIRB + BDL, virtio-snd messages, the integer mixer/volume/routing
+    # service, and the DE-H2 ABI are `no_std + alloc`; the MMIO/DMA/IRQ bring-up
+    # + live tone/loopback land on the rig.
+    "crates/nexacore-driver-audio",
+    # `nexacore-driver-wifi` is the Wi-Fi driver + WPA2/WPA3 supplicant core
+    # (WS2-11): iwlwifi register/host-command map, 802.11 management-frame
+    # parsing (beacon/probe/auth/assoc), EAPOL 4-way handshake state machine,
+    # SAE (WPA3) message framing, and the PTK/GTK key hierarchy + CCMP nonce.
+    # `no_std + alloc`; the firmware load/queues/IRQ + the vetted SHA-1/AES-CCMP
+    # crypto land on the rig / behind crypto seams.
+    "crates/nexacore-driver-wifi",
+    # `nexacore-usys` is the thin userspace syscall wrapper library (mini-libc)
+    # for NexaCore OS userspace programs (T4.1, Phase 1).
+    "crates/nexacore-usys",
+    # `nexacore-net` is the userspace TCP/IP network stack service (N2.1–N2.6,
+    # N3.2, N5.1).  `no_std + alloc`; implements ARP, IPv4 routing, ICMP,
+    # UDP, TCP (RFC 793 + Reno), DNS stub resolver, and the Socket API
+    # dispatcher that bridges userspace SocketRequest IPC to the stack.
+    "crates/nexacore-net",
+    # `nexacore-tls` is the TLS 1.3 stack (WS4-03). `no_std + alloc`; record
+    # layer + key schedule + client/server handshake state machines over the
+    # socket API, using `nexacore-crypto` primitives (ChaCha20-Poly1305,
+    # HKDF-SHA-256, X25519, Ed25519). Cert store + ALPN negotiation.
+    "crates/nexacore-tls",
+    # `nexacore-ssh` is the SSH-2 transport layer (WS4-06). `no_std + alloc`;
+    # the binary packet protocol, curve25519-sha256 key exchange, exchange-hash
+    # + RFC 4253 key derivation, and an AEAD packet channel over the
+    # `nexacore-crypto` primitives (X25519, ChaCha20-Poly1305, SHA-256,
+    # Ed25519 host keys).
+    "crates/nexacore-ssh",
+    # `nexacore-cmd-ping` is the `ping` network diagnostic command (N7.1).
+    # `no_std + alloc`; provides ICMP echo request/reply packet construction,
+    # response parsing, RTT calculation, and statistics aggregation.
+    # The bare-metal binary entry point lives in a sibling `-image` crate
+    # (excluded from the default workspace matrix; added at bring-up time).
+    "crates/nexacore-cmd-ping",
+    # `nexacore-cmd-traceroute` is the `traceroute` command (N7.2).
+    # `no_std + alloc`; ICMP TTL-based route discovery: probe construction,
+    # response parsing, hop formatting, and argument parsing.
+    "crates/nexacore-cmd-traceroute",
+    # `nexacore-cmd-ifconfig` is the `ifconfig` command (N7.3).
+    # `no_std + alloc`; network interface configuration: list, show, set
+    # address, bring up/down.
+    "crates/nexacore-cmd-ifconfig",
+    # `nexacore-cmd-route` is the `route` command (N7.4).
+    # `no_std + alloc`; routing table management: show, add, delete, default.
+    "crates/nexacore-cmd-route",
+    # `nexacore-cmd-netstat` is the `netstat` command (N7.5).
+    # `no_std + alloc`; network connection listing: tabular format and filters.
+    "crates/nexacore-cmd-netstat",
+    # `nexacore-cmd-nslookup` is the `nslookup` command (N7.6).
+    # `no_std + alloc`; DNS lookup: A/AAAA/MX/PTR/TXT query types,
+    # result formatting, and argument parsing.
+    "crates/nexacore-cmd-nslookup",
+    # `nexacore-cmd-curl` is the minimal HTTP/1.1 client command (N7.7).
+    # `no_std + alloc`; request construction, response parsing, URL
+    # decomposition, and argument parsing.
+    "crates/nexacore-cmd-curl",
+    # `nexacore-cmd-wget` is the file downloader command (N7.8).
+    # `no_std + alloc`; filename extraction, range headers, progress
+    # formatting, and argument parsing.
+    "crates/nexacore-cmd-wget",
+    # `nexacore-cmd-ssh` is the SSH client scaffold (N7.9).
+    # `no_std + alloc`; SSH-2 binary packet framing (RFC 4253 §6) and
+    # type definitions.  Full protocol is deferred to a future sprint.
+    "crates/nexacore-cmd-ssh",
+    # `nexacore-cmd-scp` is the SCP file transfer scaffold (N7.10).
+    # `no_std + alloc`; ScpPath type and argument parsing.  Transfer
+    # logic depends on the SSH scaffold.
+    "crates/nexacore-cmd-scp",
+    # `nexacore-cmd-nc` is the `nc` (netcat) command (N7.11).
+    # `no_std + alloc`; connect/listen mode types and argument parsing.
+    "crates/nexacore-cmd-nc",
+    # `nexacore-spark` (NexaCore Spark) is the cross-platform desktop application for
+    # mesh participation on conventional OSes (Linux, Windows, macOS).
+    # `std`-enabled. Specified by NCIP-025; depends on NCIP-024 tiered trust model.
+    "crates/nexacore-spark",
+    # `nexacore-desktop-shell` is the desktop shell layer (WS7 desktop parity M1,
+    # TASK-21, DE-D1/DE-D2). `no_std + alloc`; builds for both host and
+    # `x86_64-unknown-none`. Provides design tokens, window chrome, and a
+    # compositor-agnostic window-state machine. Sits between `nexacore-ui`
+    # (toolkit) and the apps image.
+    "crates/nexacore-desktop-shell",
+    # `nexacore-display` is the userspace compositor + window manager (TASK-19,
+    # DE-C2/DE-C3, ADR-0041). `no_std + alloc`; builds for both host and
+    # `x86_64-unknown-none`. Provides damage-tracked compositing, z-ordered
+    # window management, focus + input routing. The bootable Ring-3 image
+    # (`crates/nexacore-display-image`) is workspace-excluded and arrives with the
+    # TASK-19 VM-103 verification step.
+    "crates/nexacore-display",
+    # `nexacore-fonts` embeds the three brand type families (Inter, IBM Plex
+    # Mono, Source Serif 4) as glyf TrueType byte slices (WS7-19.3). Dep-free,
+    # no_std; isolates the heavy font assets so only render paths pull them in.
+    "crates/nexacore-fonts",
+    # `nexacore-ui` is the brand-themed GUI toolkit (TASK-20, DE-C4/DE-C5,
+    # ADR-0042). `no_std + alloc`; builds for both host and
+    # `x86_64-unknown-none`. Provides a Canvas pixel-buffer abstraction,
+    # UTF-8-aware text rendering (font8x8), a brand Theme, and a retained
+    # widget tree (Label, Button, TextInput, List, Container) with
+    # measure → layout → render → hit-test pipeline.
+    "crates/nexacore-ui",
+    # `nexacore-media` is the host-testable media-player core (WS8-02, ADR-0052):
+    # container demuxers (MP4/MKV/WebM), codec bitstream header parsers
+    # (H.264/VP9/Opus/AAC), `VideoDecoder`/`AudioDecoder` traits with a
+    # hardware-accelerated/software-fallback selector, integer-microsecond A/V
+    # sync clock, virtio-gpu/virtio-snd sink scheduling, and the playlist model.
+    # `no_std + alloc`; the actual pixel/PCM decode lives behind traits (the
+    # vetted decode library is library-gated, like the WS5-03 ASR model).
+    "crates/nexacore-media",
+    # `nexacore-bench` is the host-side performance baseline schema + regression
+    # gate comparator (WS13-07); the benchmarks themselves measure in QEMU.
+    "crates/nexacore-bench",
+    # `nexacore-print` is the host-testable IPP printing core (WS2-13): IPP
+    # protocol, print spooler, PWG-Raster; PDF rasterizer/mDNS are seam-/device-gated.
+    "crates/nexacore-print",
+    # `nexacore-image` is the host-testable image viewer/editor core (WS8-03):
+    # format sniff + header parse, RGBA buffer + crop/rotate/flip, zoom/pan
+    # viewport, annotations, with the real PNG/JPEG/WebP/AVIF codecs library-gated.
+    "crates/nexacore-image",
+    # `nexacore-doc` is the host-testable document/PDF viewer core (WS8-04):
+    # document model, render cache over the PdfRasterizer seam, continuous-scroll
+    # + thumbnail navigation, text layout/selection + clipboard, zoom/fit, and the
+    # print path into nexacore-print. `no_std + alloc`; the real PDF parse/raster
+    # and text extraction are library-gated behind traits.
+    "crates/nexacore-doc",
+    # `nexacore-text` is the NexaCoreText editor core (WS8-08): a piece-table
+    # text buffer for large files, find/replace, encoding/EOL detection, and a
+    # line index + minimap sampler. `no_std + alloc`, dependency-free.
+    "crates/nexacore-text",
+    # `nexacore-monitor` is the host-testable system-monitor core (WS8-05):
+    # a `/proc`-class telemetry client (WS12-04), live CPU/RAM integer-permille
+    # series, disk/net throughput rates, the per-process resource table, and
+    # capability-gated kill/renice actions. `no_std + alloc`; the kernel /proc
+    # transport and the real process-control + capability seams sit behind traits.
+    "crates/nexacore-monitor",
+    # `nexacore-log` is the host-testable structured logging service (WS12-03):
+    # a journald-class structured-record schema + severity, an ingestion bus,
+    # a persistent ring store with rotation behind a `LogSink` seam,
+    # service/severity indices, a query API, and a monitor summary. Dep-free
+    # `no_std + alloc`; builds for `x86_64-unknown-none`.
+    "crates/nexacore-log",
+    # `nexacore-time` is the host-testable time service (WS12-02): an SNTP
+    # client, a monotonic/wall clock split with NTP disciplining, a POSIX-TZ
+    # timezone parser + UTC→local civil-time conversion, and a settings hook.
+    # Dep-free `no_std + alloc`; builds for `x86_64-unknown-none`.
+    "crates/nexacore-time",
+    # `nexacore-auth` is the host-testable users/auth/identity core (WS12-05):
+    # the user-store schema, a passphrase-hashing seam (Argon2id via the
+    # `PasswordHasher` trait), a PAM-class pluggable auth stack, per-user
+    # privileges (root capability), per-user home-key derivation, and account
+    # creation. `no_std + alloc`; the memory-hard hasher and TEE-bound
+    # credential sit behind trait seams.
+    "crates/nexacore-auth",
+    # `nexacore-driver-xhci` is the host-testable `no_std` lib crate for the
+    # xHCI USB host controller driver (TASK-26, DE-E1+E2, ADR-0048).
+    # Contains register definitions, TRB types + ring state, DCBAA/context
+    # builders, USB descriptor parsing, and the enumeration state machine.
+    # The bootable Ring-3 image sibling (`crates/nexacore-driver-xhci-image`)
+    # is workspace-excluded and arrives in the TASK-26 VM-103 phase.
+    "crates/nexacore-driver-xhci",
+    # `nexacore-config` is the typed, hierarchical, capability-gated system
+    # configuration store (dconf/gsettings class, WS17-01). `no_std + alloc`,
+    # dep-free; persistence is abstracted behind a backend trait (VFS-backed
+    # per WS3-02 in production, in-memory for host tests).
+    "crates/nexacore-config",
+    # `nexacore-script` is the ncScript interpreter / runtime (WS18-02,
+    # NCIP-ncScript-030): lexer → parser → tree-walking interpreter,
+    # capability-bound with deterministic resource limits. `no_std + alloc`,
+    # dep-free, embeddable.
+    "crates/nexacore-script",
+]
+
+# Fuzz harnesses live in their own ephemeral packages outside the
+# workspace because `cargo-fuzz` requires standalone crates with
+# `bin` targets. Excluding them prevents accidental rebuilds during
+# normal `cargo build`/`cargo test` and keeps the workspace closure
+# minimal.
+exclude = [
+    "crates/nexacore-crypto/fuzz",
+    # Parser/wire-format fuzz harnesses (WS13-02.2-.4): standalone cargo-fuzz
+    # crates for the postcard wire codec, on-disk FS, and network packet
+    # parsers. Excluded like every cargo-fuzz crate (own bin closure). The ELF
+    # loader (.1) is gated behind `feature = "bare-metal"` (no_std+no_main) and
+    # is not host-fuzzable without un-gating the parser — deferred (see plan.md).
+    "crates/nexacore-types/fuzz",
+    "crates/nexacore-fs/fuzz",
+    "crates/nexacore-net/fuzz",
+    # `kernel-runner` is the bootable artifact (NCIP-Kernel-005 § S1):
+    # a bare-metal bin that compiles only for `x86_64-unknown-none`.
+    # Excluding it from the default workspace matrix keeps `cargo
+    # build --workspace` green on developer machines without a
+    # cross-toolchain. CI builds it explicitly via
+    # `cargo build --manifest-path kernel-runner/Cargo.toml \
+    #              --target x86_64-unknown-none --release`
+    # See `kernel-runner/README.md` for the full build + QEMU run flow.
+    "kernel-runner",
+    # `nexacore-driver-net-virtio-image` is the bootable sibling of
+    # `nexacore-driver-net-virtio` (NCIP-Driver-Net-015 + NCIP-Driver-Framework-013
+    # § S5.3 step 9 — `DriverLoad` ingests this ELF and `spawn_from_elf`
+    # turns it into a Ring 3 driver process). `no_std + no_main` for
+    # `x86_64-unknown-none`; excluded so `cargo build --workspace` stays
+    # green on developer machines without the cross-toolchain. Built via
+    # `cargo build --manifest-path crates/nexacore-driver-net-virtio-image/Cargo.toml \
+    #              --target x86_64-unknown-none --release` (P6.7.8.3).
+    "crates/nexacore-driver-net-virtio-image",
+    # `nexacore-driver-nvme-image` is the bootable sibling of `nexacore-driver-nvme`
+    # (NCIP-Driver-NVMe-014 § S6 + NCIP-Driver-Framework-013 § S5.3 step 9 —
+    # `DriverLoad` ingests this ELF and `spawn_from_elf` turns it into a
+    # Ring 3 driver process). `no_std + no_main` for `x86_64-unknown-none`;
+    # excluded so `cargo build --workspace` stays green on developer
+    # machines without the cross-toolchain. Built via
+    # `cargo build --manifest-path crates/nexacore-driver-nvme-image/Cargo.toml \
+    #              --target x86_64-unknown-none --release` (P6.7.8.5).
+    "crates/nexacore-driver-nvme-image",
+    # `nexacore-driver-e1000e-image` is the bootable sibling of
+    # `nexacore-driver-e1000e` (NCIP-Driver-Net-015 § S5 + § S8 +
+    # NCIP-Driver-Framework-013 § S5.3 step 9 — `DriverLoad` ingests this
+    # ELF and `spawn_from_elf` turns it into a Ring 3 driver process).
+    # `no_std + no_main` for `x86_64-unknown-none`; excluded so
+    # `cargo build --workspace` stays green on developer machines without
+    # the cross-toolchain. Built via
+    # `cargo build --manifest-path crates/nexacore-driver-e1000e-image/Cargo.toml \
+    #              --target x86_64-unknown-none --release` (P6.7.8.7).
+    "crates/nexacore-driver-e1000e-image",
+    # `nexacore-shell-image` is the bare-metal PID 1 shell binary (`no_std +
+    # no_main`, target `x86_64-unknown-none`). Excluded from the default
+    # workspace matrix so `cargo build --workspace` stays green on developer
+    # machines without the cross-toolchain. Build explicitly via:
+    #
+    #   cargo build --manifest-path crates/nexacore-shell-image/Cargo.toml \
+    #               --target x86_64-unknown-none --release
+    "crates/nexacore-shell-image",
+    # `nexacore-net-image` is the bare-metal network stack service binary
+    # (`no_std + no_main`, target `x86_64-unknown-none`). Excluded from the
+    # default workspace matrix so `cargo build --workspace` stays green on
+    # developer machines without the cross-toolchain. Build explicitly via:
+    #
+    #   cargo build --manifest-path crates/nexacore-net-image/Cargo.toml \
+    #               --target x86_64-unknown-none --release
+    #
+    # Spawned by the kernel from the initramfs alongside the virtio-net driver
+    # image (Lane V) during M0 network stack bring-up.
+    "crates/nexacore-net-image",
+    # `nexacore-netcheck-image` is the bare-metal M0 networking self-test client
+    # (`no_std + no_main`, target `x86_64-unknown-none`). It issues
+    # NetSocket/NetConnect syscalls and prints the outcomes to the serial
+    # console, validating the kernel→nexacore-net IPC relay end to end on
+    # hardware. Excluded like the other `*-image` crates; built via:
+    #   cargo build --manifest-path crates/nexacore-netcheck-image/Cargo.toml \
+    #               --target x86_64-unknown-none --release
+    "crates/nexacore-netcheck-image",
+    # `nexacore-runtime-image` is the bare-metal AI runtime service endpoint
+    # (TASK-11 / DE-G6, ADR-0032): the Ring 3 counterpart of the kernel's
+    # AI syscall relay (`"ai"`/`"ai_reply"` rendezvous), serving the wire
+    # contract with a deterministic mock provider until the full std
+    # serving engine can run in-image (TASK-13). `no_std + no_main` for
+    # `x86_64-unknown-none`; excluded like the other `*-image` crates;
+    # built via:
+    #   cargo build --manifest-path crates/nexacore-runtime-image/Cargo.toml \
+    #               --target x86_64-unknown-none --release
+    "crates/nexacore-runtime-image",
+    # `nexacore-aicheck-image` is the bare-metal TASK-11 AI syscall self-test
+    # client: issues AiInvoke (80) and prints the relayed response, then
+    # exercises the EFAULT/ENOSPC negative paths on hardware. Excluded
+    # like the other `*-image` crates; built via:
+    #   cargo build --manifest-path crates/nexacore-aicheck-image/Cargo.toml \
+    #               --target x86_64-unknown-none --release
+    "crates/nexacore-aicheck-image",
+    # `nexacore-blkcheck-image` is the bare-metal TASK-14 BLK service smoke client
+    # (ADR-0036 D7): validates the NVMe BLK IPC loop end-to-end on hardware
+    # (negative cap-gate, Write/Flush/Read with inline data chunks, byte-compare,
+    # out-of-range rejection). `no_std + no_main` for `x86_64-unknown-none`;
+    # excluded like the other `*-image` crates; built via:
+    #   cargo build --manifest-path crates/nexacore-blkcheck-image/Cargo.toml \
+    #               --target x86_64-unknown-none --release
+    "crates/nexacore-blkcheck-image",
+    # `nexacore-fsd-image` is the bare-metal TASK-15 NCFS root-mount daemon
+    # (ADR-0037): mounts the NCFS root volume from the NVMe BLK service
+    # (TASK-14) and proves reboot persistence via a `/test.txt` boot counter.
+    # `no_std + no_main` for `x86_64-unknown-none`; excluded like the other
+    # `*-image` crates; built via:
+    #   cargo build --manifest-path crates/nexacore-fsd-image/Cargo.toml \
+    #               --target x86_64-unknown-none --release
+    "crates/nexacore-fsd-image",
+    # `nexacore-display-probe` is the bare-metal TASK-18 (DE-C1) display-map +
+    # input-event smoke probe (ADR-0040 D5): validates DisplayMap (79) and the
+    # display-input IPC channel end-to-end on VM-103 (serial capture + visual
+    # colour-bar check). `no_std + no_main` for `x86_64-unknown-none`;
+    # excluded like the other `*-image` crates; built via:
+    #   cargo build --manifest-path crates/nexacore-display-probe/Cargo.toml \
+    #               --target x86_64-unknown-none --release
+    "crates/nexacore-display-probe",
+    # `nexacore-display-image` is the bare-metal TASK-19 (DE-C2/DE-C3) Ring 3
+    # compositor + window manager bootable image (ADR-0041 D1 acceptance
+    # artifact): maps the framebuffer, drives the `nexacore-display` Compositor,
+    # creates three overlapping test windows, and runs an input loop that
+    # exercises focus switching and window destruction.  VM-103 verification
+    # artifact.  `no_std + no_main` for `x86_64-unknown-none`; excluded like
+    # the other `*-image` crates; built via:
+    #   cargo build --manifest-path crates/nexacore-display-image/Cargo.toml \
+    #               --target x86_64-unknown-none --release
+    "crates/nexacore-display-image",
+    # `nexacore-ui-demo-image` is the bare-metal TASK-20 (DE-C4/DE-C5) Ring 3
+    # widget-UI demo image (ADR-0042 D6 acceptance artifact): maps the
+    # framebuffer, drives the `nexacore-display` Compositor, renders a single
+    # window with an `nexacore-ui` widget tree (title label + text input + submit
+    # button + status label) in brand colours, and runs an input loop that
+    # feeds keystrokes to the TextInput and activates Submit on Enter.
+    # VM-103 acceptance artifact ("finestra demo con widget interattivi e
+    # testo leggibile").  `no_std + no_main` for `x86_64-unknown-none`;
+    # excluded like the other `*-image` crates; built via:
+    #   cargo build --manifest-path crates/nexacore-ui-demo-image/Cargo.toml \
+    #               --target x86_64-unknown-none --release
+    "crates/nexacore-ui-demo-image",
+    # `nexacore-apps-image` is the bare-metal TASK-22 (DE-D1/DE-D4) Ring 3
+    # display image (ADR-0044): hosts a windowed nexacore-shell terminal and a
+    # text editor with NCFS persistence (/notes.txt) in a single display
+    # task.  Tab cycles focus between the two windows.  The editor saves via
+    # the IPC FS service (Esc key) and reads back across reboots.  VM-103
+    # acceptance artifact (M4 open).  `no_std + no_main` for
+    # `x86_64-unknown-none`; excluded like the other `*-image` crates; built via:
+    #   cargo build --manifest-path crates/nexacore-apps-image/Cargo.toml \
+    #               --target x86_64-unknown-none --release
+    "crates/nexacore-apps-image",
+    # `nexacore-driver-xhci-image` is the bootable Ring 3 xHCI USB host controller
+    # driver image (ADR-0048 D1, TASK-26). `no_std + no_main` for
+    # `x86_64-unknown-none`; excluded so `cargo build --workspace` stays green
+    # on developer machines without the cross-toolchain. Built via:
+    #   cargo build --manifest-path crates/nexacore-driver-xhci-image/Cargo.toml \
+    #               --target x86_64-unknown-none --release
+    "crates/nexacore-driver-xhci-image",
+    # `disk-image` is the host-side UEFI/BIOS disk image builder.
+    # It depends on the heavy `bootloader 0.11` crate (which embeds
+    # pre-compiled bootloader binary blobs) and only needs to run on CI
+    # or developer machines that have OVMF installed. Excluded from the
+    # default workspace to keep `cargo build --workspace` lightweight.
+    "disk-image",
+]
+
+# -----------------------------------------------------------------------------
+# Shared package metadata
+# -----------------------------------------------------------------------------
+# All crates inherit these fields. They can be referenced via
+# `field.workspace = true` inside each crate's Cargo.toml.
+[workspace.package]
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.85"
+# Authors: project pseudonym `cySalazar` with the project mailbox. Once the
+# project's legal entity exists (form under evaluation — `todo.md` P4.1), this
+# field may transition to the entity's name. Rationale
+# for the pseudonym lives in the project identity policy (see governance
+# doc and project memory).
+authors = ["cySalazar <hello@nexacoreos.com>"]
+license = "Apache-2.0"
+repository = "https://github.com/CySalazar/nexacore-os"
+homepage = "https://nexacoreos.com"
+documentation = "https://docs.nexacoreos.com"
+readme = "README.md"
+keywords = ["operating-system", "ai", "privacy", "decentralized", "mesh"]
+categories = ["os", "embedded", "cryptography"]
+
+# -----------------------------------------------------------------------------
+# Shared dependencies (versions pinned at workspace level)
+# -----------------------------------------------------------------------------
+# Sub-crates depend on these via `dep.workspace = true` to ensure consistent
+# versions across the workspace. Rationale per crate is documented in
+# /docs/09-tech-specifications.md.
+[workspace.dependencies]
+# --- Internal crates (path-based, version-tracked) ---
+nexacore-types          = { path = "crates/nexacore-types",          version = "0.2.0" }
+nexacore-crypto         = { path = "crates/nexacore-crypto",         version = "0.2.0" }
+nexacore-capability     = { path = "crates/nexacore-capability",     version = "0.2.0" }
+nexacore-config         = { path = "crates/nexacore-config",         version = "0.2.0" }
+nexacore-script         = { path = "crates/nexacore-script",         version = "0.2.0" }
+nexacore-tee            = { path = "crates/nexacore-tee",            version = "0.2.0" }
+nexacore-hal            = { path = "crates/nexacore-hal",            version = "0.2.0" }
+nexacore-runtime        = { path = "crates/nexacore-runtime",        version = "0.2.0" }
+nexacore-mesh           = { path = "crates/nexacore-mesh",           version = "0.2.0" }
+nexacore-tokenization   = { path = "crates/nexacore-tokenization",   version = "0.2.0" }
+nexacore-sdk            = { path = "crates/nexacore-sdk",            version = "0.2.0" }
+nexacore-agent          = { path = "crates/nexacore-agent",          version = "0.2.0" }
+# Filesystem service (TASK-011, NCIP-FS-018): Phase-1 skeleton.
+nexacore-fs             = { path = "crates/nexacore-fs",             version = "0.2.0" }
+# Read-only FAT12/16/32 reader (WS3-05): dep-free, no_std.
+nexacore-fatfs          = { path = "crates/nexacore-fatfs",          version = "0.2.0" }
+# Driver SDK helper (P6.7.8.10, NCIP-013 § S5.3 step 8): dep-free, no_std.
+nexacore-driver-shared  = { path = "crates/nexacore-driver-shared",  version = "0.2.0" }
+# Network stack service (N2.1–N2.6, N3.2, N5.1): no_std + alloc.
+nexacore-net            = { path = "crates/nexacore-net",            version = "0.2.0" }
+# TLS 1.3 stack (WS4-03): no_std + alloc; uses nexacore-crypto primitives.
+nexacore-tls            = { path = "crates/nexacore-tls",            version = "0.2.0" }
+# SSH-2 transport (WS4-06): no_std + alloc over nexacore-crypto.
+nexacore-ssh            = { path = "crates/nexacore-ssh",            version = "0.2.0" }
+# Structured logging service (WS12-03): dep-free no_std + alloc.
+nexacore-log            = { path = "crates/nexacore-log",            version = "0.2.0" }
+# Time service (WS12-02): dep-free no_std + alloc (SNTP, clocks, timezone).
+nexacore-time           = { path = "crates/nexacore-time",           version = "0.2.0" }
+# Embedded brand type families (WS7-19.3): dep-free no_std glyf TrueType assets.
+nexacore-fonts          = { path = "crates/nexacore-fonts",          version = "0.2.0" }
+# `ping` network diagnostic command (N7.1): no_std + alloc.
+nexacore-cmd-ping       = { path = "crates/nexacore-cmd-ping",       version = "0.2.0" }
+# `traceroute` command (N7.2): no_std + alloc.
+nexacore-cmd-traceroute = { path = "crates/nexacore-cmd-traceroute", version = "0.2.0" }
+# `ifconfig` command (N7.3): no_std + alloc.
+nexacore-cmd-ifconfig   = { path = "crates/nexacore-cmd-ifconfig",   version = "0.2.0" }
+# `route` command (N7.4): no_std + alloc.
+nexacore-cmd-route      = { path = "crates/nexacore-cmd-route",      version = "0.2.0" }
+# `netstat` command (N7.5): no_std + alloc.
+nexacore-cmd-netstat    = { path = "crates/nexacore-cmd-netstat",    version = "0.2.0" }
+# `nslookup` command (N7.6): no_std + alloc.
+nexacore-cmd-nslookup   = { path = "crates/nexacore-cmd-nslookup",   version = "0.2.0" }
+# `curl` HTTP client command (N7.7): no_std + alloc.
+nexacore-cmd-curl       = { path = "crates/nexacore-cmd-curl",       version = "0.2.0" }
+# `wget` file downloader command (N7.8): no_std + alloc.
+nexacore-cmd-wget       = { path = "crates/nexacore-cmd-wget",       version = "0.2.0" }
+# `ssh` client scaffold (N7.9): no_std + alloc.
+nexacore-cmd-ssh        = { path = "crates/nexacore-cmd-ssh",        version = "0.2.0" }
+# `scp` file transfer scaffold (N7.10): no_std + alloc.
+nexacore-cmd-scp        = { path = "crates/nexacore-cmd-scp",        version = "0.2.0" }
+# `nc` (netcat) command (N7.11): no_std + alloc.
+nexacore-cmd-nc         = { path = "crates/nexacore-cmd-nc",         version = "0.2.0" }
+# NexaCore Spark (NCIP-025): cross-platform mesh participation desktop app.
+nexacore-spark          = { path = "crates/nexacore-spark",          version = "0.2.0" }
+# --- no_std math + collections shims ---
+# `libm` provides transcendental float functions (sqrt, exp, sin, cos, powf)
+# for no_std targets.  On stable Rust 1.85 these live in `std`, not `core`,
+# so `libm` is the only portable solution for `x86_64-unknown-none`.
+# License: MIT/Apache-2.0. (TASK-13-pre, ADR-0034)
+libm = { version = "0.2", default-features = false }
+# `hashbrown` is the hash-map implementation that underlies `std::collections::HashMap`.
+# Used in nexacore-runtime's BPE tokenizer so it can build without std
+# (ADR-0034 strategy: feature-gate the existing crates, no engine extraction).
+# `default-features = false` keeps the dependency no_std-clean; `ahash` is the
+# default-hasher feature (hashbrown pulls ahash with default-features=false,
+# i.e. fixed-seed, NO getrandom — safe for x86_64-unknown-none; vocab keys
+# come from the model file, not from an adversarial network boundary);
+# `inline-more` matches hashbrown's own default inlining profile.
+# License: MIT/Apache-2.0. (TASK-13-pre, ADR-0034)
+hashbrown = { version = "0.14", default-features = false, features = ["ahash", "inline-more"] }
+
+# --- Async runtime ---
+tokio        = { version = "1.52", features = ["full"] }
+async-trait  = "0.1"
+futures      = "0.3"
+
+# --- Serialization ---
+# `serde` is configured with `default-features = false` + `derive` + `alloc`
+# so that consumers can opt into `no_std + alloc` without dragging `std` in.
+serde       = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+serde_json  = "1.0"
+# `postcard` 1.x is the canonical wire encoding used for capability-token
+# signing pre-images and TEE attestation envelopes. It replaces `bincode`
+# v2 (unmaintained per RUSTSEC-2025-0141) under `NCIP-Serde-004`.
+#
+# `default-features = false` + `alloc` only — `use-std` is intentionally
+# NOT enabled at the workspace level: Cargo features are additive, so
+# enabling it once would pull `std` into every foundational crate
+# (`nexacore-types`, `nexacore-crypto`, `nexacore-capability`, `nexacore-tee`,
+# `nexacore-kernel`). A consumer that genuinely requires `std::io::Read`/
+# `Write` adapters MUST depend on `postcard` directly (not via the
+# workspace re-export) and enable `use-std` in that crate's Cargo.toml
+# only. There are no such consumers at v0.2; the rule is stated to head
+# off future drift.
+#
+# All call sites MUST go through `nexacore-types::wire::{encode_canonical,
+# decode_canonical}` — never invoke `postcard::*` directly outside of
+# `nexacore-types::wire`. Enforced by clippy `disallowed-methods` in
+# `clippy.toml` (introduced in M2 of `NCIP-Serde-004`).
+postcard    = { version = "1.0", default-features = false, features = ["alloc"] }
+
+# --- Cryptography (subset — see /docs/09-tech-specifications.md) ---
+# All crypto crates are pinned and selected from the RustCrypto family for
+# audit coherence + `no_std`-friendliness (consistent with the kernel
+# trajectory in P6). `ring` is intentionally NOT used: it is not
+# `no_std`-friendly and would force a divergent crypto trust base.
+ed25519-dalek      = { version = "2.1", default-features = false, features = ["zeroize", "rand_core", "serde"] }
+x25519-dalek       = { version = "2.0", default-features = false, features = ["zeroize", "static_secrets", "reusable_secrets", "serde"] }
+chacha20poly1305   = { version = "0.10", default-features = false, features = ["alloc"] }
+sha2               = { version = "0.11", default-features = false }
+sha3               = { version = "0.12", default-features = false }
+blake3             = { version = "1.5", default-features = false }
+hkdf               = { version = "0.13", default-features = false }
+argon2             = { version = "0.5", default-features = false, features = ["alloc"] }
+
+# --- Random number generation ---
+# CSPRNG abstraction used by signing/kex/AEAD nonce generation.
+# `getrandom` v0.2 is the platform CSPRNG bridge; `rand_core` is the trait
+# surface implemented by all RustCrypto crates that need entropy.
+rand_core          = { version = "0.6", default-features = false, features = ["getrandom"] }
+getrandom          = { version = "0.2", default-features = false }
+
+# --- Constant-time + zeroization helpers ---
+# `subtle` provides `ConstantTimeEq` for AEAD tag check / signature verify.
+# `zeroize` ensures key material is wiped on `Drop`.
+subtle             = { version = "2.6", default-features = false }
+zeroize            = { version = "1.8", default-features = false, features = ["derive", "alloc"] }
+
+# --- Identifiers + encoding ---
+# `uuid` v1 with `v4` is a 122-bit random identifier used for AgentId /
+# CapabilityId / SessionId. v4 is chosen over v7 (sortable timestamped)
+# because v7 requires `std::time::SystemTime`, which is unavailable in
+# `no_std` foundational crates. Entropy is sourced from `getrandom`
+# directly at the call site, so the `rng-*` features of `uuid` are not
+# enabled (we keep the dependency surface minimal). When a `Clock`
+# abstraction lands in `nexacore-hal` (P6), we can revisit using v7 with an
+# injected timestamp.
+#
+# `hex` provides safe encoding for raw-byte identifiers (we deliberately
+# do NOT impl `Display` for raw bytes; call sites must pass through
+# `to_hex` to surface an ID).
+uuid               = { version = "1.11", default-features = false, features = ["v4", "serde"] }
+hex                = { version = "0.4", default-features = false, features = ["alloc"] }
+
+# --- Networking (mesh protocol) ---
+quinn = "0.11"
+snow  = "0.9"
+
+# --- Synchronization primitives ---
+# `parking_lot` is the workspace-standard `Mutex` / `RwLock` replacement.
+# It does not have PoisonError semantics (unlike `std::sync::Mutex`), which
+# simplifies audit paths. The `clippy.toml` disallowed-methods list bans
+# `std::sync::Mutex::new` and redirects callers here. MIT/Apache-2.0.
+parking_lot = "0.12"
+
+# --- Observability ---
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+# --- Error handling ---
+# thiserror v2 chosen to align with the version pulled by upstream crates
+# (quinn, tokio ecosystem), eliminating duplicate-dependency warnings.
+# `default-features = false` enables `no_std` mode (Rust 1.81+ has
+# `core::error::Error` so this is fully supported on our MSRV 1.85).
+thiserror = { version = "2.0", default-features = false }
+anyhow    = "1.0"
+
+# --- Testing utilities ---
+proptest = "1.5"
+mockall  = "0.13"
+# Compile-fail tests for type-system invariants (e.g., proving that a
+# `ModelId` cannot be passed where a `NodeId` is expected). Dev-only.
+trybuild = "1.0"
+
+# -----------------------------------------------------------------------------
+# Build profiles
+# -----------------------------------------------------------------------------
+# Profiles reflect NexaCore OS priorities: Security > Stability > Performance.
+
+# Release: maximum optimization, abort on panic, stripped symbols.
+# Rationale: smaller attack surface, predictable failure mode (no unwinding
+# state in security-critical code), smaller binary size.
+[profile.release]
+opt-level       = 3
+lto             = "fat"
+codegen-units   = 1
+debug           = false
+panic           = "abort"
+strip           = "symbols"
+overflow-checks = true   # Keep overflow checks even in release for security.
+
+# Dev: fast builds, overflow checks, debug info.
+[profile.dev]
+opt-level       = 0
+debug           = true
+overflow-checks = true
+
+# Bench: like release but with debug info for profiling.
+[profile.bench]
+inherits = "release"
+debug    = true
+strip    = "none"
+
+# Test: optimization-friendly while keeping debug info.
+[profile.test]
+opt-level       = 1
+debug           = true
+overflow-checks = true
+
+# -----------------------------------------------------------------------------
+# Workspace-wide lints
+# -----------------------------------------------------------------------------
+# Strict lints enforce NexaCore OS priorities in code. Sub-crates inherit these
+# via `lints.workspace = true` in their Cargo.toml.
+
+[workspace.lints.rust]
+# --- Memory safety ---
+# Any unsafe code requires explicit justification in PR review.
+unsafe_code = "warn"
+
+# --- Correctness ---
+unreachable_pub  = "warn"
+unused_must_use  = "deny"
+
+# --- Documentation ---
+# Every public item must be documented. Critical for a 25-year project.
+missing_docs = "warn"
+
+# --- Future compatibility ---
+future_incompatible      = { level = "warn", priority = -1 }
+rust_2024_compatibility  = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+# Clippy lint groups — strictness from low priority to high.
+pedantic = { level = "warn", priority = -1 }
+nursery  = { level = "warn", priority = -1 }
+cargo    = { level = "warn", priority = -1 }
+
+# Specific lints critical for systems and security code.
+unwrap_used       = "warn"
+expect_used       = "warn"
+panic             = "warn"
+todo              = "warn"   # Tracks explicit `todo!()` for inventory.
+unimplemented     = "warn"   # Tracks explicit `unimplemented!()`.
+indexing_slicing  = "warn"
+integer_division  = "warn"
+float_arithmetic  = "warn"
+
+# Allow some pedantic lints that are noisy in practice without security value.
+module_name_repetitions = "allow"
+must_use_candidate      = "allow"
+
+# Transitive-dependency version conflicts come from upstream crates (Windows
+# target shims, etc.) and cannot be fixed at this workspace's level. We
+# accept these and revisit when a single-version policy becomes feasible.
+multiple_crate_versions = "allow"
+
+# Placeholder tests in scaffold crates trigger this; not actionable at v0.1.
+# Re-enable selectively per-crate when implementations land.
+missing_const_for_fn = "allow"

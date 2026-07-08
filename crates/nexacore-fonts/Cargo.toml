@@ -1,0 +1,33 @@
+# =============================================================================
+# nexacore-fonts — embedded brand type families (WS7-19.3)
+# =============================================================================
+# Dependency-free, no_std crate that embeds the three NexaCore brand type
+# families as `glyf`-flavored TrueType byte slices, so the OS text engine
+# (nexacore-display::font / raster) can render real proportional/monospace/serif
+# text with no filesystem font loading. All three families are SIL Open Font
+# License 1.1 (see brand/typography/fonts/OFL-*.txt); the bytes are the same
+# TrueType builds documented in brand/typography/fonts/README.md.
+#
+# This crate isolates the heavy binary assets so only the render paths (the
+# desktop image, nexacore-ui text) pull them in — not every nexacore-display
+# consumer. It carries no `std` and builds for x86_64-unknown-none.
+# =============================================================================
+
+[package]
+name             = "nexacore-fonts"
+description      = "NexaCore OS embedded brand type families (Inter, IBM Plex Mono, Source Serif 4) as glyf TrueType byte slices for the OS text engine — SIL OFL 1.1 (WS7-19.3)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]

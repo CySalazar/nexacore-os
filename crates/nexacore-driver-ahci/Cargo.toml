@@ -1,0 +1,28 @@
+# =============================================================================
+# nexacore-driver-ahci — AHCI / SATA driver (WS2-07, DE-B5)
+# =============================================================================
+# Host-testable core of the AHCI/SATA storage driver: the generic + per-port
+# HBA MMIO register map (ABAR), Host-to-Device Register-FIS construction for ATA
+# commands, and IDENTIFY DEVICE response parsing (disk size + capabilities). The
+# MMIO/DMA/IRQ bring-up, READ/WRITE DMA EXT, NCQ, and the BLK provider land on
+# the rig. `no_std + alloc`, integer-only, dependency-free.
+# =============================================================================
+
+[package]
+name             = "nexacore-driver-ahci"
+description      = "NexaCore OS AHCI/SATA driver core — HBA register map, H2D FIS, IDENTIFY DEVICE (WS2-07)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]

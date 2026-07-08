@@ -1,0 +1,39 @@
+# =============================================================================
+# nexacore-monitor — system-monitor core (WS8-05)
+# =============================================================================
+# Host-testable core of the NexaCore system monitor.  `no_std + alloc` so it
+# compiles for both the developer host and the bare-metal Ring-3 target.
+#
+# Design: every kernel-bound effect sits behind a trait so the orchestration
+# logic stays host-testable —
+#   - the telemetry client reads the `/proc`-class surface (WS12-04) through a
+#     `ProcSource` transport seam and parses it into structured samples;
+#   - live CPU/RAM history is integer permille (no float, deterministic);
+#   - disk/net throughput is a rate derived from successive samples;
+#   - the per-process table sorts the parsed rows;
+#   - kill/renice drive a `ProcessController` seam and are gated by an
+#     `ActionCapability` seam (capability-checked before any effect).
+# The VM-103 E2E (live CPU/RAM + active service list) is WS8-05.7.
+# =============================================================================
+
+[package]
+name             = "nexacore-monitor"
+description      = "NexaCore OS system-monitor core — /proc telemetry client, live CPU/RAM series, disk/net rates, process table, capability-gated kill/renice (WS8-05)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# No dependencies: the monitor core is self-contained (parses the stable
+# `/proc` text contract emitted by WS12-04 and drives kernel effects through
+# trait seams). `alloc` provides `String`/`Vec` without `std`.
+[dependencies]

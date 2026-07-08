@@ -1,0 +1,16 @@
+# =============================================================================
+# nexacore-shell-image — cargo target configuration
+# =============================================================================
+# Sets the image base to 0x400000 via lld's --image-base flag. This makes
+# all addresses in the PIE ELF absolute, starting from 0x400000 instead
+# of 0x0. The kernel's ELF loader applies a load_bias of 0x400000 for
+# ET_DYN ELFs, so the effective address after loading is 0x800000. To
+# avoid double-biasing, we also disable the kernel's bias by making the
+# virt_addr start above zero (the loader only biases when virt_addr == 0).
+# =============================================================================
+
+[build]
+target = "x86_64-unknown-none"
+
+[target.x86_64-unknown-none]
+rustflags = ["-C", "link-arg=--image-base=0x400000"]

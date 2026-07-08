@@ -1,0 +1,34 @@
+# =============================================================================
+# nexacore-cmd-traceroute — `traceroute` command for NexaCore OS
+# =============================================================================
+# Provides ICMP TTL-based route discovery: probe packet construction, response
+# parsing, hop formatting, and argument parsing.
+#
+# Architecture:
+#   `no_std + alloc` library crate following the driver/command pattern.
+#   Zero external production dependencies — pure logic built on `nexacore-types`.
+#
+# References:
+#   - RFC 792 (ICMP)
+#   - NCIP-Net-N7.2 (traceroute command specification)
+# =============================================================================
+
+[package]
+name             = "nexacore-cmd-traceroute"
+description      = "traceroute command for NexaCore OS — ICMP TTL-based route discovery."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+nexacore-types = { workspace = true }

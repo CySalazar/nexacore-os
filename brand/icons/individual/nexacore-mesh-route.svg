@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NexaCore OS — nexacore-mesh-route
+  Packet flowing through nodes — routing
+  Direction: C — Civic Tech / Generational
+  Source sprite: ../icons.svg (this is a single-icon extraction for inspection / direct use)
+  Geometry: 24x24 viewBox, 1.5 stroke, currentColor (defaults to charcoal #1F2421)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="nexacore-mesh-route" color="#1F2421">
+<g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <circle cx="4" cy="12" r="2"/>
+      <circle cx="12" cy="6" r="2"/>
+      <circle cx="20" cy="12" r="2"/>
+      <circle cx="12" cy="18" r="2"/>
+      <path d="M6 12 L10 7"/>
+      <path d="M14 7 L18 12"/>
+      <path d="M18 13 L14 17"/>
+    </g>
+</svg>

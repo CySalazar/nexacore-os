@@ -1,0 +1,41 @@
+# =============================================================================
+# nexacore-fs fuzz harness (cargo-fuzz) — WS13-02.3
+# =============================================================================
+# Fuzzes the on-disk volume parser (`nexacore_fs::ondisk::OnDiskVolume::mount`),
+# the trust boundary for untrusted disk images. NOT a workspace member —
+# cargo-fuzz requires a standalone bin package (see the workspace root
+# `Cargo.toml` `[workspace] exclude` list).
+#
+# Usage (Rust nightly + cargo-fuzz):
+#   cargo install cargo-fuzz
+#   cd crates/nexacore-fs
+#   cargo +nightly fuzz run ondisk_mount
+# =============================================================================
+
+[package]
+name = "nexacore-fs-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "Apache-2.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+nexacore-fs = { path = ".." }
+
+[[bin]]
+name = "ondisk_mount"
+path = "fuzz_targets/ondisk_mount.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "v3_parse"
+path = "fuzz_targets/v3_parse.rs"
+test = false
+doc = false
+bench = false

@@ -1,0 +1,148 @@
+/* ============================================================
+   NexaCore OS — Color tokens
+   Direction:    C — Civic Tech / Generational
+   Authoritative: brand/STRATEGY.md, brand/colors/palette.md
+   Last updated: 2026-05-13
+   ============================================================
+   Token layers:
+     1. Core scale — raw color ramps, named by hue
+     2. Semantic   — purpose-bound aliases (use these in production)
+     3. Mode       — light + dark mode overrides
+
+   Production code MUST use Semantic tokens, never Core scale directly.
+
+   Accessibility budget (WCAG 2.1 AA minimum, AAA target):
+     • text-primary on bg-canvas:   12.2 : 1 (AAA)
+     • text-primary on bg-surface:  14.6 : 1 (AAA)
+     • text-inverse on bg-inverse:  11.8 : 1 (AAA)
+     • accent-danger on bg-canvas:   4.7 : 1 (AA — large/UI only)
+============================================================ */
+
+:root {
+  /* 1 · CORE SCALE — Petrol (primary brand hue) */
+  --nexacore-petrol-50:  #E6EEF0;
+  --nexacore-petrol-100: #C5D6DB;
+  --nexacore-petrol-200: #94B3BC;
+  --nexacore-petrol-300: #6390A0;
+  --nexacore-petrol-400: #386F82;
+  --nexacore-petrol-500: #0F4C5C;   /* canonical petrol */
+  --nexacore-petrol-600: #0C3E4B;
+  --nexacore-petrol-700: #0A323C;
+  --nexacore-petrol-800: #07242C;
+  --nexacore-petrol-900: #051921;
+
+  /* Cream — warm canvas */
+  --nexacore-cream-50:  #FDFBF4;
+  --nexacore-cream-100: #FAF5E6;
+  --nexacore-cream-200: #F8F0DA;
+  --nexacore-cream-300: #F4EBD0;   /* canonical cream */
+  --nexacore-cream-400: #E8DAB1;
+  --nexacore-cream-500: #D9C68A;
+  --nexacore-cream-600: #B5A26B;
+  --nexacore-cream-700: #8F7F50;
+
+  /* Brick — Mission Anchor accent */
+  --nexacore-brick-50:  #F8E1DE;
+  --nexacore-brick-100: #EFB7B0;
+  --nexacore-brick-300: #D85C50;
+  --nexacore-brick-500: #C03221;   /* canonical brick */
+  --nexacore-brick-700: #8F2519;
+  --nexacore-brick-900: #5C1710;
+
+  /* Sage — community / success / status-OK */
+  --nexacore-sage-50:  #EAF1EB;
+  --nexacore-sage-100: #C6D8C8;
+  --nexacore-sage-300: #9CBC9F;
+  --nexacore-sage-500: #7A9E7E;   /* canonical sage */
+  --nexacore-sage-700: #587657;
+  --nexacore-sage-900: #2E4E2D;
+
+  /* Charcoal — body text + dark surfaces */
+  --nexacore-charcoal-50:  #F2F3F2;
+  --nexacore-charcoal-100: #DCDEDC;
+  --nexacore-charcoal-200: #B3B7B3;
+  --nexacore-charcoal-300: #888D88;
+  --nexacore-charcoal-400: #5E635E;
+  --nexacore-charcoal-500: #3E423E;
+  --nexacore-charcoal-600: #2D312D;
+  --nexacore-charcoal-700: #252925;
+  --nexacore-charcoal-800: #1F2421;   /* canonical charcoal */
+  --nexacore-charcoal-900: #14171A;
+  --nexacore-charcoal-950: #0A0B0C;
+
+  --nexacore-white: #FFFFFF;
+  --nexacore-black: #000000;
+
+  /* 2 · SEMANTIC TOKENS — light mode default */
+  --nexacore-bg-canvas:     var(--nexacore-cream-300);
+  --nexacore-bg-surface:    var(--nexacore-white);
+  --nexacore-bg-surface-2:  var(--nexacore-cream-100);
+  --nexacore-bg-inverse:    var(--nexacore-charcoal-800);
+  --nexacore-bg-code:       var(--nexacore-petrol-50);
+
+  --nexacore-text-primary:    var(--nexacore-charcoal-800);
+  --nexacore-text-secondary:  var(--nexacore-charcoal-500);
+  --nexacore-text-tertiary:   var(--nexacore-charcoal-300);
+  --nexacore-text-inverse:    var(--nexacore-cream-300);
+  --nexacore-text-accent:     var(--nexacore-petrol-500);
+  --nexacore-text-link:       var(--nexacore-petrol-500);
+  --nexacore-text-link-hover: var(--nexacore-petrol-700);
+
+  --nexacore-border-default:  var(--nexacore-charcoal-100);
+  --nexacore-border-strong:   var(--nexacore-charcoal-300);
+  --nexacore-border-accent:   var(--nexacore-petrol-300);
+  --nexacore-rule:            var(--nexacore-petrol-200);
+
+  --nexacore-status-success:  var(--nexacore-sage-500);
+  --nexacore-status-warning:  #B58D32;
+  --nexacore-status-danger:   var(--nexacore-brick-500);
+  --nexacore-status-info:     var(--nexacore-petrol-500);
+  --nexacore-status-neutral:  var(--nexacore-charcoal-300);
+
+  --nexacore-anchor: var(--nexacore-brick-500);
+  --nexacore-focus-ring: var(--nexacore-brick-500);
+  --nexacore-focus-ring-offset: var(--nexacore-bg-canvas);
+}
+
+/* 3 · MODE — Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-nexacore-theme="light"]) {
+    --nexacore-bg-canvas:     var(--nexacore-charcoal-900);
+    --nexacore-bg-surface:    var(--nexacore-charcoal-800);
+    --nexacore-bg-surface-2:  var(--nexacore-charcoal-700);
+    --nexacore-bg-inverse:    var(--nexacore-cream-300);
+    --nexacore-bg-code:       var(--nexacore-petrol-900);
+
+    --nexacore-text-primary:    var(--nexacore-cream-300);
+    --nexacore-text-secondary:  var(--nexacore-cream-500);
+    --nexacore-text-tertiary:   var(--nexacore-charcoal-300);
+    --nexacore-text-inverse:    var(--nexacore-charcoal-800);
+    --nexacore-text-accent:     var(--nexacore-cream-300);
+    --nexacore-text-link:       var(--nexacore-cream-400);
+    --nexacore-text-link-hover: var(--nexacore-cream-300);
+
+    --nexacore-border-default:  var(--nexacore-charcoal-700);
+    --nexacore-border-strong:   var(--nexacore-charcoal-500);
+    --nexacore-border-accent:   var(--nexacore-petrol-300);
+    --nexacore-rule:            var(--nexacore-charcoal-700);
+  }
+}
+
+[data-nexacore-theme="dark"] {
+  --nexacore-bg-canvas:     var(--nexacore-charcoal-900);
+  --nexacore-bg-surface:    var(--nexacore-charcoal-800);
+  --nexacore-bg-surface-2:  var(--nexacore-charcoal-700);
+  --nexacore-bg-inverse:    var(--nexacore-cream-300);
+  --nexacore-bg-code:       var(--nexacore-petrol-900);
+  --nexacore-text-primary:    var(--nexacore-cream-300);
+  --nexacore-text-secondary:  var(--nexacore-cream-500);
+  --nexacore-text-tertiary:   var(--nexacore-charcoal-300);
+  --nexacore-text-inverse:    var(--nexacore-charcoal-800);
+  --nexacore-text-accent:     var(--nexacore-cream-300);
+  --nexacore-text-link:       var(--nexacore-cream-400);
+  --nexacore-text-link-hover: var(--nexacore-cream-300);
+  --nexacore-border-default:  var(--nexacore-charcoal-700);
+  --nexacore-border-strong:   var(--nexacore-charcoal-500);
+  --nexacore-border-accent:   var(--nexacore-petrol-300);
+  --nexacore-rule:            var(--nexacore-charcoal-700);
+}

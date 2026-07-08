@@ -1,0 +1,75 @@
+# =============================================================================
+# nexacore-runtime-image — bare-metal AI runtime service binary for NexaCore OS
+# =============================================================================
+# `no_std + no_main` ELF entry point that the kernel spawns as the
+# `nexacore-runtime` userspace AI serving endpoint after boot (TASK-11 transport,
+# TASK-13-pre real engine — DE-G6, ADR-0032, ADR-0034).
+#
+# The image is the Ring 3 COUNTERPART of the kernel's AI syscall relay
+# (`ai_handlers::ai_relay`): it creates the two IPC channels of the
+# rendezvous, registers them as `"ai"` / `"ai_reply"` via NetRegister, and
+# serves each postcard-encoded `nexacore_types::ai::AiSyscallRequest` with the
+# REAL CPU inference engine (`nexacore_runtime::engine::CpuEngine` over the
+# embedded Q8_0 fixture model): BPE encode → sync transformer forward →
+# greedy argmax → BPE decode. The no_std port that made this possible is
+# TASK-13-pre / ADR-0034; the TASK-11 deterministic MOCK is retired.
+# Remote serving (SessionManager + BackendRouter → Ollama) remains the
+# std/tokio surface proven by the host suite (`tests/e2e_task11_relay.rs`).
+#
+# `nexacore-usys` is intentionally NOT a dependency (same getrandom rationale
+# as nexacore-net-image): minimal syscall stubs are inlined in main.rs.
+#
+# Built out-of-workspace via:
+#   cargo build --manifest-path crates/nexacore-runtime-image/Cargo.toml \
+#               --target x86_64-unknown-none --release
+# =============================================================================
+
+[package]
+name         = "nexacore-runtime-image"
+description  = "Bare-metal AI runtime service endpoint for NexaCore OS (kernel AI syscall relay counterpart)"
+version      = "0.2.0"
+edition      = "2024"
+rust-version = "1.85"
+authors      = ["cySalazar <hello@nexacoreos.com>"]
+license      = "Apache-2.0"
+repository   = "https://github.com/CySalazar/nexacore-os"
+homepage     = "https://nexacoreos.com"
+categories   = ["os", "embedded"]
+publish      = false
+
+[[bin]]
+name = "nexacore-runtime-image"
+path = "src/main.rs"
+
+[dependencies]
+# nexacore-types carries the AI relay wire types (`nexacore_types::ai`).
+# `default-features = false` strips uuid + getrandom so this builds for
+# x86_64-unknown-none.
+nexacore-types = { path = "../nexacore-types", default-features = false }
+# nexacore-runtime with `default-features = false` is the no_std inference-engine
+# subset (gguf, tensor_loader, bpe, engine — TASK-13-pre / ADR-0034);
+# `fixture-model` embeds the canonical Q8_0 fixture this image serves.
+nexacore-runtime = { path = "../nexacore-runtime", default-features = false, features = ["fixture-model"] }
+# serde with no_std + alloc: needed for the encode/decode helpers that
+# serialise AiSyscallRequest/AiSyscallResponse via postcard.
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+# postcard 1.x: the canonical NexaCore wire encoding (NCIP-Serde-004).
+postcard = { version = "1.0", default-features = false, features = ["alloc"] }
+# nexacore-cmd-curl is the zero-dependency no_std HTTP/1.1 codec — reused for
+# the RemoteGpu (Ollama) request framing/response parsing (TASK-13,
+# ADR-0035 D4: reuse over duplication).
+nexacore-cmd-curl = { path = "../nexacore-cmd-curl" }
+# serde_json with no_std + alloc parses Ollama's JSON reply — untrusted
+# network input gets a real parser, never hand-rolled extraction
+# (ADR-0035 D4).
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+lto           = true
+codegen-units = 1
+panic         = "abort"
+strip         = "debuginfo"
+opt-level     = "z"

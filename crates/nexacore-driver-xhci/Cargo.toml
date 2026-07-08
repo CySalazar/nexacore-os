@@ -1,0 +1,53 @@
+# =============================================================================
+# nexacore-driver-xhci — xHCI USB host controller driver scaffold
+# =============================================================================
+# First-party driver for xHCI (USB 3.x host controller interface) per
+# PCI class `0x0C:0x03:0x30`. Implements DE-E1 (controller bring-up) +
+# DE-E2 (root-hub port enumeration, address assignment, descriptor read)
+# as specified by ADR-0048 (TASK-26).
+#
+# This is the host-testable `no_std` library crate: register definitions,
+# TRB types + Command/Event/Transfer ring state, DCBAA + slot/endpoint
+# context layout, USB descriptor parsing, and the enumeration state
+# machine. A `MmioBackend`-style trait seam allows the pure logic to
+# be fully tested on the host without hardware.
+#
+# The bootable Ring-3 image sibling (`crates/nexacore-driver-xhci-image`) that
+# drives live MMIO/DMA over the actual controller is a separate later phase
+# and is NOT part of this crate.
+#
+# Pattern mirrors `nexacore-driver-nvme` (ADR-0036/0037, ADR-0048 D1).
+# =============================================================================
+
+[package]
+name             = "nexacore-driver-xhci"
+description      = "NexaCore OS first-party xHCI USB host controller driver (ADR-0048, TASK-26, DE-E1+E2 scaffold)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+# Deliberately dependency-free: the xHCI driver logic is pure `core` + ring
+# state math with no allocator requirement in the lib crate. All rings and
+# buffers live in the DMA arena provided by the image-side crate.
+# No `nexacore-driver-shared`, `nexacore-types`, or external crates needed here.
+[dependencies]
+# `nexacore-types` provides `BlkRequest`, `BlkResponse`, and `BLOCK_SIZE_BYTES`
+# used by the Mass Storage gateway module.  `default-features = false` keeps
+# this crate `no_std + alloc`-clean (drops the `id-generation`/`getrandom`
+# features that are irrelevant to a hardware driver).
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+
+[dev-dependencies]

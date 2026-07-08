@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NexaCore OS — nexacore-fork
+  Branching path — forks-welcome
+  Direction: C — Civic Tech / Generational
+  Source sprite: ../icons.svg (this is a single-icon extraction for inspection / direct use)
+  Geometry: 24x24 viewBox, 1.5 stroke, currentColor (defaults to charcoal #1F2421)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="nexacore-fork" color="#1F2421">
+<g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <circle cx="6" cy="5" r="2"/>
+      <circle cx="6" cy="19" r="2"/>
+      <circle cx="18" cy="9" r="2"/>
+      <line x1="6" y1="7" x2="6" y2="17"/>
+      <path d="M6 11 Q 6 9 8 9 L16 9"/>
+    </g>
+</svg>

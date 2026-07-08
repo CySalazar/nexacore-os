@@ -1,0 +1,61 @@
+# =============================================================================
+# nexacore-shell-image — bare-metal shell binary for NexaCore OS
+# =============================================================================
+# `no_std + no_main` ELF entry point that the kernel spawns as the first
+# userspace process (PID 1) after boot. The image links against:
+#
+#   - `nexacore-shell` (no_std, no default-features) — the full shell logic:
+#     lexer, parser, env expansion, glob, line editor, executor, 33 builtins.
+#
+# `nexacore-usys` is intentionally NOT listed as a dependency here. The crate
+# depends transitively on `nexacore-types` with default features enabled, which
+# pulls in `uuid` + `getrandom`. The `getrandom` crate has no implementation
+# for the `x86_64-unknown-none` target and fails to compile. Because Cargo
+# features are additive and cannot be suppressed by downstream crates, the
+# only clean path is to inline the four minimal syscall stubs (write, read,
+# listdir, exit) directly in `main.rs`. This is the same approach taken by
+# `nexacore-driver-net-virtio-image` and all other driver image crates.
+#
+# The resulting ELF at
+#   target/x86_64-unknown-none/release/nexacore-shell-image
+# is the binary the kernel loads as PID 1.
+#
+# NOTE: All [package] fields carry concrete literal values (not
+# `field.workspace = true`) because excluded crates cannot inherit from
+# [workspace.package] when built standalone via `--manifest-path`. This
+# mirrors the pattern used by `nexacore-driver-net-virtio-image`.
+# =============================================================================
+
+[package]
+name         = "nexacore-shell-image"
+description  = "Bare-metal shell binary for NexaCore OS — spawned as PID 1 by the kernel."
+version      = "0.2.0"
+edition      = "2024"
+rust-version = "1.85"
+authors      = ["cySalazar <hello@nexacoreos.com>"]
+license      = "Apache-2.0"
+repository   = "https://github.com/CySalazar/nexacore-os"
+homepage     = "https://nexacoreos.com"
+keywords     = ["operating-system", "ai", "privacy", "decentralized", "mesh"]
+categories   = ["os", "embedded"]
+publish      = false
+
+[[bin]]
+name = "nexacore-shell-image"
+path = "src/main.rs"
+
+[dependencies]
+# Shell logic: lexer, parser, env, glob, executor, 33 builtins.
+# `default-features = false` disables the `std` feature so the crate
+# compiles as `no_std + alloc` for the bare-metal target.
+nexacore-shell = { path = "../nexacore-shell", default-features = false }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+lto           = true
+codegen-units = 1
+panic         = "abort"
+strip         = "debuginfo"
+opt-level     = "z"

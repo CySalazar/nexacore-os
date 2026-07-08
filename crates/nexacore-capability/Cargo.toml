@@ -1,0 +1,90 @@
+# =============================================================================
+# nexacore-capability — Capability tokens for NexaCore OS
+# =============================================================================
+# Macaroons-style attenuable, time-bounded, TEE-bound capability tokens.
+# Used by every system action that crosses a trust boundary. See
+# /docs/04-security-model.md § "Capability-based access control".
+# =============================================================================
+
+[package]
+name             = "nexacore-capability"
+description      = "Capability tokens for NexaCore OS — Macaroons-style attenuable tokens with TEE binding."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Features
+# -----------------------------------------------------------------------------
+# `mint` (default-on) gates the CSPRNG-using paths: `CapabilityToken::mint`
+# and `attenuation::attenuate`. Both call `CapabilityId::new()` which
+# requires `nexacore-types/id-generation` + `nexacore-crypto/rng`. Verify-only
+# bare-metal consumers (the kernel, MB13.c) disable `mint` and consume
+# only the verification side of the crate, which is the entire reason
+# the split exists.
+#
+# `bare-metal` is a marker feature consumed by `nexacore-kernel`. It does not
+# alter runtime behaviour but propagates `nexacore-crypto/bare-metal` so the
+# transitive build stays on the verify-only RustCrypto backend. The flag
+# is intentionally NOT a superset of `mint`: a build with
+# `--no-default-features --features bare-metal` exposes only the verify
+# API (no mint, no attenuate). That is what the kernel needs.
+[features]
+default    = ["mint"]
+mint       = ["nexacore-types/id-generation", "nexacore-crypto/rng"]
+bare-metal = ["nexacore-crypto/bare-metal"]
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+# Token canonical encoding is delegated to `nexacore-types::wire`, which
+# wraps `postcard` 1.x with the project's canonical-encoding options.
+# Direct `postcard::*` calls outside `nexacore-types::wire` are forbidden by
+# the workspace clippy `disallowed-methods` lint (see `NCIP-Serde-004`).
+# The bloom filter used by the revocation list is implemented in-crate
+# (see `revocation.rs`) so we avoid pulling in `std`-only crates such as
+# `bloomfilter`.
+#
+# `nexacore-types` and `nexacore-crypto` are declared via path + version with an
+# explicit `default-features = false` so the bare-metal feature path
+# stays free of `getrandom` / `uuid` / `argon2` transitive deps that do
+# not compile on `x86_64-unknown-none`. Userspace consumers re-enable
+# the runtime features they need at their own `[dependencies]` site.
+#
+# `id-types` is a hard requirement: `token.rs` and `attenuation.rs`
+# both reference `NodeId` / `CapabilityId` in type positions. `id-types`
+# exposes only the type definitions (no `::new()` CSPRNG constructors —
+# those live behind `id-generation`), so bare-metal builds get the
+# types without dragging `getrandom`. The userspace mint path (used by
+# integration tests and downstream callers) opts into `id-generation`
+# via the dev-dependency override below.
+[dependencies]
+nexacore-types  = { path = "../nexacore-types",  version = "0.2.0", default-features = false, features = ["id-types"] }
+nexacore-crypto = { path = "../nexacore-crypto", version = "0.2.0", default-features = false }
+serde       = { workspace = true }
+# `postcard` access is delegated to `nexacore-types::wire::{encode_canonical,
+# decode_canonical}`; no direct postcard dependency. This is the
+# single-audit-point property mandated by `NCIP-Serde-004` and enforced
+# by the workspace clippy `disallowed-methods` lint.
+thiserror   = { workspace = true }
+
+[dev-dependencies]
+# Dev-only re-enable: the integration tests mint tokens (Ed25519 sign)
+# and therefore need the userspace `rng` path. Cargo unifies features
+# additively, so this keeps the bare-metal compile of the library free
+# of `getrandom` while still letting `cargo test -p nexacore-capability`
+# exercise the full mint→verify flow.
+nexacore-crypto = { path = "../nexacore-crypto", version = "0.2.0", default-features = false, features = ["rng"] }
+nexacore-types  = { path = "../nexacore-types",  version = "0.2.0", default-features = false, features = ["id-generation"] }
+proptest = { workspace = true }
+hex      = { workspace = true }

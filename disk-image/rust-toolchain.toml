@@ -1,0 +1,29 @@
+# =============================================================================
+# disk-image — pinned nightly toolchain (WS0-04.1, reproducible release ISO)
+# =============================================================================
+# `bootloader 0.11`'s build script invokes `cargo -Z build-std=core` to
+# compile the UEFI/BIOS bootloader stages (see Cargo.toml), which requires a
+# NIGHTLY toolchain. A floating `nightly` channel makes the release ISO
+# non-reproducible: every `rustup update` silently changes the compiler that
+# builds the boot stages embedded in the image.
+#
+# This file pins the exact dated nightly used for the ISO build and is the
+# SINGLE SOURCE OF TRUTH for the disk-image toolchain: build-iso.sh,
+# qemu-boot-smoke.sh and qemu-e1000e-smoke.sh all read the channel from
+# here instead of hardcoding `+nightly`. Bump it deliberately and re-verify
+# boot on QEMU/OVMF and the Proxmox test VM (scripts/vm103-assert.sh).
+#
+# nightly-2026-06-10 == rustc 1.98.0-nightly (485ec3fbc 2026-06-10) —
+# verified working on the x86_64 Linux build host (Proxmox, /root/nexacore-build).
+# =============================================================================
+
+[toolchain]
+channel = "nightly-2026-06-10"
+
+# rust-src is required by `-Z build-std=core` (bootloader stage builds);
+# llvm-tools-preview provides llvm-objcopy, used by bootloader 0.11's
+# build.rs to flatten the BIOS stage binaries — without it the build
+# panics after the UEFI stage ("Result::unwrap() on an Err value").
+components = ["rust-src", "llvm-tools-preview"]
+
+profile = "minimal"

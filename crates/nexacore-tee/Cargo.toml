@@ -1,0 +1,92 @@
+# =============================================================================
+# nexacore-tee — Trusted Execution Environment abstractions
+# =============================================================================
+# Vendor-neutral TEE traits with implementations for Intel TDX and AMD SEV-SNP.
+# Provides remote attestation generation and verification, sealed key
+# provisioning, and confidential workload execution. `no_std + alloc` so the
+# crate can be consumed by `nexacore-kernel` and other bare-metal contexts.
+# =============================================================================
+
+[package]
+name             = "nexacore-tee"
+description      = "TEE attestation abstractions for NexaCore OS — Intel TDX, AMD SEV-SNP, vendor-neutral traits."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Feature flags
+# -----------------------------------------------------------------------------
+# The crate is intentionally light-weight by default. The `mock` feature
+# enables `MockTeeBackend`, used by every other crate's tests so they can
+# exercise TEE-bound code paths without real hardware. Hardware backends are
+# strictly opt-in:
+#   - `tdx`     — Intel TDX backend (requires TDX-capable Xeon).
+#   - `sev-snp` — AMD SEV-SNP backend (requires Milan+ EPYC).
+#
+# `default` includes only `mock` so the workspace builds and tests cleanly on
+# CI hardware that has no TEE. Production deployments enable the relevant
+# hardware feature explicitly.
+# -----------------------------------------------------------------------------
+[features]
+default = ["mock"]
+mock    = []
+tdx     = []
+sev-snp = []
+# Convenience aggregate enabling every hardware backend; useful for the
+# `--all-features` audit run on developer machines.
+all-backends = ["tdx", "sev-snp"]
+
+[dependencies]
+# Internal crates from the workspace. `nexacore-types` is used for the
+# project-wide error wiring; `nexacore-crypto` provides the shared-secret type
+# that `derive_key_for` ultimately returns. We keep both as deps even when a
+# given build does not exercise every code path, so the workspace dep graph
+# is stable across feature toggles.
+nexacore-types  = { workspace = true }
+nexacore-crypto = { workspace = true }
+
+# Error derive — `thiserror` v2 selected at workspace level to align with the
+# rest of the ecosystem (see `docs/09-tech-specifications.md`).
+thiserror   = { workspace = true }
+
+# Serialization — `Quote`, `Measurement`, and `SealedBlob` derive `Serialize`
+# / `Deserialize` so they can travel through `postcard` (via the canonical
+# helper in `nexacore-types::wire`) on the wire and through `serde_json` in
+# audit logs.
+serde       = { workspace = true }
+
+# `async-trait` is retained so a future async backend (e.g. a TEE that goes
+# through a remote attestation service) can be added without ABI churn. The
+# core `TeeBackend` trait stays synchronous; the async variant lives in its
+# own module that we will introduce when needed.
+async-trait = { workspace = true }
+
+# `tracing` for structured logs at backend boundaries. Reaches stderr in
+# host builds, becomes a no-op in `no_std` builds when its `default-features`
+# are off. We keep the workspace pin for now.
+tracing     = { workspace = true }
+
+[dev-dependencies]
+# `mockall` was the original choice for `TeeBackend` mocking. With the
+# in-crate `MockTeeBackend` providing deterministic behaviour for every other
+# crate's tests, `mockall` is now reserved for trait-level expectation-based
+# tests inside this crate only.
+mockall  = { workspace = true }
+proptest = { workspace = true }
+# `postcard` access is delegated to `nexacore-types::wire::{encode_canonical,
+# decode_canonical}`; no direct postcard dev-dependency. Round-trip
+# tests use `nexacore_types::wire::encode_canonical(&value).expect(...)` and
+# its decode counterpart. This is the single-audit-point property
+# mandated by `NCIP-Serde-004` and enforced by the workspace clippy
+# `disallowed-methods` lint.

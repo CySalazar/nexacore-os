@@ -1,0 +1,35 @@
+# =============================================================================
+# nexacore-bench — performance baseline + regression gate (WS13-07)
+# =============================================================================
+# Host-side library + CLI for the performance regression gate: a metric schema,
+# a versioned JSON baseline, per-metric regression thresholds, and a
+# deterministic comparator that turns "current vs baseline" into a pass/fail
+# verdict. The benchmarks themselves (boot time, IPC throughput, tok/s, IOPS)
+# are measured in QEMU/on the rig and emit results in this schema; the gate
+# logic here is pure and host-testable.
+# =============================================================================
+
+[package]
+name             = "nexacore-bench"
+description      = "NexaCore OS performance baseline schema + regression gate comparator (WS13-07)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "nexacore-bench-gate"
+path = "src/main.rs"
+
+[dependencies]
+serde      = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }

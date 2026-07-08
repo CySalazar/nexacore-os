@@ -1,0 +1,44 @@
+# =============================================================================
+# nexacore-tokenization — PII tokenization service
+# =============================================================================
+# Local NER classifier + per-user deterministic token vault, running inside
+# an attested TEE. Replaces PII with deterministic tokens before any
+# inference workload leaves the user's TEE.
+# =============================================================================
+
+[package]
+name             = "nexacore-tokenization"
+description      = "PII tokenization service for NexaCore OS — local NER + per-user token vault inside TEE."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[features]
+# Enable the provider-gated constructors for `EncryptedString`,
+# `MaskedSSN`, `TokenizedEmail`, and `AttestedHash`. This is the only
+# crate authorized to enable this flag — it runs inside an attested TEE.
+default = ["_tokenization_provider_types"]
+_tokenization_provider_types = ["nexacore-types/_tokenization_provider"]
+
+[dependencies]
+nexacore-types  = { workspace = true }
+nexacore-crypto = { workspace = true }
+# Enable `mock` so `MockTeeBackend` is available in doc-tests and tests.
+nexacore-tee    = { workspace = true, features = ["mock"] }
+tokio       = { workspace = true }
+serde       = { workspace = true }
+tracing     = { workspace = true }
+thiserror   = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }

@@ -1,0 +1,29 @@
+[package]
+name             = "nexacore-desktop-shell"
+description      = "NexaCore OS desktop shell: window frame, design tokens, WM state (WS7 desktop parity)"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# `version` field required by cargo-deny's wildcard-ban policy (deny.toml
+# `wildcards = "deny"`).
+nexacore-display = { path = "../nexacore-display", version = "0.2.0" }
+nexacore-ui      = { path = "../nexacore-ui", version = "0.2.0" }
+# `libm` provides `sqrtf` for the distance-field AA line stroking in
+# `stroke.rs`; the workspace already depends on it for `no_std` float math
+# (see `omni-display`), so we reuse the same portable solution here.
+libm = { workspace = true }
+
+[dev-dependencies]
+nexacore-fonts = { workspace = true }

@@ -1,0 +1,116 @@
+# =============================================================================
+# nexacore-driver-pack — NexaCore OS driver-pack v1 producer
+# =============================================================================
+# Specified by NCIP-Driver-Framework-013 § S5.5. This tool converts a
+# JSON driver manifest + Ring 3 ELF image into a signed NexaCore-Pack v1
+# (.opack) binary blob that the kernel's `DriverLoad (73)` syscall can
+# ingest.
+#
+# Workspace-excluded so `cargo build --workspace` on developer machines
+# without the full NexaCore toolchain stays green. Invoke explicitly:
+#
+#   cargo build --release --manifest-path tools/nexacore-driver-pack/Cargo.toml
+#   cargo test  --manifest-path tools/nexacore-driver-pack/Cargo.toml
+#   cargo clippy --manifest-path tools/nexacore-driver-pack/Cargo.toml \
+#                --all-targets -- -D warnings
+# =============================================================================
+
+[package]
+name             = "nexacore-driver-pack"
+description      = "NexaCore OS driver-pack v1 producer — JSON manifest + ELF → signed .opack blob (NCIP-013 § S5.5)."
+version          = "0.2.0"
+edition          = "2024"
+rust-version     = "1.85"
+authors          = ["cySalazar <hello@nexacoreos.com>"]
+license          = "Apache-2.0"
+repository       = "https://github.com/CySalazar/nexacore-os"
+homepage         = "https://nexacoreos.com"
+keywords         = ["operating-system", "driver", "NexaCore-Pack", "tooling"]
+categories       = ["command-line-utilities", "os"]
+publish          = false
+
+# The crate exposes both a library target (for integration tests) and the
+# `nexacore-driver-pack` binary. Tests in `tests/` import from the library.
+[lib]
+name = "nexacore_driver_pack"
+path = "src/lib.rs"
+
+[[bin]]
+name = "nexacore-driver-pack"
+path = "src/main.rs"
+
+# -----------------------------------------------------------------------------
+# Dependencies — ZERO new external crates.
+# All resolved versions already appear in the workspace Cargo.lock.
+# -----------------------------------------------------------------------------
+[dependencies]
+# NexaCore internal path-deps. `nexacore-kernel` (std mode, without `bare-metal`)
+# gives us `DriverManifestBody`, `DriverCapabilities`, `DriverMatchers`,
+# `PciMatcher`, and the `NEXACORE_PACK_*` format constants, guaranteeing
+# compile-time field-order identity with the kernel decoder. Field-order
+# drift = silently broken signatures — this dependency eliminates that risk.
+nexacore-types      = { path = "../../crates/nexacore-types",      version = "0.2.0" }
+nexacore-crypto     = { path = "../../crates/nexacore-crypto",     version = "0.2.0" }
+nexacore-capability = { path = "../../crates/nexacore-capability", version = "0.2.0" }
+nexacore-kernel     = { path = "../../crates/nexacore-kernel",     version = "0.2.0" }
+
+# serde + serde_json — JSON manifest parsing. Both already in workspace lock.
+# Using std-default features (not `default-features = false`) because this
+# is a std-enabled CLI tool and we want the full serde I/O adapter set.
+serde      = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# toml — TOML manifest parsing (NCIP-Driver-Framework-013 § R4 canonical
+# developer-side source format). Both serde-driven; the TOML and JSON
+# paths share the same `PackManifestJson` struct. 0.8 is the current
+# stable major; transitively pinned via `serde 1.0`. License:
+# MIT OR Apache-2.0 (verified 2026-05 on crates.io), Apache-2.0-compatible
+# under `deny.toml`'s allow-list. Pinned to 0.8 line per planning doc
+# TASK-007 acceptance criteria.
+toml = "0.8"
+
+# thiserror — typed error enum. std-default features (includes std::error::Error).
+thiserror = "2.0"
+
+# -----------------------------------------------------------------------------
+# Dev-dependencies — explicitly listed so integration tests can `use` them.
+# These are the same crates as in [dependencies]; listing them here tells
+# Cargo they are also available in the test namespace.
+# -----------------------------------------------------------------------------
+[dev-dependencies]
+nexacore-kernel = { path = "../../crates/nexacore-kernel", version = "0.2.0" }
+nexacore-crypto = { path = "../../crates/nexacore-crypto", version = "0.2.0" }
+
+# -----------------------------------------------------------------------------
+# Lints — mirror the workspace-level policy (tool is workspace-excluded so
+# workspace.lints does not apply here automatically).
+# -----------------------------------------------------------------------------
+[lints.rust]
+unsafe_code      = "warn"
+missing_docs     = "warn"
+unreachable_pub  = "warn"
+unused_must_use  = "deny"
+
+[lints.clippy]
+pedantic              = { level = "warn", priority = -1 }
+nursery               = { level = "warn", priority = -1 }
+cargo                 = { level = "warn", priority = -1 }
+unwrap_used           = "warn"
+expect_used           = "warn"
+panic                 = "warn"
+indexing_slicing      = "warn"
+# Allow noisy-but-harmless pedantic lints that have no security value here.
+module_name_repetitions = "allow"
+must_use_candidate      = "allow"
+multiple_crate_versions = "allow"
+missing_const_for_fn    = "allow"
+
+# -----------------------------------------------------------------------------
+# Standalone workspace declaration.
+# This crate is workspace-excluded (like `kernel-runner`) so that
+# `cargo build --workspace` on the main workspace stays clean without the full
+# std toolchain context. The empty `[workspace]` table below tells Cargo that
+# this package defines its own workspace root and should not be treated as a
+# member of the parent workspace rooted at `/Cargo.toml`.
+# -----------------------------------------------------------------------------
+[workspace]

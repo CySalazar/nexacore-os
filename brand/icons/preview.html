@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexaCore OS — Icon preview</title>
+<!--
+  NexaCore OS / NexaCore Foundation — Icon preview page
+  Direction: C — Civic Tech / Generational
+
+  Renders all 16 symbols from icons.svg at three sizes (16, 24, 48 px)
+  and in three colors (charcoal default, petrol, brick) to inspect them
+  visually. Aperto in qualunque browser. Non sostituisce icons.svg —
+  serve solo come review/ispezione.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Source+Serif+4:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --petrol: #0F4C5C;
+    --cream:  #F4EBD0;
+    --brick:  #C03221;
+    --sage:   #7A9E7E;
+    --charcoal: #1F2421;
+    --rule:   #94B3BC;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--cream);
+    color: var(--charcoal);
+    -webkit-font-smoothing: antialiased;
+    padding: 32px;
+    line-height: 1.55;
+  }
+  header { max-width: 1100px; margin: 0 auto 32px; }
+  header h1 {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 700;
+    font-size: 36px;
+    color: var(--petrol);
+    letter-spacing: -0.015em;
+    margin-bottom: 6px;
+  }
+  header p { font-size: 15px; max-width: 720px; color: var(--charcoal); }
+  header code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    background: rgba(15,76,92,0.08);
+    padding: 1px 6px;
+    border-radius: 2px;
+  }
+  .toolbar {
+    max-width: 1100px;
+    margin: 24px auto 32px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .toolbar label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .toolbar input[type="radio"] { accent-color: var(--petrol); }
+
+  .grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 800px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
+
+  .cell {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 18px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .cell:hover {
+    border-color: var(--petrol);
+    transform: translateY(-1px);
+  }
+  .cell .preview-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 56px;
+    color: var(--charcoal);
+  }
+  .cell svg { color: inherit; display: block; }
+  .cell .id {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--petrol);
+    margin-top: 4px;
+  }
+  .cell .meaning {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--charcoal);
+    text-align: center;
+    opacity: 0.75;
+    margin-top: 2px;
+    min-height: 28px;
+    line-height: 1.35;
+  }
+  .cell .usage {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--charcoal);
+    opacity: 0.45;
+    text-align: center;
+    word-break: break-all;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--rule);
+    width: 100%;
+  }
+  /* Color modes via data-mode on body */
+  body[data-mode="petrol"] .cell .preview-row { color: var(--petrol); }
+  body[data-mode="brick"]  .cell .preview-row { color: var(--brick); }
+  body[data-mode="sage"]   .cell .preview-row { color: var(--sage); }
+  body[data-mode="dark"] { background: var(--charcoal); color: var(--cream); }
+  body[data-mode="dark"] .cell { background: #2A2F2C; border-color: rgba(244,235,208,0.2); }
+  body[data-mode="dark"] .cell .preview-row { color: var(--cream); }
+  body[data-mode="dark"] .cell .meaning { color: var(--cream); }
+  body[data-mode="dark"] .cell .usage { color: var(--cream); border-top-color: rgba(244,235,208,0.2); }
+  body[data-mode="dark"] header h1 { color: var(--cream); }
+  body[data-mode="dark"] header code { background: rgba(244,235,208,0.1); color: var(--cream); }
+
+  footer {
+    max-width: 1100px;
+    margin: 48px auto 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--charcoal);
+    opacity: 0.55;
+    letter-spacing: 0.06em;
+  }
+</style>
+</head>
+<body data-mode="default">
+
+<header>
+  <h1>NexaCore icon preview</h1>
+  <p>
+    The 16 symbols in <code>icons.svg</code>, rendered at three sizes (<strong>16, 24, 48&nbsp;px</strong>) and switchable across the four palette modes. Production usage: <code>&lt;svg&gt;&lt;use href="icons.svg#nexacore-mesh"/&gt;&lt;/svg&gt;</code>. Color is inherited via <code>currentColor</code> — set it on the parent element.
+  </p>
+</header>
+
+<div class="toolbar">
+  <span>Color:</span>
+  <label><input type="radio" name="mode" value="default" checked> Charcoal</label>
+  <label><input type="radio" name="mode" value="petrol"> Petrol</label>
+  <label><input type="radio" name="mode" value="brick"> Brick</label>
+  <label><input type="radio" name="mode" value="sage"> Sage</label>
+  <label><input type="radio" name="mode" value="dark"> Dark&nbsp;mode</label>
+</div>
+
+<!-- The sprite must be included inline (or via <object>) for <use href="#id"> to resolve cross-file in some browsers.
+     We include it via <object> to keep the sprite as the single source of truth. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- Embed the sprite content inline so <use href="#nexacore-mesh"> resolves reliably across browsers. -->
+  <symbol id="nexacore-mesh" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="12" cy="3" r="1.6"/><circle cx="20" cy="7.5" r="1.6"/><circle cx="20" cy="16.5" r="1.6"/><circle cx="12" cy="21" r="1.6"/><circle cx="4" cy="16.5" r="1.6"/><circle cx="4" cy="7.5" r="1.6"/><line x1="12" y1="4.6" x2="12" y2="9"/><line x1="13.4" y1="3.8" x2="18.6" y2="6.7"/><line x1="18.6" y1="17.3" x2="13.4" y2="20.2"/><line x1="10.6" y1="20.2" x2="5.4" y2="17.3"/><line x1="5.4" y1="6.7" x2="10.6" y2="3.8"/></g></symbol>
+  <symbol id="nexacore-node" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></g></symbol>
+  <symbol id="nexacore-local-first" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><rect x="3" y="5" width="18" height="12" rx="1.5"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="17" x2="12" y2="20"/><rect x="10" y="9.5" width="4" height="3.5" rx="0.5"/><path d="M10.7 9.5 V8.2 a1.3 1.3 0 0 1 2.6 0 V9.5"/></g></symbol>
+  <symbol id="nexacore-cloud-deny" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M6 16 H17 a4 4 0 0 0 0-8 a5 5 0 0 0-9.5 1 A3.5 3.5 0 0 0 6 16 Z"/><line x1="4" y1="4" x2="20" y2="20"/></g></symbol>
+  <symbol id="nexacore-attestation" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M12 3 L20 6 V12 a9 9 0 0 1-8 9 a9 9 0 0 1-8-9 V6 Z"/><path d="M8.5 12 L11 14.5 L16 9.5"/></g></symbol>
+  <symbol id="nexacore-tee" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><rect x="5" y="5" width="14" height="14" rx="1.5"/><line x1="9" y1="3" x2="9" y2="5"/><line x1="15" y1="3" x2="15" y2="5"/><line x1="9" y1="19" x2="9" y2="21"/><line x1="15" y1="19" x2="15" y2="21"/><line x1="3" y1="9" x2="5" y2="9"/><line x1="3" y1="15" x2="5" y2="15"/><line x1="19" y1="9" x2="21" y2="9"/><line x1="19" y1="15" x2="21" y2="15"/><path d="M12 9 L15 10 V13 a3 3 0 0 1-3 3 a3 3 0 0 1-3-3 V10 Z"/></g></symbol>
+  <symbol id="nexacore-kernel" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="2"/></g></symbol>
+  <symbol id="nexacore-agent" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M5 20 V18 a4 4 0 0 1 4-4 H15 a4 4 0 0 1 4 4 V20"/><circle cx="12" cy="8" r="4.5"/><line x1="10" y1="8" x2="14" y2="8"/><line x1="12" y1="6" x2="12" y2="10"/></g></symbol>
+  <symbol id="nexacore-inference" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><rect x="9" y="6" width="6" height="12" rx="0.75"/><line x1="3" y1="9" x2="9" y2="9"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="3" y1="15" x2="9" y2="15"/><line x1="15" y1="12" x2="21" y2="12"/><polyline points="18.5 9.5 21 12 18.5 14.5"/></g></symbol>
+  <symbol id="nexacore-encryption" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><rect x="3" y="6" width="18" height="12" rx="1"/><polyline points="3 7 12 13 21 7"/><circle cx="17" cy="17" r="2.5"/><line x1="17" y1="14.5" x2="17" y2="11"/><line x1="17" y1="12" x2="19" y2="12"/></g></symbol>
+  <symbol id="nexacore-mesh-route" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="4" cy="12" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="12" cy="18" r="2"/><path d="M6 12 L10 7"/><path d="M14 7 L18 12"/><path d="M18 13 L14 17"/></g></symbol>
+  <symbol id="nexacore-governance" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><polygon points="3 7 12 3 21 7"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="6" y1="9" x2="6" y2="18"/><line x1="12" y1="9" x2="12" y2="18"/><line x1="18" y1="9" x2="18" y2="18"/><line x1="3" y1="20" x2="21" y2="20"/></g></symbol>
+  <symbol id="nexacore-fork" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="9" r="2"/><line x1="6" y1="7" x2="6" y2="17"/><path d="M6 11 Q 6 9 8 9 L16 9"/></g></symbol>
+  <symbol id="nexacore-ncip" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M6 3 H14 L18 7 V21 H6 Z"/><polyline points="14 3 14 7 18 7"/><line x1="8.5" y1="11.5" x2="14.5" y2="11.5"/><line x1="8.5" y1="14.5" x2="14.5" y2="14.5"/><path d="M8.5 17.5 Q 10 16 11.5 17.5 T 14.5 17.5"/></g></symbol>
+  <symbol id="nexacore-zk" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M2 12 Q 7 5 12 5 Q 17 5 22 12 Q 17 19 12 19 Q 7 19 2 12 Z"/><circle cx="12" cy="12" r="2.5"/><line x1="4" y1="4" x2="20" y2="20"/></g></symbol>
+  <symbol id="nexacore-anchor" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="20"/><line x1="9" y1="10" x2="15" y2="10"/><path d="M5 14 Q 5 20 12 20 Q 19 20 19 14"/><line x1="3" y1="14" x2="7" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/></g></symbol>
+</svg>
+
+<main class="grid" id="icon-grid">
+  <!-- Cells generated by JS below -->
+</main>
+
+<footer>brand/icons/preview.html · v0.1 · 2026-05-13 · DO NOT SHIP THIS PAGE — review only</footer>
+
+<script>
+  // 16 icon definitions with concept + 1-line meaning
+  const ICONS = [
+    ['nexacore-mesh',         'mesh',          'The federated mesh — 6 attested peers around a core'],
+    ['nexacore-node',         'node',          'A single attested peer'],
+    ['nexacore-local-first',  'local-first',   'Device with closed lock — default-private compute'],
+    ['nexacore-cloud-deny',   'cloud-deny',    'Cloud with strikethrough — anti-cloud framing'],
+    ['nexacore-attestation',  'attestation',   'Shield with checkmark — TEE attestation'],
+    ['nexacore-tee',          'tee',           'Chip with shield inset — TDX, SEV-SNP, CCA'],
+    ['nexacore-kernel',       'kernel',        'Three concentric rings — microkernel'],
+    ['nexacore-agent',        'agent',         'Head with internal process — AI agent'],
+    ['nexacore-inference',    'inference',     'Input → transform → output — model inference'],
+    ['nexacore-encryption',   'encryption',    'Envelope + key — cryptographic envelope'],
+    ['nexacore-mesh-route',   'mesh-route',    'Packet flowing through nodes — routing'],
+    ['nexacore-governance',   'governance',    'Pillars + architrave — NCIP / governance'],
+    ['nexacore-fork',         'fork',          'Branching path — forks-welcome'],
+    ['nexacore-ncip',          'ncip',           'Signed document — NexaCore Improvement Proposal'],
+    ['nexacore-zk',           'zk-proof',      'Eye with strike — verifiable yet private'],
+    ['nexacore-anchor',       'anchor',        'Anchor — Mission Anchor (irrevocable)']
+  ];
+
+  // Build each cell with three sizes (16, 24, 48) rendered side-by-side.
+  const grid = document.getElementById('icon-grid');
+  ICONS.forEach(([id, label, meaning]) => {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.innerHTML = `
+      <div class="preview-row">
+        <svg width="16" height="16" aria-hidden="true"><use href="#${id}"/></svg>
+        <svg width="24" height="24" aria-hidden="true"><use href="#${id}"/></svg>
+        <svg width="48" height="48" aria-hidden="true"><use href="#${id}"/></svg>
+      </div>
+      <div class="id">${label}</div>
+      <div class="meaning">${meaning}</div>
+      <div class="usage">&lt;use href="icons.svg#${id}"/&gt;</div>
+    `;
+    grid.appendChild(cell);
+  });
+
+  // Color-mode switching
+  document.querySelectorAll('input[name="mode"]').forEach(input => {
+    input.addEventListener('change', e => {
+      document.body.dataset.mode = e.target.value;
+    });
+  });
+</script>
+
+</body>
+</html>

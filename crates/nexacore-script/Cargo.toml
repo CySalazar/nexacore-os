@@ -1,0 +1,30 @@
+# =============================================================================
+# nexacore-script — ncScript interpreter / runtime (WS18-02)
+# =============================================================================
+# The sandboxed, capability-bound runtime for ncScript (NCIP-ncScript-030):
+# lexer -> parser -> AST -> tree-walking interpreter, with deterministic
+# resource limits (CPU/instructions, memory, time) and deny-by-default
+# capability gating of every effect. `no_std + alloc`, embeddable; zero
+# production dependencies.
+# =============================================================================
+
+[package]
+name             = "nexacore-script"
+description      = "ncScript interpreter for NexaCore OS — sandboxed, capability-bound, no_std (NCIP-ncScript-030)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+
+[dev-dependencies]

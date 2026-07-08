@@ -1,0 +1,65 @@
+# =============================================================================
+# NexaCore OS — documentation gate (`cargo doc -D warnings`) — WS14-02.7
+# =============================================================================
+# Enforces the per-crate documentation discipline (DE-I2): the whole workspace
+# must build its rustdoc with zero warnings. `-D warnings` promotes every
+# rustdoc lint — broken intra-doc links, redundant link targets, public docs
+# linking to private items, and `missing_docs` (a hard `deny` workspace-wide) —
+# to a hard error. Verified clean locally (WS14-02.8).
+#
+# `--no-deps` keeps the gate scoped to first-party crates (we do not police
+# third-party crate docs); `--all-features` is intentionally NOT passed because
+# the `bare-metal` feature switches the kernel to `no_std + no_main` and is
+# covered by the boot-smoke gate instead — the default-feature doc build is the
+# one every contributor runs.
+# =============================================================================
+
+name: doc
+
+on:
+  push:
+    branches: ["main", "rebrand/**"]
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/doc.yml"
+  pull_request:
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/doc.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  cargo-doc:
+    name: cargo doc -D warnings
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup show active-toolchain || rustup toolchain install stable
+
+      - name: Cache cargo registry + target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: doc-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+
+      - name: Build workspace docs with warnings as errors
+        env:
+          RUSTDOCFLAGS: "-D warnings"
+        run: cargo doc --workspace --no-deps

@@ -1,0 +1,46 @@
+# =============================================================================
+# nexacore-tls — TLS 1.3 stack (WS4-03)
+# =============================================================================
+# A `no_std + alloc` implementation of TLS 1.3 (RFC 8446) layered above the
+# NexaCore socket API. Provides the record layer, the HKDF-SHA-256 key
+# schedule, client and server handshake state machines, a trust-anchor cert
+# store, and ALPN negotiation. Cryptographic primitives come from
+# `nexacore-crypto` (ChaCha20-Poly1305, HKDF-SHA-256, X25519, Ed25519), so the
+# supported cipher suite is `TLS_CHACHA20_POLY1305_SHA256` with the `x25519`
+# group and the `ed25519` signature scheme.
+#
+# Like the other `nexacore-crypto`-dependent crates (`nexacore-tee`, the
+# `nexacore-fs` v3 crypto modules) the bare-metal `x86_64-unknown-none` build
+# is exercised in CI on x86_64-Linux only; on aarch64 hosts the transitive
+# poly1305/chacha20 SIMD backend fails to legalize. The crate itself is
+# strictly `core + alloc`.
+# =============================================================================
+
+[package]
+name = "nexacore-tls"
+description = "TLS 1.3 stack for NexaCore OS — record layer, key schedule, client/server handshake, cert store, ALPN."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# `default-features = false` keeps the `id-generation` (UUID + getrandom)
+# feature off so the crate stays `no_std`. Only the wire/error types are used.
+nexacore-types  = { path = "../nexacore-types",  version = "0.2.0", default-features = false }
+# Crypto primitives: AEAD, HKDF, X25519, Ed25519, SHA-256. The `rng` feature is
+# needed for ephemeral key generation during the handshake.
+nexacore-crypto = { path = "../nexacore-crypto", version = "0.2.0", features = ["rng"] }
+
+[dev-dependencies]
+proptest = { workspace = true }
+hex      = { workspace = true }

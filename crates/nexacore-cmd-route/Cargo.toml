@@ -1,0 +1,31 @@
+# =============================================================================
+# nexacore-cmd-route — `route` command for NexaCore OS
+# =============================================================================
+# Routing table management: show, add, delete, and set default gateway.
+#
+# Architecture:
+#   `no_std + alloc` library crate. Zero external production dependencies.
+#
+# References:
+#   - NCIP-Net-N7.4 (route command specification)
+# =============================================================================
+
+[package]
+name             = "nexacore-cmd-route"
+description      = "route command for NexaCore OS — routing table management."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+nexacore-types = { workspace = true }

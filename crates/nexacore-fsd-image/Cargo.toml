@@ -1,0 +1,56 @@
+# =============================================================================
+# nexacore-fsd-image — bare-metal TASK-15 NCFS root-mount daemon
+# =============================================================================
+#
+# `no_std + no_main` ELF the kernel spawns as a Ring 3 process to mount the
+# NCFS root volume from the NVMe BLK service (TASK-14) and prove reboot
+# persistence via a `/test.txt` boot counter (TASK-15, ADR-0037).
+#
+# Built out-of-workspace via:
+#   cargo build --manifest-path crates/nexacore-fsd-image/Cargo.toml \
+#               --target x86_64-unknown-none --release
+# =============================================================================
+
+[package]
+name         = "nexacore-fsd-image"
+description  = "Bare-metal TASK-15 NCFS root-mount daemon for NexaCore OS"
+version      = "0.1.0"
+edition      = "2024"
+rust-version = "1.85"
+authors      = ["cySalazar <hello@nexacoreos.com>"]
+license      = "Apache-2.0"
+repository   = "https://github.com/CySalazar/nexacore-os"
+homepage     = "https://nexacoreos.com"
+publish      = false
+
+[[bin]]
+name = "nexacore-fsd-image"
+path = "src/main.rs"
+
+[dependencies]
+# nexacore-fs provides OnDiskVolume — the byte-buffer-backed on-disk filesystem.
+# It builds for x86_64-unknown-none with default-features = false on nexacore-types
+# (the ADR-0034 / ADR-0037 fix that strips uuid + getrandom).
+nexacore-fs = { path = "../nexacore-fs" }
+# nexacore-types carries BlkRequest / BlkResponse and the canonical wire encoder.
+# `default-features = false` strips uuid + getrandom so this builds for
+# x86_64-unknown-none.
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+# nexacore-driver-shared provides caps::find_token for the IpcSend deposit window.
+# Dep-free and no_std; safe to link into Ring 3 images.
+nexacore-driver-shared = { path = "../nexacore-driver-shared" }
+# serde with no_std + alloc: needed for postcard encode/decode helpers that
+# serialise BlkRequest / BlkResponse.
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+# postcard 1.x: the canonical NexaCore wire encoding (NCIP-Serde-004).
+postcard = { version = "1.0", default-features = false, features = ["alloc"] }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+lto           = true
+codegen-units = 1
+panic         = "abort"
+strip         = "debuginfo"
+opt-level     = "z"

@@ -1,0 +1,34 @@
+# =============================================================================
+# NexaCore OS — End-user guide (mdBook) — WS14-04.5
+# =============================================================================
+# The canonical, versioned source for NexaCore OS end-user documentation:
+# installation, the desktop manual, the bundled system apps, and
+# troubleshooting. Built with mdBook (Rust-native, zero-JS-runtime, renders to
+# static HTML) and published to GitHub Pages.
+#
+# Build locally:
+#   cargo install mdbook            # one-time
+#   mdbook build docs/user          # → docs/user/book/
+#   mdbook serve docs/user          # live preview on http://localhost:3000
+# =============================================================================
+
+[book]
+title = "NexaCore OS — User Guide"
+description = "Install and use NexaCore OS: the AI-native, local-first, privacy-by-construction operating system."
+authors = ["NexaCore OS contributors"]
+language = "en"
+src = "src"
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/CySalazar/nexacore-os"
+edit-url-template = "https://github.com/CySalazar/nexacore-os/edit/main/docs/user/{path}"
+site-url = "/user/"
+
+[output.html.fold]
+enable = true
+level = 1
+
+[output.html.search]
+enable = true

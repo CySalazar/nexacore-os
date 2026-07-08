@@ -1,0 +1,71 @@
+# =============================================================================
+# nexacore-net-image — bare-metal network stack binary for NexaCore OS
+# =============================================================================
+# `no_std + no_main` ELF entry point that the kernel spawns as the
+# `nexacore-net` userspace TCP/IP stack service after boot.
+#
+# The image wires together:
+#   - `nexacore-net` — the full TCP/IP stack (no_std + alloc)
+#
+# `nexacore-usys` is intentionally NOT listed as a dependency here. The crate
+# depends transitively on `nexacore-types` with default features enabled, which
+# pulls in `uuid` + `getrandom`. The `getrandom` crate has no implementation
+# for the `x86_64-unknown-none` target and fails to compile. Because Cargo
+# features are additive and cannot be suppressed by downstream crates, the
+# only clean path is to inline the minimal syscall stubs directly in
+# `main.rs`. This is the same approach taken by `nexacore-shell-image` and
+# `nexacore-driver-net-virtio-image`.
+#
+# The resulting ELF at
+#   target/x86_64-unknown-none/release/nexacore-net-image
+# is the binary the kernel spawns as the network stack service.
+#
+# NOTE: All [package] fields carry concrete literal values (not
+# `field.workspace = true`) because excluded crates cannot inherit from
+# [workspace.package] when built standalone via `--manifest-path`. This
+# mirrors the pattern used by `nexacore-shell-image`.
+# =============================================================================
+
+[package]
+name         = "nexacore-net-image"
+description  = "Bare-metal network stack binary for NexaCore OS — spawned as the nexacore-net service by the kernel."
+version      = "0.2.0"
+edition      = "2024"
+rust-version = "1.85"
+authors      = ["cySalazar <hello@nexacoreos.com>"]
+license      = "Apache-2.0"
+repository   = "https://github.com/CySalazar/nexacore-os"
+homepage     = "https://nexacoreos.com"
+keywords     = ["operating-system", "networking", "tcp-ip"]
+categories   = ["os", "embedded"]
+publish      = false
+
+[[bin]]
+name = "nexacore-net-image"
+path = "src/main.rs"
+
+[dependencies]
+# Network stack: no_std + alloc. `default-features = false` is not needed
+# here because nexacore-net itself uses nexacore-types with default-features = false
+# (changed in M0). The dependency chain is therefore getrandom-free.
+nexacore-net   = { path = "../nexacore-net" }
+# nexacore-types is needed for InterfaceConfig, Cidr, MacAddress, NetEvent, NetRequest.
+# `default-features = false` strips uuid + getrandom so this builds for
+# x86_64-unknown-none.
+nexacore-types = { path = "../nexacore-types", default-features = false }
+# serde with no_std + alloc: needed for the encode_into/decode_from helpers
+# that serialise SocketRequest/SocketResponse/NetEvent/NetRequest via postcard.
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+# postcard 1.x: the canonical NexaCore wire encoding (NCIP-Serde-004).
+# `default-features = false` + `alloc` keeps this no_std-clean.
+postcard = { version = "1.0", default-features = false, features = ["alloc"] }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+lto           = true
+codegen-units = 1
+panic         = "abort"
+strip         = "debuginfo"
+opt-level     = "z"

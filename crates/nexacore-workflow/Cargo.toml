@@ -1,0 +1,28 @@
+# =============================================================================
+# nexacore-workflow — Agentic automation (workflow) framework
+# =============================================================================
+# Declarative, local-first workflow automations: trigger -> steps -> actions on
+# apps/files/network, each step capability-gated. See plan.md WS16-04.
+# =============================================================================
+
+[package]
+name             = "nexacore-workflow"
+description      = "Declarative local-first workflow automation framework for NexaCore OS."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+nexacore-types = { workspace = true }
+serde      = { workspace = true }
+thiserror  = { workspace = true }

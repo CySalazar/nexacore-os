@@ -1,0 +1,83 @@
+# =============================================================================
+# nexacore-driver-nvme — developer-authored driver manifest (TOML v1)
+# =============================================================================
+# Source format consumed by the `nexacore-driver-pack` build tool (NexaCore Forge,
+# user-space) per `NCIP-Driver-Framework-013` § S5.1 + the NVMe-specific
+# overlay locked by `NCIP-Driver-NVMe-014` § S1. The tool compiles this
+# TOML into the canonical postcard payload embedded inside an
+# `NexaCore-Pack v1` binary container (§ S5.5) and signs it with the issuer's
+# Ed25519 key. The kernel does NOT parse TOML; it only validates the
+# NexaCore-Pack header and decodes the postcard manifest.
+#
+# Placeholder values (`nexacore_image_hash`, `nexacore_signature`,
+# `nexacore_issuer_pubkey`) are filled in by `nexacore-driver-pack` after the
+# driver image is built; the schema below is the authoritative shape
+# every NVMe driver image MUST present.
+# =============================================================================
+
+[meta]
+name           = "nexacore-driver-nvme"
+version        = "0.2.0"
+nexacore_image_hash = "<filled-by-nexacore-driver-pack: 64-hex-char BLAKE3 of the ELF image>"
+nexacore_signature  = "<filled-by-nexacore-driver-pack: base64 Ed25519 over manifest.pc>"
+nexacore_issuer_pubkey = "<filled-by-nexacore-driver-pack: base64 Ed25519 public key, must be in KNOWN_ISSUERS>"
+
+# -----------------------------------------------------------------------------
+# Capabilities the driver requests at DriverLoad time.
+# -----------------------------------------------------------------------------
+# Each entry MUST be provable as a subset of the issuer's capabilities
+# (NCIP-Driver-Framework-013 § S5.3 step 8). The kernel attenuates them to
+# the driver process's NodeId with a 90-day lifetime.
+[capabilities]
+# MMIO regions: NVMe controllers expose their architected register file
+# + doorbell array via BAR0 (16 KiB by NCIP-014 § S1 advertisement). The
+# manifest declares the size up front; the loader fills `phys_base` from
+# PCI enumeration before signing the NexaCore-Pack.
+mmio_regions = [
+    { phys_base = "<BAR0 phys base from PCI enum>", len = "0x4000" },
+]
+# DMA windows: 4 GiB IOVA arena matches `NCIP-Driver-NVMe-014` § S1 default
+# and gives the driver headroom for admin queues + IO queues + per-IO
+# 4 KiB buffers across the lifetime of the driver process.
+dma_windows = [
+    { iova_base = "0x0", len = "0x100000000" },
+]
+# IRQ lines: populated by `IrqAttach` at runtime, one per completion
+# queue (ACQ + N ICQs). NCIP-014 § S5 caps the total at
+# 1 + io_queue_count ≤ 5 for v0.3.
+irq_lines = []
+# PCI device: bound dynamically by PCI enumeration. The matchers below
+# (under `[matchers]`) determine which device this driver can claim.
+pci_devices = [
+    { segment = 0, bus = "<dyn>", device = "<dyn>", function = 0 },
+]
+
+# -----------------------------------------------------------------------------
+# Auto-claim matchers (NCIP-Driver-NVMe-014 § S1 / § R4).
+# -----------------------------------------------------------------------------
+# NVMe is matched by PCI class code rather than vendor/device pairs.
+# The class triple `0x01:0x08:0x02` covers every NVM Express I/O
+# controller regardless of vendor; vendor/device pinning is reserved
+# for a future blocklist NCIP (§ R4 rationale).
+[matchers]
+pci_class = { class = "0x01", subclass = "0x08", prog_if = "0x02" }
+pci_vendor_device = []   # empty → class match wins; populate to restrict
+acpi_hid = []
+
+# -----------------------------------------------------------------------------
+# NVMe-specific parameters (NCIP-Driver-NVMe-014 § S1).
+# -----------------------------------------------------------------------------
+# The kernel uses this table at DriverLoad time to validate the queue
+# depths (1..=4096 admin, 1..=65536 IO), cap the IO queue count
+# (1..=4 for v0.3), and reject any non-PRP transfer model. All values
+# are validated per NCIP-014 § S1.1 — out-of-range values return EINVAL.
+[nvme]
+admin_sq_depth = 64       # 1..=4096 per NVMe 1.4 § 5.1
+admin_cq_depth = 64       # 1..=4096 per NVMe 1.4 § 5.1
+io_sq_depth    = 1024     # 1..=65536 per NVMe 1.4 § 5.5
+io_cq_depth    = 1024     # 1..=65536 per NVMe 1.4 § 5.5
+io_queue_count = 1        # 1..=4 for v0.3 (NCIP-014 § R5)
+transfer_model = "prp"    # only "prp" accepted in v0.3 (NCIP-014 § M4)
+# Optional features (driver-side capability bits, not device-side):
+format_nvm_enabled = false   # requires Action::FormatStorage cap-bit, separate token
+discard_enabled    = true    # NVMe Dataset Management with AD=1

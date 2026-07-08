@@ -1,0 +1,44 @@
+# =============================================================================
+# nexacore-media — media-player core (WS8-02, ADR-0052)
+# =============================================================================
+# Host-testable core of the NexaCore media player.  `no_std + alloc` so it
+# compiles for both the developer host (`x86_64-unknown-linux-gnu`) and the
+# bare-metal Ring-3 target (`x86_64-unknown-none`).
+#
+# Design (ADR-0052): every device- or library-bound effect sits behind a trait
+#   - container demuxers (MP4/MKV/WebM) parse boxes/EBML into tracks + packets;
+#   - codec parsers read bitstream headers (H.264 SPS, VP9 frame header, Opus
+#     ID header, AAC ADTS) to recover dimensions / sample-rate / key-frame flag;
+#   - `VideoDecoder` / `AudioDecoder` abstract the vetted decode library so the
+#     pipeline is host-testable with mocks while the real codec is library-gated;
+#   - the A/V sync clock uses integer microseconds (no float, deterministic);
+#   - `VideoSink` / `AudioSink` abstract virtio-gpu (WS2-10) / virtio-snd
+#     (WS2-09); the present/queue scheduling is host-tested with mock sinks.
+# The VM-103 E2E (real MP4 playback with synchronised audio) is WS8-02.10.
+# =============================================================================
+
+[package]
+name             = "nexacore-media"
+description      = "NexaCore OS media-player core — container demux, codec header parsing, A/V sync, virtio sinks, playlist (WS8-02, ADR-0052)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+# `nexacore-types` provides `ai::{AudioFormat, PcmEncoding}` (WS5-03.8), reused
+# verbatim as the audio-output PCM contract.  `default-features = false` strips
+# `id-generation` (getrandom + uuid) for `x86_64-unknown-none` cleanliness.
+[dependencies]
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }

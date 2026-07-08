@@ -1,0 +1,94 @@
+# =============================================================================
+# nexacore-driver-net-virtio — developer-authored driver manifest (TOML v1)
+# =============================================================================
+# Source format consumed by the `nexacore-driver-pack` build tool (NexaCore Forge,
+# user-space) per `NCIP-Driver-Framework-013` § S5.1. The tool compiles this
+# TOML into the canonical postcard payload embedded inside an
+# `NexaCore-Pack v1` binary container (§ S5.5) and signs it with the issuer's
+# Ed25519 key. The kernel does NOT parse TOML; it only validates the
+# NexaCore-Pack header and decodes the postcard manifest.
+#
+# Placeholder values (`nexacore_image_hash`, `nexacore_signature`,
+# `nexacore_issuer_pubkey`) are filled in by `nexacore-driver-pack` after the
+# driver image is built; the schema below is the authoritative shape
+# every virtio-net driver image MUST present.
+# =============================================================================
+
+[meta]
+name           = "nexacore-driver-net-virtio"
+version        = "0.2.0"
+nexacore_image_hash = "<filled-by-nexacore-driver-pack: 64-hex-char BLAKE3 of the ELF image>"
+nexacore_signature  = "<filled-by-nexacore-driver-pack: base64 Ed25519 over manifest.pc>"
+nexacore_issuer_pubkey = "<filled-by-nexacore-driver-pack: base64 Ed25519 public key, must be in KNOWN_ISSUERS>"
+
+# -----------------------------------------------------------------------------
+# Capabilities the driver requests at DriverLoad time.
+# -----------------------------------------------------------------------------
+# Each entry MUST be provable as a subset of the issuer's capabilities
+# (NCIP-Driver-Framework-013 § S5.3 step 8). The kernel attenuates them to
+# the driver process's NodeId with a 90-day lifetime.
+[capabilities]
+# MMIO regions: virtio-net modern devices expose the Common / Notify / ISR
+# / Device-specific / PCI configurations via vendor-specific PCI
+# capabilities. BAR4 is the typical modern MMIO BAR; BAR0 carries the
+# legacy IO-port layout (deprecated, supported as fallback only).
+mmio_regions = [
+    # Filled in by the loader once PCI enumeration completes; the manifest
+    # shape is fixed (phys_base + len). v0.3 expects one MMIO region.
+    { phys_base = "<BAR4 phys base from PCI enum>", len = "<BAR4 size>" },
+]
+# DMA windows: 4 GiB IOVA arena matches `NCIP-Driver-Net-015` § S1 default
+# and gives the driver headroom for descriptor + buffer pools across the
+# RX (queue 0) and TX (queue 1) virtqueues.
+dma_windows = [
+    { iova_base = "0x0", len = "0x100000000" },
+]
+# IRQ lines: the driver creates one IRQ-notify IPC channel and attaches
+# virtio-net line 33 (Q35 / QEMU default MSI-X for virtio-net PCI slot 3)
+# to it via `IrqAttach (72)` after `DRIVER_OK`. The kernel's trampoline
+# enqueues an 8-byte notification on the bound channel whenever the device
+# asserts the vector; the service loop polls that channel to drain received
+# frames (`poll_rx`) and repost RX buffers.
+#
+# With MSI-X the device uses a separate vector per virtqueue (RX = 0, TX = 1);
+# for M0 both share the single combined line below. MSI-X split-vector
+# support is deferred to a later milestone.
+irq_lines = [
+    { line = 33, label = "virtio-net-combined" },
+]
+# PCI device: bound dynamically by PCI enumeration. The matchers below
+# (under `[matchers]`) determine which device this driver can claim.
+pci_devices = [
+    { segment = 0, bus = "<dyn>", device = "<dyn>", function = 0 },
+]
+
+# -----------------------------------------------------------------------------
+# Auto-claim matchers (NCIP-Driver-Net-015 § S1).
+# -----------------------------------------------------------------------------
+# Empty arrays mean "no auto-claim". For virtio-net we expose both the
+# modern (0x1041) and legacy (0x1000) device IDs under the Red Hat /
+# virtio vendor 0x1AF4.
+[matchers]
+pci_vendor_device = [
+    { vendor = "0x1AF4", device = "0x1041" }, # modern (virtio 1.0+)
+    { vendor = "0x1AF4", device = "0x1000" }, # legacy / transitional (fallback)
+]
+acpi_hid = []
+
+# -----------------------------------------------------------------------------
+# NET service channel parameters (NCIP-Driver-Net-015 § S1).
+# -----------------------------------------------------------------------------
+# The kernel uses this table to size the per-driver IOVA arena (RX buffer
+# pool) and to bound the channel-frame size advertised on
+# `nexacore.svc.net.eth<N>`. All values are validated at DriverLoad per
+# NCIP-015 § S1.1 (validation rules in spec).
+[net]
+mtu                 = 1500   # standard Ethernet; virtio-net supports up to 9216 if VIRTIO_NET_F_MTU is negotiated
+rx_ring_depth       = 256    # power of 2 in [1, 4096]
+tx_ring_depth       = 256    # power of 2 in [1, 4096]
+rx_buffer_count     = 512    # 512 × 2 KiB = 1 MiB pre-allocated RX pool
+promisc_at_boot     = false  # opt-in; first-party drivers default off
+tx_checksum_offload = true   # negotiated via VIRTIO_NET_F_CSUM (bit 0)
+rx_checksum_offload = true   # negotiated via VIRTIO_NET_F_GUEST_CSUM
+tso_enabled         = false  # opt-in; not enabled by default in v0.3
+lro_enabled         = false  # opt-in; gated on VIRTIO_NET_F_MRG_RXBUF (bit 15)

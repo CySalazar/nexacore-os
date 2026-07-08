@@ -1,0 +1,40 @@
+# =============================================================================
+# NexaCore OS — Rust toolchain pin
+# =============================================================================
+# Ensures all contributors and CI use the same Rust toolchain version.
+# Cargo will download and use this exact toolchain when building NexaCore OS.
+#
+# Rationale: deterministic builds across environments are essential for a
+# security-critical project. A pinned toolchain reduces "works on my machine"
+# class of bugs and is a baseline for reproducible builds.
+# =============================================================================
+
+[toolchain]
+# Rust 1.85 is the first stable channel supporting edition 2024 and the
+# resolver "3" used by this workspace. See /docs/09-tech-specifications.md.
+#
+# Reproducibility note (WS0-04.1): 1.85.1 is the FINAL point release of the
+# 1.85 series, so this partial pin is terminally exact — rustup resolves it
+# to 1.85.1 on every machine, forever. The nightly toolchain used by the ISO
+# build path is pinned separately in disk-image/rust-toolchain.toml.
+channel = "1.85"
+
+# Components installed alongside rustc. Each is required by the project's
+# tooling or developer experience baseline.
+components = [
+    "rustfmt",            # Source formatting (cargo fmt).
+    "clippy",             # Linter (cargo clippy).
+    "rust-analyzer",      # IDE language server.
+    "rust-src",           # Standard library source (required by some tooling).
+    "llvm-tools-preview", # Required by cargo-llvm-cov and similar tools.
+]
+
+# Build targets. x86_64-unknown-linux-gnu for the workspace; x86_64-unknown-none
+# for the bare-metal kernel and kernel-runner crates (NCIP-Kernel-012/005).
+# Apple Silicon and ARMv9 added in v1.1+.
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-unknown-none",
+]
+
+profile = "default"

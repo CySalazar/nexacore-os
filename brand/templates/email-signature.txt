@@ -1,0 +1,16 @@
+<!--
+  Plain-text companion to email-signature.html.
+  Use this in plain-text-only mail clients (mutt, neomutt, mailing-list replies).
+  Compatible with PGP-signed plain-text email.
+-->
+
+--
+cySalazar
+Lead Architect · NexaCore Foundation
+
+hello@nexacoreos.com
+github.com/CySalazar/nexacore-os
+nexacore-foundation.org
+
+NexaCore Foundation · Stichting NexaCore · Amsterdam, NL
+Encrypted reports: github.com/CySalazar/nexacore-os/blob/main/SECURITY.md

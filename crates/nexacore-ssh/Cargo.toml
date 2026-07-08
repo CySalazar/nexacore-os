@@ -1,0 +1,34 @@
+# =============================================================================
+# nexacore-ssh — SSH-2 transport layer (WS4-06)
+# =============================================================================
+# The SSH-2 transport: identification exchange, the binary packet protocol
+# (RFC 4253 §6), curve25519-sha256 key exchange (RFC 8731), the exchange hash
+# and RFC 4253 §7.2 key derivation, Ed25519 host-key authentication of the
+# exchange hash, and an AEAD packet channel — all over `nexacore-crypto`.
+#
+# `no_std + alloc`. The `rng` feature of `nexacore-crypto` (ephemeral key
+# generation) pulls `getrandom`, so — like `nexacore-tls` — the bare-metal
+# `x86_64-unknown-none` gate is N/A; the crate's own code is core + alloc.
+# =============================================================================
+
+[package]
+name = "nexacore-ssh"
+description = "SSH-2 transport layer for NexaCore OS — binary packet protocol, curve25519-sha256 KEX, AEAD channel."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+nexacore-crypto = { path = "../nexacore-crypto", version = "0.2.0", features = ["rng"] }
+
+[dev-dependencies]

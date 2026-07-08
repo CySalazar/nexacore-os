@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NexaCore OS — nexacore-ncip
+  Signed document — NexaCore Improvement Proposal
+  Direction: C — Civic Tech / Generational
+  Source sprite: ../icons.svg (this is a single-icon extraction for inspection / direct use)
+  Geometry: 24x24 viewBox, 1.5 stroke, currentColor (defaults to charcoal #1F2421)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="nexacore-ncip" color="#1F2421">
+<g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M6 3 H14 L18 7 V21 H6 Z"/>
+      <polyline points="14 3 14 7 18 7"/>
+      <line x1="8.5" y1="11.5" x2="14.5" y2="11.5"/>
+      <line x1="8.5" y1="14.5" x2="14.5" y2="14.5"/>
+      <path d="M8.5 17.5 Q 10 16 11.5 17.5 T 14.5 17.5"/>
+    </g>
+</svg>

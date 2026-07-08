@@ -1,0 +1,121 @@
+# =============================================================================
+# nexacore-crypto — Cryptographic primitives for NexaCore OS
+# =============================================================================
+# Wraps battle-tested cryptographic libraries behind NexaCore-specific traits.
+# Sub-modules cover symmetric / asymmetric crypto, KDF, AEAD, signatures,
+# format-preserving encryption, and zk-SNARK predicates.
+# =============================================================================
+
+[package]
+name             = "nexacore-crypto"
+description      = "Cryptographic primitives for NexaCore OS — AEAD, signatures, KDF, FPE, zk-SNARK predicates."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Features
+# -----------------------------------------------------------------------------
+# `rng` (default-on) gates everything that pulls in `getrandom`,
+# `rand_core::OsRng`, or `argon2` — i.e. every code path that needs the
+# platform CSPRNG. Disabling it (e.g. via `--no-default-features` or via
+# the kernel's `bare-metal` propagation) yields a verify-only build of
+# the crate that compiles on `x86_64-unknown-none`. Mint/generate paths
+# remain present but compile out.
+#
+# `bare-metal` is an alias semantic forwarded from `nexacore-capability` and
+# `nexacore-kernel`: it explicitly disables the `rng` feature transitively
+# through the workspace. It does *not* add behaviour; it is only here so
+# downstream crates can say `nexacore-crypto/bare-metal` and get a
+# verify-only build.
+[features]
+default    = ["rng"]
+# `rng` brings in the platform CSPRNG path. It also propagates to
+# `nexacore-types/id-generation` because UUIDv4 minting (`CapabilityId`,
+# `AgentId`) shares the same getrandom dep — keeping them unified at
+# the feature boundary means a single `--no-default-features` switch
+# turns *every* getrandom site off across the workspace crypto stack.
+rng        = [
+    "dep:getrandom",
+    "dep:rand_core",
+    "dep:argon2",
+    "nexacore-types/id-generation",
+]
+bare-metal = []
+
+# -----------------------------------------------------------------------------
+# Dependencies — RustCrypto family only.
+# -----------------------------------------------------------------------------
+# Decision recorded 2026-05-10: `ring` is intentionally NOT used. See
+# /docs/09-tech-specifications.md § "Cryptography" for the rationale.
+[dependencies]
+# Direct path-based declaration (instead of workspace-inherited) so we
+# can set `default-features = false`. The workspace root entry for
+# `nexacore-types` does not pin `default-features`, and Cargo refuses to
+# override it from a downstream `workspace = true` member. nexacore-crypto's
+# `rng` feature re-enables `nexacore-types/id-generation` for userspace
+# builds; bare-metal builds (`--no-default-features`) leave it off.
+nexacore-types       = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+ed25519-dalek    = { workspace = true }
+x25519-dalek     = { workspace = true }
+chacha20poly1305 = { workspace = true }
+sha2             = { workspace = true }
+sha3             = { workspace = true }
+blake3           = { workspace = true }
+hkdf             = { workspace = true }
+# `argon2` is RNG-adjacent (KDF for password hashing) — keep it behind
+# the `rng` feature for bare-metal builds that do not need it.
+argon2           = { workspace = true, optional = true }
+# CSPRNG: `rand_core` is the trait surface, `getrandom` is the platform
+# bridge. Together they back ephemeral key generation and nonce minting.
+# Both are gated behind the `rng` feature so verify-only builds (kernel
+# bare-metal) can opt out of pulling in a platform RNG.
+rand_core        = { workspace = true, optional = true }
+getrandom        = { workspace = true, optional = true }
+# Constant-time equality + key-material zeroization.
+subtle           = { workspace = true }
+zeroize          = { workspace = true }
+serde            = { workspace = true }
+thiserror        = { workspace = true }
+
+# -----------------------------------------------------------------------------
+# Bare-metal feature passthrough (MB13.a)
+# -----------------------------------------------------------------------------
+# `ed25519-dalek 2.1` and `x25519-dalek 2.0` transitively pin `sha2 0.10` (via
+# `digest 0.10`). On `x86_64-unknown-none` `sha2 0.10`'s default backend
+# pulls in SHA-NI / SSE intrinsics that LLVM cannot legalize against the
+# bare-metal target spec (no `sse2`/`ssse3`/`sse4.1` `target_feature`), and
+# the build aborts with
+#       rustc-LLVM ERROR: Do not know how to split the result of this operator!
+#
+# `sha2 0.10` exposes a `force-soft` Cargo feature that routes through the
+# portable software backend. Cargo unifies features per resolved version, so
+# declaring the feature here is sufficient to attach it to the transitive
+# `sha2 0.10` instance shared with the dalek crates. The passthrough is a
+# different package alias (`sha2_010_force_soft`) so it cannot collide with
+# the workspace's direct `sha2 0.11` dependency above.
+#
+# Scoped to `x86_64-unknown-none` only — host builds keep the hardware-fast
+# backend. `sha2 0.11` (used directly by `nexacore-crypto`) does not need this
+# treatment because its 0.11 backend selection is `target_feature`-driven
+# and degrades gracefully to soft on bare metal.
+#
+# Companion `rustflags` for `poly1305 0.8`, `chacha20 0.9`, and
+# `curve25519-dalek 4` live in the workspace `/.cargo/config.toml`.
+[target.x86_64-unknown-none.dependencies]
+sha2_010_force_soft = { package = "sha2", version = "0.10", default-features = false, features = ["force-soft"] }
+
+[dev-dependencies]
+proptest = { workspace = true }
+# Hex used for parsing RFC test vectors.
+hex      = { workspace = true }

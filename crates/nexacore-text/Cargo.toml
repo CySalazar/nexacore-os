@@ -1,0 +1,36 @@
+# =============================================================================
+# nexacore-text — NexaCoreText editor core (WS8-08)
+# =============================================================================
+# The device-independent, host-testable core of NexaCoreText, NexaCore's fast
+# plain-text editor ("Notepad but advanced"). It provides:
+#   - a piece-table text buffer that edits large files without copying the
+#     loaded content (WS8-08.1);
+#   - literal / case-insensitive / whole-word find & replace, with a `Matcher`
+#     seam for the regex engine (WS8-08.5);
+#   - encoding (BOM) and line-ending (EOL) detection and normalisation
+#     (WS8-08.6);
+#   - a line index for gutter line numbers and a minimap sampler (WS8-08.7).
+#
+# The multi-tab UI, syntax highlighting, AI contextual actions, ncScript
+# execution, and clipboard integration are the surrounding sub-tasks. `no_std +
+# alloc`, dependency-free, so it builds for the host and the Ring-3 target.
+# =============================================================================
+
+[package]
+name             = "nexacore-text"
+description      = "NexaCoreText editor core — piece-table text buffer for large files, find/replace, encoding/EOL detection, line index + minimap (WS8-08)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]

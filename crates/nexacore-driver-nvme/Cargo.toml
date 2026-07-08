@@ -1,0 +1,67 @@
+# =============================================================================
+# nexacore-driver-nvme — NVMe first-party user-space driver scaffold
+# =============================================================================
+# First-party driver for NVMe 1.4-compliant PCIe SSDs (PCI class
+# `0x01:0x08:0x02`). Specified by `NCIP-Driver-NVMe-014` § S1-S6 and loaded
+# via the `DriverLoad` syscall flow specified by
+# `NCIP-Driver-Framework-013` § S5.
+#
+# This is the **P6.7.8.4 scaffold** delivery: skeleton-only `no_std + alloc`
+# library that locks the public surface (NVMe PCI class match, controller
+# register offsets, admin/IO queue depth bounds, PRP transfer model, 13-step
+# bring-up FSM) without wiring any syscall path. The bootable image sibling
+# (`crates/nexacore-driver-nvme-image`, excluded from the default workspace
+# matrix like `kernel-runner`) lands in a follow-up sub-step (P6.7.8.5)
+# together with the actual `MmioMap`/`DmaMap`/`IrqAttach` invocations.
+#
+# Pattern mirrors `nexacore-driver-net-virtio` (P6.7.8.2): the lib hosts the
+# auditable logic compiled in the default workspace matrix; the runtime
+# ELF lives in the excluded sibling image crate. Same split as
+# `nexacore-kernel` ↔ `kernel-runner`.
+# =============================================================================
+
+[package]
+name             = "nexacore-driver-nvme"
+description      = "NexaCore OS first-party NVMe user-space driver (NCIP-Driver-NVMe-014 § S1-S6 scaffold)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+# The scaffold is deliberately dependency-light: no `nexacore-types`, no
+# `nexacore-capability`, no `nexacore-crypto`. The driver's eventual capability
+# surface (MmioMap / DmaMap / IrqAttach / DriverLoad) is mediated by the
+# kernel; the user-space driver process only needs to issue raw syscalls
+# and shape its own data structures. We will reintroduce dependencies in
+# the bring-up step when the FSM starts touching real types (`BlkRequest`
+# from a new `nexacore-types::blk` module per NCIP-014 Reference Implementation).
+[dependencies]
+# `nexacore-driver-shared` provides the well-known deposit VA constant
+# (DRIVER_CAP_DEPOSIT_VA), the action-tag constants, and the
+# `caps::find_token` helper for locating capability tokens at bring-up
+# (NCIP-013 § S5.3 step 8, P6.7.8.10).  Dep-free, no_std-compatible.
+nexacore-driver-shared = { workspace = true }
+# `nexacore-types` provides the canonical `IdentifyTarget` / `NvmeCommand` /
+# `NvmeEvent` wire-shape enums per NCIP-Driver-NVMe-014 § S2 + § S3
+# (P6.7.10-pre.5). The admin-queue encoder in `src/admin.rs` consumes
+# `IdentifyTarget` to dispatch the CDW10.CNS byte without redeclaring
+# the enum here. `default-features = false` strips `id-generation`
+# (which pulls in `getrandom` and breaks `x86_64-unknown-none` — same
+# rationale as `nexacore-kernel`'s pin) — we only need the `nvme` module
+# which is dep-free at the gate level. Pin via path + version since
+# the workspace entry has `default-features = true`.
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+
+[dev-dependencies]

@@ -1,0 +1,107 @@
+# =============================================================================
+# NexaCore OS — QEMU boot + desktop smoke (WS13-01.3/.4)
+# =============================================================================
+# Boots the kernel-runner under QEMU+OVMF on every push / pull request and
+# asserts the canonical banner sequence (boot-smoke) and the desktop boot
+# markers + a rendered screenshot (desktop-smoke). Both jobs upload their
+# captured evidence as artifacts so a failing boot is diagnosable from the run:
+#   - boot-smoke    → boot-serial.log         (WS13-01.3)
+#   - desktop-smoke → desktop-serial.log + desktop.png  (WS13-01.4)
+#
+# Making these two jobs *required* status checks is a branch-protection setting
+# (WS13-01.1/.2), configured in the GitHub repository, not in this file.
+#
+# Must run on x86_64 Linux: the bare-metal target does not link on arm64 hosts
+# (crypto SIMD asm; see plan WS13-08).
+# =============================================================================
+
+name: qemu-boot-smoke
+
+on:
+  push:
+    branches: ["main", "rebrand/**"]
+  pull_request: {}
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+env:
+  # The NexaCore-OS-owned crates build under the full lint policy. The script
+  # strips RUSTFLAGS for the inner bootloader stage-N builds it does not own.
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  boot-smoke:
+    name: QEMU boot smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install QEMU + OVMF
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qemu-system-x86 ovmf
+
+      - name: Install pinned Rust toolchains
+        # Materialize the workspace toolchain (1.85 + x86_64-unknown-none) and
+        # the dated nightly the disk-image builder needs (-Z build-std).
+        run: |
+          rustup show
+          NIGHTLY="$(sed -n 's/^channel *= *"\([^"]*\)".*/\1/p' disk-image/rust-toolchain.toml)"
+          rustup toolchain install "${NIGHTLY}" --profile minimal --component rust-src --component llvm-tools-preview
+
+      - name: Run boot smoke (capture serial log)
+        run: |
+          mkdir -p artifacts
+          # The script prints the captured serial console to stdout; tee it to a
+          # file for the artifact while preserving the script's pass/fail exit.
+          set -o pipefail
+          bash scripts/qemu-boot-smoke.sh | tee artifacts/boot-serial.log
+
+      - name: Upload serial log artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boot-serial-log
+          path: artifacts/boot-serial.log
+          if-no-files-found: warn
+
+  desktop-smoke:
+    name: QEMU desktop smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install QEMU + OVMF + netpbm (PPM→PNG)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qemu-system-x86 ovmf netpbm
+
+      - name: Install pinned Rust toolchains
+        run: |
+          rustup show
+          NIGHTLY="$(sed -n 's/^channel *= *"\([^"]*\)".*/\1/p' disk-image/rust-toolchain.toml)"
+          rustup toolchain install "${NIGHTLY}" --profile minimal --component rust-src --component llvm-tools-preview
+
+      - name: Run desktop smoke (capture screenshot)
+        run: |
+          mkdir -p artifacts
+          bash scripts/qemu-desktop-smoke.sh --screenshot artifacts/desktop.png
+
+      - name: Collect desktop serial log
+        if: always()
+        run: |
+          # The smoke script keeps its serial log under a temp dir it cleans up;
+          # nothing to collect here beyond the screenshot, which is the artifact.
+          ls -l artifacts || true
+
+      - name: Upload desktop screenshot artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-screenshot
+          path: artifacts/desktop.png
+          if-no-files-found: warn

@@ -1,0 +1,89 @@
+# =============================================================================
+# nexacore-driver-e1000e — developer-authored driver manifest (TOML v1)
+# =============================================================================
+# Source format consumed by the `nexacore-driver-pack` build tool (NexaCore Forge,
+# user-space) per `NCIP-Driver-Framework-013` § S5.1 + the network-driver
+# overlay locked by `NCIP-Driver-Net-015` § S5. The tool compiles this
+# TOML into the canonical postcard payload embedded inside an
+# `NexaCore-Pack v1` binary container (§ S5.5) and signs it with the issuer's
+# Ed25519 key. The kernel does NOT parse TOML; it only validates the
+# NexaCore-Pack header and decodes the postcard manifest.
+#
+# Placeholder values (`nexacore_image_hash`, `nexacore_signature`,
+# `nexacore_issuer_pubkey`) are filled in by `nexacore-driver-pack` after the
+# driver image is built; the schema below is the authoritative shape
+# every e1000e driver image MUST present.
+# =============================================================================
+
+[meta]
+name           = "nexacore-driver-e1000e"
+version        = "0.2.0"
+nexacore_image_hash = "<filled-by-nexacore-driver-pack: 64-hex-char BLAKE3 of the ELF image>"
+nexacore_signature  = "<filled-by-nexacore-driver-pack: base64 Ed25519 over manifest.pc>"
+nexacore_issuer_pubkey = "<filled-by-nexacore-driver-pack: base64 Ed25519 public key, must be in KNOWN_ISSUERS>"
+
+# -----------------------------------------------------------------------------
+# Capabilities the driver requests at DriverLoad time.
+# -----------------------------------------------------------------------------
+# Each entry MUST be provable as a subset of the issuer's capabilities
+# (NCIP-Driver-Framework-013 § S5.3 step 8). The kernel attenuates them to
+# the driver process's NodeId with a 90-day lifetime.
+[capabilities]
+# MMIO regions: e1000e devices expose their full CSR space on BAR0
+# (128 KiB per Intel 82574L datasheet § 10.1 and NCIP-015 § S5.1). The
+# manifest declares the size up front; the loader fills `phys_base` from
+# PCI enumeration before signing the NexaCore-Pack.
+mmio_regions = [
+    { phys_base = "<BAR0 phys base from PCI enum>", len = "0x20000" },
+]
+# DMA windows: 4 GiB IOVA arena matches `NCIP-Driver-Net-015` § S1 default
+# and gives the driver headroom for the RX/TX descriptor rings plus the
+# pre-allocated RX buffer pool (`rx_buffer_count` × 2 KiB).
+dma_windows = [
+    { iova_base = "0x0", len = "0x100000000" },
+]
+# IRQ lines: populated by `IrqAttach` at runtime. e1000e exposes one
+# combined MSI-X vector by default per NCIP-015 § S7; multi-vector is
+# deferred to a follow-up NCIP.
+irq_lines = []
+# PCI device: bound dynamically by PCI enumeration. The matchers below
+# (under `[matchers]`) determine which device this driver can claim.
+pci_devices = [
+    { segment = 0, bus = "<dyn>", device = "<dyn>", function = 0 },
+]
+
+# -----------------------------------------------------------------------------
+# Auto-claim matchers (NCIP-Driver-Net-015 § S5).
+# -----------------------------------------------------------------------------
+# The e1000e driver claims devices by vendor/device pairs rather than the
+# PCI class triple, because Intel Ethernet controllers span multiple PCI
+# class encodings (network controller / Ethernet controller variants).
+# The set below matches the constants in `crates/nexacore-driver-e1000e/src/pci_ids.rs`
+# (Intel vendor 0x8086 plus the five v0.3 supported device IDs).
+[matchers]
+pci_vendor_device = [
+    { vendor = "0x8086", device = "0x10D3" }, # 82574L (QEMU `-device e1000e`)
+    { vendor = "0x8086", device = "0x153A" }, # I217-LM (Haswell)
+    { vendor = "0x8086", device = "0x153B" }, # I217-V
+    { vendor = "0x8086", device = "0x15A1" }, # I218-LM (Wildcat Point)
+    { vendor = "0x8086", device = "0x15A3" }, # I219-LM (Skylake+)
+]
+acpi_hid = []
+
+# -----------------------------------------------------------------------------
+# NET service channel parameters (NCIP-Driver-Net-015 § S1).
+# -----------------------------------------------------------------------------
+# The kernel uses this table to size the per-driver IOVA arena (RX buffer
+# pool) and to bound the channel-frame size advertised on
+# `nexacore.svc.net.eth<N>`. All values are validated at DriverLoad per
+# NCIP-015 § S1.1 (validation rules in spec).
+[net]
+mtu                 = 1500   # standard Ethernet; e1000e supports jumbo up to 9216 (driver-side opt-in)
+rx_ring_depth       = 256    # power of 2 in [1, 4096]; matches `ring_config::DEFAULT_RX_RING_DEPTH`
+tx_ring_depth       = 256    # power of 2 in [1, 4096]; matches `ring_config::DEFAULT_TX_RING_DEPTH`
+rx_buffer_count     = 512    # 512 × 2 KiB = 1 MiB pre-allocated RX pool
+promisc_at_boot     = false  # opt-in; first-party drivers default off
+tx_checksum_offload = true   # e1000e supports TX IP/TCP/UDP checksum offload
+rx_checksum_offload = true   # e1000e supports RX checksum validation
+tso_enabled         = false  # opt-in; not enabled by default in v0.3
+lro_enabled         = false  # opt-in; software LRO not implemented yet

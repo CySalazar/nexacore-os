@@ -1,0 +1,31 @@
+# =============================================================================
+# nexacore-doc — document/PDF viewer core (WS8-04)
+# =============================================================================
+# Host-testable core of the NexaCore document viewer: the document model, a
+# render cache over the PdfRasterizer seam, continuous-scroll + thumbnail
+# navigation, text layout / selection / clipboard, zoom + fit-to-width/page, and
+# the print path into nexacore-print (WS2-13). The real PDF parser/rasterizer
+# and the text extractor are library-gated behind traits — exactly like the
+# WS8-02 media codecs and WS8-03 image codecs. `no_std + alloc`, integer-only.
+# =============================================================================
+
+[package]
+name             = "nexacore-doc"
+description      = "NexaCore OS document/PDF viewer core — model, navigation, text selection, zoom, print (WS8-04)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-print = { path = "../nexacore-print", version = "0.2.0" }

@@ -1,0 +1,33 @@
+// match_result.oss — a fn returning Result with a `match`, a guard, an
+// or-pattern, and the `?` operator (NCIP-Script-030 § S1, § S2, § S4).
+//
+// Pure script (no capability header): parsing/validation only, no host effects.
+
+// `parse_port` returns a typed error in `Result::Err`. There are no exceptions
+// in ncScript (§ S2); errors are values.
+fn parse_port(text: String) -> Result<Int, ParseError> {
+    let n = text.trim().parse_int()?;            // `?` propagates ParseError (§ S2)
+    match n {
+        0 | 65536 => Err(ParseError::OutOfRange),  // or-pattern (§ S1)
+        p if p < 0 => Err(ParseError::OutOfRange), // guard (§ S1)
+        p if p > 65535 => Err(ParseError::OutOfRange),
+        p => Ok(p),                                // binding arm
+    }
+}
+
+fn classify(text: String) -> String {
+    // `match` on a Result is exhaustive (§ S1): Ok and Err are both covered.
+    match parse_port(text) {
+        Ok(p) if p < 1024 => "well-known port: " + p.to_string(),
+        Ok(p)             => "user port: " + p.to_string(),
+        Err(_)            => "invalid port",
+    }
+}
+
+fn main() -> Result<(), Error> {
+    let inputs = ["80", "8443", "-1", "not_a_number"];
+    for raw in inputs {
+        print(classify(raw));
+    }
+    Ok(())
+}

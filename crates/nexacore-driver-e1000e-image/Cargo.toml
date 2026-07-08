@@ -1,0 +1,77 @@
+# =============================================================================
+# nexacore-driver-e1000e-image — bootable Ring 3 Intel e1000e driver image (P6.7.8.7)
+# =============================================================================
+# Specified by `NCIP-Driver-Net-015` § S5 + § S8 and consumed by the kernel
+# `DriverLoad (73)` syscall per `NCIP-Driver-Framework-013` § S5.3 step 9.
+# The crate compiles the user-space e1000e driver into a `no_std + no_main`
+# ELF64 (target `x86_64-unknown-none`) that the kernel ingests via
+# `spawn_from_elf`. The ELF entry point is `_start`; it consumes the
+# capability tokens passed by the kernel through the `DriverLoad`
+# protocol and drives the 13-step bring-up FSM in
+# `nexacore_driver_e1000e::bringup`.
+#
+# Excluded from the default workspace `cargo build` matrix (see the root
+# `Cargo.toml` `[workspace.exclude]` list) — the host-side `--target`
+# requires a cross-toolchain that not every developer machine has. CI
+# builds the image explicitly via:
+#
+#   cargo build --manifest-path crates/nexacore-driver-e1000e-image/Cargo.toml \
+#               --target x86_64-unknown-none --release
+#
+# The resulting ELF is fed to `nexacore-driver-pack` (NexaCore Forge, user-space)
+# together with the developer-authored `manifest.toml` from
+# `crates/nexacore-driver-e1000e/manifest.toml` to produce the `NexaCore-Pack v1`
+# binary container the kernel validates.
+#
+# Pattern mirrors the `nexacore-driver-nvme-image` sibling that landed in
+# P6.7.8.5, the `nexacore-driver-net-virtio-image` sibling that landed in
+# P6.7.8.3, and the `nexacore-kernel` ↔ `kernel-runner` split that powers the
+# bare-metal boot path.
+# =============================================================================
+
+[package]
+name             = "nexacore-driver-e1000e-image"
+description      = "NexaCore OS Intel e1000e driver — bootable Ring 3 ELF image (consumed by DriverLoad)"
+version          = "0.2.0"
+edition          = "2024"
+rust-version     = "1.85"
+authors          = ["cySalazar <hello@nexacoreos.com>"]
+license          = "Apache-2.0"
+repository       = "https://github.com/CySalazar/nexacore-os"
+homepage         = "https://nexacoreos.com"
+keywords         = ["operating-system", "driver", "ethernet", "network"]
+categories       = ["os", "embedded"]
+publish          = false
+
+[[bin]]
+name = "nexacore-driver-e1000e-image"
+path = "src/main.rs"
+
+[dependencies]
+# Pull the auditable lib in as `path` — no version pin since both
+# crates ship in the same repo and bump together.
+nexacore-driver-e1000e = { path = "../nexacore-driver-e1000e" }
+
+# Driver SDK helper (P6.7.8.10, NCIP-013 § S5.3 step 8). Provides the
+# capability deposit window parser (`caps::find_token`) and the well-known
+# constants (`DRIVER_CAP_DEPOSIT_VA`, `ACTION_TAG_*`) the image consumes
+# in `_start` before invoking `MmioMap (70)` / `DmaMap (71)` /
+# `IrqAttach (72)`. Dep-free, `no_std`, no transitive supply-chain.
+nexacore-driver-shared = { path = "../nexacore-driver-shared" }
+
+# The image deliberately avoids depending on `nexacore-types`, `nexacore-capability`,
+# `nexacore-crypto` at this stage: P6.7.8.10 reads the token bytes as opaque
+# blobs and forwards them to the kernel through the syscall ABI; the
+# kernel does the postcard decode + Ed25519 verify side. Reintroducing
+# `nexacore-types` would pull a host of transitive deps that defeat the
+# "thin Ring 3 trampoline" model.
+
+[profile.release]
+lto             = true
+codegen-units   = 1
+panic           = "abort"
+strip           = "debuginfo"
+opt-level       = "z"
+
+[profile.dev]
+panic = "abort"

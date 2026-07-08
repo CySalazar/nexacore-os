@@ -1,0 +1,31 @@
+# =============================================================================
+# nexacore-print — IPP printing core (WS2-13)
+# =============================================================================
+# Host-testable core of the NexaCore print subsystem: IPP (Internet Printing
+# Protocol) message encode/decode + the common operations (Get-Printer-
+# Attributes, Create-Job, Send-Document, Print-Job), a print spooler with a
+# persistent job queue, and PWG-Raster page-header encoding. PDF→raster
+# rendering is library-gated behind a trait; live mDNS/DNS-SD discovery and the
+# LAN print verification are device-side.
+# =============================================================================
+
+[package]
+name             = "nexacore-print"
+description      = "NexaCore OS IPP printing core — IPP protocol, print spooler, PWG-Raster (WS2-13)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+serde          = { workspace = true }

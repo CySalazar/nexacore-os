@@ -1,0 +1,30 @@
+# =============================================================================
+# nexacore-time — time service (WS12-02)
+# =============================================================================
+# An SNTP (RFC 4330) client, a monotonic/wall clock split with NTP-offset
+# disciplining, a POSIX-TZ timezone parser with UTC→local civil-time
+# conversion, and a settings hook for the selected zone.
+#
+# Dep-free `no_std + alloc` so it builds for `x86_64-unknown-none`.
+# =============================================================================
+
+[package]
+name = "nexacore-time"
+description = "Time service for NexaCore OS — SNTP client, monotonic/wall clocks, POSIX-TZ timezones."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+
+[dev-dependencies]

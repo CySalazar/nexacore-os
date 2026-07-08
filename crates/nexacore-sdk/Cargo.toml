@@ -1,0 +1,44 @@
+# =============================================================================
+# nexacore-sdk — Application SDK for NexaCore OS
+# =============================================================================
+# High-level Rust API for NexaCore OS applications. Wraps lower-level system
+# services (runtime, capabilities, encrypted types) in an ergonomic
+# developer-facing API.
+# =============================================================================
+
+[package]
+name             = "nexacore-sdk"
+description      = "Application SDK for NexaCore OS — high-level API for AI invocation, agents, encrypted data."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+nexacore-types      = { workspace = true }
+nexacore-capability = { workspace = true }
+nexacore-runtime    = { workspace = true }
+# nexacore-agent provides the RuntimeLink seam that `agent::BridgeLink`
+# implements (TASK-13, ADR-0035 D3). Dependency direction is
+# sdk -> agent (nexacore-agent does NOT depend on nexacore-sdk).
+nexacore-agent      = { workspace = true }
+async-trait     = { workspace = true }
+tracing         = { workspace = true }
+thiserror       = { workspace = true }
+
+[dev-dependencies]
+# Locks the in-memory audit log in the E2E acceptance test (workspace-
+# standard sync mutex; see clippy.toml disallowed_methods).
+parking_lot = { workspace = true }
+# Drives the async E2E acceptance test (prompt -> Orchestrator -> Task
+# agent -> ServingRelay(mock provider) -> answer; TASK-13).
+tokio = { workspace = true, features = ["macros", "rt"] }

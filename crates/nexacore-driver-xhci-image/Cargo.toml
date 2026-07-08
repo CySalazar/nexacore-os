@@ -1,0 +1,66 @@
+# =============================================================================
+# nexacore-driver-xhci-image — bootable Ring 3 xHCI USB host controller image
+# =============================================================================
+# Bootable `no_std + no_main` ELF64 that the kernel spawns at boot via the
+# boot-spawn path (ADR-0048 D2, mirroring `nexacore-driver-nvme-image`). The ELF
+# entry point is `_start`; it consumes the capability tokens deposited by the
+# kernel and drives the xHCI bring-up + root-hub enumeration FSM.
+#
+# Excluded from the default workspace `cargo build` matrix — the host-side
+# `--target` requires the bare-metal cross-toolchain. CI builds it explicitly:
+#
+#   cargo build --manifest-path crates/nexacore-driver-xhci-image/Cargo.toml \
+#               --target x86_64-unknown-none --release
+#
+# Pattern mirrors `nexacore-driver-nvme-image` (ADR-0036, ADR-0048 D1).
+# =============================================================================
+
+# Excluded from the root workspace; built independently for `x86_64-unknown-none`.
+# See root `Cargo.toml` `exclude` list for the rationale.
+[workspace]
+
+[package]
+name             = "nexacore-driver-xhci-image"
+description      = "NexaCore OS xHCI USB driver — bootable Ring 3 ELF image (ADR-0048, TASK-26)"
+version          = "0.2.0"
+edition          = "2024"
+rust-version     = "1.85"
+authors          = ["cySalazar <hello@nexacoreos.com>"]
+license          = "Apache-2.0"
+repository       = "https://github.com/CySalazar/nexacore-os"
+homepage         = "https://nexacoreos.com"
+keywords         = ["operating-system", "driver", "usb", "xhci"]
+categories       = ["os", "embedded"]
+publish          = false
+
+[[bin]]
+name = "nexacore-driver-xhci-image"
+path = "src/main.rs"
+
+[dependencies]
+# Host-testable xHCI driver lib (Phase 1, ADR-0048 D1). Provides register
+# definitions, TRB constructors, ring state machines, context builders, USB
+# descriptor parsing, enumeration state machine, and mass-storage (BOT/SCSI)
+# codec. Pure `no_std` logic with no allocator dependency.
+nexacore-driver-xhci = { path = "../nexacore-driver-xhci" }
+
+# Driver SDK helper (NCIP-013 § S5.3 step 8). Provides capability deposit
+# window parser (`caps::find_token`), `device_info::read`, and the
+# well-known constants (`DRIVER_CAP_DEPOSIT_VA`, `ACTION_TAG_*`).
+# Dep-free, `no_std`, no transitive supply-chain.
+nexacore-driver-shared = { path = "../nexacore-driver-shared" }
+
+# Shared kernel–driver wire types. Provides `BlkRequest`, `BlkResponse`,
+# `BLOCK_SIZE_BYTES`, and `wire::{encode_into_slice, decode_canonical}` used
+# by the BLK IPC service (ADR-0049 D5). `no_std` compatible.
+nexacore-types = { path = "../nexacore-types", default-features = false }
+
+[profile.release]
+lto             = true
+codegen-units   = 1
+panic           = "abort"
+strip           = "debuginfo"
+opt-level       = "z"
+
+[profile.dev]
+panic = "abort"

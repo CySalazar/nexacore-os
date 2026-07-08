@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NexaCore OS — Monochrome (cream on dark)
+  Usage: dark backgrounds, dark-mode UI, embossed light foil
+  Color: #F4EBD0 (cream)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" role="img" aria-label="NexaCore OS — monochrome light">
+  <defs><style>
+    .wordmark { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; }
+    .tagline  { font-family: 'Inter', sans-serif; font-weight: 500; }
+  </style></defs>
+  <g transform="translate(24,30)">
+    <circle cx="30" cy="30" r="26" fill="none" stroke="#F4EBD0" stroke-width="1.5" opacity="0.45"/>
+    <circle cx="30" cy="4" r="4" fill="#F4EBD0"/>
+    <circle cx="52.5" cy="17" r="4" fill="#F4EBD0"/>
+    <circle cx="52.5" cy="43" r="4" fill="#F4EBD0"/>
+    <circle cx="30" cy="56" r="4" fill="#F4EBD0"/>
+    <circle cx="7.5" cy="43" r="4" fill="#F4EBD0"/>
+    <circle cx="7.5" cy="17" r="4" fill="#F4EBD0"/>
+    <circle cx="30" cy="30" r="5" fill="none" stroke="#F4EBD0" stroke-width="2"/>
+    <circle cx="30" cy="30" r="1.5" fill="#F4EBD0"/>
+  </g>
+  <text x="108" y="56" class="wordmark" font-size="36" fill="#F4EBD0" letter-spacing="-0.5">NexaCore OS</text>
+  <text x="110" y="80" class="tagline" font-size="11" fill="#F4EBD0" letter-spacing="0.5" opacity="0.85">A project of NexaCore Foundation</text>
+</svg>

@@ -1,0 +1,69 @@
+# =============================================================================
+# nexacore-display-probe — TASK-18 (DE-C1) framebuffer + input-event smoke probe
+# =============================================================================
+#
+# `no_std + no_main` ELF the kernel spawns as a Ring 3 process to validate
+# the DisplayMap (79) syscall and the display-input IPC channel (ADR-0040):
+#
+#   ① Read device-info from the deposit window (overloaded VirtioDeviceInfo
+#      fields carry display params per ADR-0040 D3 / TASK-18 shared contract).
+#   ② Locate the Display capability token via caps::find_token(7, ...).
+#   ③ DisplayMap(offset=0, len=fb_len_page_rounded) → user VA.
+#   ④ Paint three colour bars (left=red, middle=green, right=blue) plus a
+#      white 100×100 box near the top-left for a visually obvious result.
+#   ⑤ Drain the input channel via IpcTryReceive(24), log each event, exit(0)
+#      after receiving 5 key events (or continue if fewer arrive).
+#
+# Exit codes:
+#   0  — success (DisplayMap + paint; 5+ key events logged)
+#   1  — panic handler invoked
+#   2  — no device-info in deposit window
+#   3  — no Display cap token in deposit window
+#   40+ — DisplayMap failed; the suffix is the errno (40 = errno 0 sentinel,
+#          effectively errno + 40)
+#
+# Built out-of-workspace via:
+#   cargo build --manifest-path crates/nexacore-display-probe/Cargo.toml \
+#               --target x86_64-unknown-none --release
+# =============================================================================
+
+[package]
+name         = "nexacore-display-probe"
+description  = "TASK-18 (DE-C1) Ring 3 display-map + input-event smoke probe for NexaCore OS"
+version      = "0.1.0"
+edition      = "2024"
+rust-version = "1.85"
+authors      = ["cySalazar <hello@nexacoreos.com>"]
+license      = "Apache-2.0"
+repository   = "https://github.com/CySalazar/nexacore-os"
+homepage     = "https://nexacoreos.com"
+publish      = false
+
+[[bin]]
+name = "nexacore-display-probe"
+path = "src/main.rs"
+
+[dependencies]
+# nexacore-types carries DisplayInputEvent and the canonical wire encoder/decoder.
+# `default-features = false` strips uuid + getrandom so this builds for
+# x86_64-unknown-none.
+nexacore-types = { path = "../nexacore-types", default-features = false }
+# nexacore-driver-shared provides the capability deposit window parser
+# (`caps::find_token`) and the device-info reader (`device_info::read`).
+# Dep-free and no_std; safe to link into Ring 3 images.
+nexacore-driver-shared = { path = "../nexacore-driver-shared" }
+# serde with no_std + alloc: needed for the postcard encode/decode helpers
+# used to deserialise DisplayInputEvent from the input channel.
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+# postcard 1.x: the canonical NexaCore wire encoding (NCIP-Serde-004).
+postcard = { version = "1.0", default-features = false, features = ["alloc"] }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+lto           = true
+codegen-units = 1
+panic         = "abort"
+strip         = "debuginfo"
+opt-level     = "z"

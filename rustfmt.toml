@@ -1,0 +1,51 @@
+# =============================================================================
+# NexaCore OS — rustfmt configuration
+# =============================================================================
+# Pinned per-project formatting policy. CI enforces `cargo fmt --all -- --check`
+# so any drift is caught before merge. Rationale per option below.
+#
+# References:
+#   - https://rust-lang.github.io/rustfmt/
+#   - /docs/09-tech-specifications.md (toolchain pinning)
+# =============================================================================
+
+# --- Edition ---------------------------------------------------------------
+# NexaCore OS is on Rust 2024 edition (rust-toolchain.toml channel = 1.85+).
+# Keep rustfmt aligned to avoid spurious reformatting at edition boundaries.
+edition = "2024"
+
+# --- Line width ------------------------------------------------------------
+# 100 columns balances readability on modern displays with reasonable
+# diff hygiene. 80 is too tight for typed Rust; 120 hides intent.
+max_width = 100
+
+# --- Imports ---------------------------------------------------------------
+# Group at "Crate" granularity so each crate's symbols import as a single
+# `use foo::{a, b, c};` block — easier to scan, less churn on additions.
+imports_granularity = "Crate"
+
+# Order: std → external crates → internal crate(s). Matches the cognitive
+# load order: language built-ins, then third-party, then local code.
+group_imports = "StdExternalCrate"
+
+# Keep imports sorted within each group. Auto-fix on `cargo fmt`.
+reorder_imports = true
+
+# --- Struct / function ergonomics -----------------------------------------
+# `Foo { x }` instead of `Foo { x: x }` — shorter, no information loss.
+use_field_init_shorthand = true
+
+# `..` in struct expressions and patterns goes on its own line if needed
+# to keep diffs minimal when fields are added.
+use_try_shorthand = true
+
+# --- Comments / docs -------------------------------------------------------
+# Format doc comments and code blocks inside them.
+# (Stable since rustfmt 2024; remove this comment if/when default flips.)
+format_code_in_doc_comments = true
+
+# --- Stability note --------------------------------------------------------
+# Some options below are unstable and require nightly rustfmt to take effect.
+# We list them anyway so the intent is documented; CI uses stable rustfmt
+# and silently ignores them. When they stabilize they become enforced.
+unstable_features = false

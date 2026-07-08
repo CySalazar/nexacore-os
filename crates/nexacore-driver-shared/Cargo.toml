@@ -1,0 +1,57 @@
+# =============================================================================
+# nexacore-driver-shared — common SDK surface for NexaCore OS user-space drivers
+# =============================================================================
+# This crate provides the shared constants and capability deposit window parser
+# used by every first-party NexaCore OS driver.  It has **no production
+# dependencies** (`no_std`, dep-free) and is safe to link into Ring 3 ELF
+# images that run entirely inside the driver process.
+#
+# Design rationale:
+#   - Drivers share the well-known deposit VA (0x0010_0000) and the
+#     OMNICAPS wire format.  Duplicating these across driver crates would
+#     create silent drift; extracting them here keeps the single audit point
+#     in one file.
+#   - `no_std + alloc` (alloc reserved for future extensions; not used in the
+#     initial implementation): no tokio, no serde, no crypto.  A compromised
+#     supply-chain transitive dep cannot affect drivers through this crate.
+#
+# References:
+#   - NCIP-013 § S5.3 step 8 (deposit ABI)
+#   - `docs/plans/p6-7-8-9-cap-deposit-trampoline.md` § D3
+#   - `crates/nexacore-kernel/src/cap_deposit.rs` (kernel-side wire format)
+# =============================================================================
+
+[package]
+name             = "nexacore-driver-shared"
+description      = "NexaCore OS driver SDK helpers: capability deposit window parser and well-known constants (NCIP-013 § S5.3 step 8)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+# Production: intentionally empty — dep-free by design.
+# All driver SDK logic is pure `core` (no alloc needed for the parser).
+# This guarantees zero transitive supply-chain exposure for driver binaries.
+[dependencies]
+
+# Dev-only: internal workspace crates only; no new external crates.
+# These are used exclusively to stage valid CapabilityToken bytes in the E2E
+# round-trip integration test and for property-based testing.
+[dev-dependencies]
+nexacore-types      = { workspace = true }
+nexacore-capability = { workspace = true }
+nexacore-crypto     = { workspace = true }
+ed25519-dalek   = { workspace = true }
+proptest        = { workspace = true }

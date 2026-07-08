@@ -1,0 +1,120 @@
+# =============================================================================
+# nexacore-types — Shared core types for NexaCore OS
+# =============================================================================
+# Foundational crate containing types used across the entire workspace:
+# encrypted-by-default data types, identifiers, error taxonomy, common
+# abstractions. Designed to be `no_std`-compatible (with `alloc`) once the
+# kernel scaffolding stabilizes.
+# =============================================================================
+
+[package]
+name             = "nexacore-types"
+description      = "Shared core types for NexaCore OS — encrypted-by-default types, identifiers, common abstractions."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Feature flags
+# -----------------------------------------------------------------------------
+# `_tokenization_provider` is an INTERNAL feature gate. The leading
+# underscore is the project-wide convention for "do not enable from your
+# Cargo.toml unless you are the trusted-base crate that owns this
+# capability". The only crate authorized to enable this flag is
+# `nexacore-tokenization` (Phase 2). Enabling it elsewhere bypasses the
+# encrypted-by-default invariant and is an audit-worthy event.
+[features]
+# `id-generation` exposes `crate::identity` (AgentId, CapabilityId,
+# SessionId, NodeId, ModelId) AND the CSPRNG-driven `::new()`
+# constructors. It pulls in `uuid` (the type backing) + `getrandom`
+# (the entropy source). Default-enabled because every userspace
+# consumer of `nexacore-types` needs it. Bare-metal kernel builds OPT OUT
+# via `default-features = false` because the `x86_64-unknown-none`
+# target has no platform CSPRNG; the kernel only needs the wire
+# helpers (`wire::encode_into_slice` for the K3 panic record per
+# `NCIP-Kernel-012`).
+#
+# MB13.c split: `id-types` exposes the same identity types but WITHOUT
+# the CSPRNG-driven constructors. This lets `nexacore-capability` (and
+# transitively the kernel) reference `NodeId`, `CapabilityId`, etc. in
+# verify-only paths without dragging `getrandom` into the bare-metal
+# build. `id-generation` is now a superset: enabling it also enables
+# `id-types` plus the rng-using constructors. Existing consumers that
+# said `nexacore-types = { default-features = true }` keep the same
+# behaviour.
+default = ["id-generation"]
+id-generation = ["id-types", "dep:getrandom"]
+id-types = ["dep:uuid"]
+# Exposes constructors for `EncryptedString`, `MaskedSSN`, `TokenizedEmail`,
+# and `AttestedHash`, plus real ChaCha20-Poly1305 encrypt/decrypt methods.
+# Pulling in `chacha20poly1305` is safe: the crate supports `no_std + alloc`
+# and is already pinned at workspace level (0.10.x, features = ["alloc"]).
+# Implies that the calling crate runs inside an attested TEE.
+_tokenization_provider = ["dep:chacha20poly1305"]
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+# All dependencies inherit `default-features = false` from the workspace
+# manifest (see /Cargo.toml [workspace.dependencies]) so this crate stays
+# `no_std + alloc`-compatible.
+[dependencies]
+serde     = { workspace = true }
+# `postcard` is the workspace canonical wire encoding (per `NCIP-Serde-004`).
+# `nexacore-types` owns the only direct dependency — every other crate goes
+# through `nexacore-types::wire::{encode_canonical, decode_canonical}` so the
+# encoding contract is auditable from a single audit point.
+postcard  = { workspace = true }
+thiserror = { workspace = true }
+# Random UUIDv4 identifiers for runtime-generated IDs (`AgentId`,
+# `CapabilityId`, `SessionId`). Optional — only present when the
+# `id-types` feature is active (which is implied by `id-generation`).
+#
+# MB13.c override: we deliberately pin `default-features = false,
+# features = ["serde"]` (no `v4`) here instead of inheriting from the
+# workspace declaration. The reason is that the workspace entry pulls
+# in `uuid/v4`, which transitively requires `rand` and refuses to
+# compile on `x86_64-unknown-none`. Our `random_uuid_bytes` helper
+# (see `identity.rs`) calls `getrandom` directly and constructs the
+# `Uuid` via `Uuid::from_bytes`, so the `v4` feature buys us nothing
+# beyond an unused dep. Verify-only bare-metal builds (kernel) get the
+# `Uuid` type without any rng coupling.
+uuid      = { version = "1.11", default-features = false, features = ["serde"], optional = true }
+# Platform CSPRNG bridge. On Linux this is `getrandom(2)`. The
+# `x86_64-unknown-none` target has no platform CSPRNG, which is why
+# this dep is folded into the `id-generation` feature: the kernel
+# build path simply has no UUID generation.
+getrandom = { workspace = true, optional = true }
+# ChaCha20-Poly1305 AEAD used by the provider-gated encrypt/decrypt methods
+# on the encrypted-by-default types. Optional — only present when the
+# `_tokenization_provider` feature is active (i.e., only inside
+# `nexacore-tokenization`). The `no_std + alloc` configuration is inherited from
+# the workspace declaration (features = ["alloc"]).
+chacha20poly1305 = { workspace = true, optional = true }
+# Safe hex encoding helpers for raw-byte identifiers. We deliberately do NOT
+# implement `core::fmt::Display` for byte-array IDs — call sites must go
+# through `to_hex` so accidental logging is traceable.
+hex       = { workspace = true }
+# `Zeroize` is derived on identifier wrappers that may transit through
+# memory-mapped buffers, so dropping them does not leak attestation hashes
+# in stale heap pages.
+zeroize   = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+# `trybuild` runs compile-fail integration tests. Used to assert
+# type-system invariants such as: passing a `ModelId` where a `NodeId` is
+# expected MUST be a compile error, and constructing an `EncryptedString`
+# from a `String` outside the `nexacore-tokenization` crate MUST be a compile
+# error.
+trybuild = { workspace = true }

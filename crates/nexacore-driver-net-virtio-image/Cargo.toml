@@ -1,0 +1,76 @@
+# =============================================================================
+# nexacore-driver-net-virtio-image — bootable Ring 3 driver image (P6.7.8.3)
+# =============================================================================
+# Specified by `NCIP-Driver-Net-015` § S4 and consumed by the kernel
+# `DriverLoad (73)` syscall per `NCIP-Driver-Framework-013` § S5.3 step 9.
+# The crate compiles the user-space virtio-net driver into a `no_std +
+# no_main` ELF64 (target `x86_64-unknown-none`) that the kernel ingests
+# via `spawn_from_elf`. The ELF entry point is `_start`; it consumes the
+# capability tokens passed by the kernel through the `DriverLoad`
+# protocol and drives the bring-up FSM in
+# `nexacore_driver_net_virtio::bringup`.
+#
+# Excluded from the default workspace `cargo build` matrix (see the
+# root `Cargo.toml` `[workspace.exclude]` list) — the host-side
+# `--target` requires a cross-toolchain that not every developer machine
+# has. CI builds the image explicitly via:
+#
+#   cargo build --manifest-path crates/nexacore-driver-net-virtio-image/Cargo.toml \
+#               --target x86_64-unknown-none --release
+#
+# The resulting ELF is fed to `nexacore-driver-pack` (NexaCore Forge, user-space)
+# together with the developer-authored `manifest.toml` to produce the
+# `NexaCore-Pack v1` binary container the kernel ultimately validates.
+# =============================================================================
+
+[package]
+name             = "nexacore-driver-net-virtio-image"
+description      = "NexaCore OS virtio-net driver — bootable Ring 3 ELF image (consumed by DriverLoad)"
+version          = "0.2.0"
+edition          = "2024"
+rust-version     = "1.85"
+authors          = ["cySalazar <hello@nexacoreos.com>"]
+license          = "Apache-2.0"
+repository       = "https://github.com/CySalazar/nexacore-os"
+homepage         = "https://nexacoreos.com"
+keywords         = ["operating-system", "driver", "virtio", "network"]
+categories       = ["os", "embedded"]
+publish          = false
+
+[[bin]]
+name = "nexacore-driver-net-virtio-image"
+path = "src/main.rs"
+
+[dependencies]
+# Pull the auditable lib in as `path` — no version pin since both
+# crates ship in the same repo and bump together.
+nexacore-driver-net-virtio = { path = "../nexacore-driver-net-virtio" }
+
+# Driver SDK helper (P6.7.8.10, NCIP-013 § S5.3 step 8). Provides the
+# capability deposit window parser (`caps::find_token`) and the well-known
+# constants (`DRIVER_CAP_DEPOSIT_VA`, `ACTION_TAG_*`) the image consumes
+# in `_start` before invoking `MmioMap (70)` / `DmaMap (71)` /
+# `IrqAttach (72)`. Dep-free, `no_std`, no transitive supply-chain.
+nexacore-driver-shared = { path = "../nexacore-driver-shared" }
+
+# `nexacore-types` is required for the M0 service loop:
+#   - `net_channel::{NetRequest, NetEvent, NetResponse}` — IPC message types.
+#   - `wire::{encode_canonical, decode_canonical}` — postcard codec (NCIP-Serde-004).
+#
+# `default-features = false` is MANDATORY: the default feature set includes
+# `id-generation` which transitively pulls `getrandom`, a crate with no
+# implementation for `x86_64-unknown-none`. The `wire` and `net_channel`
+# modules have zero dependency on `id-generation`; this mirrors the
+# established `default-features = false` pattern used by `nexacore-kernel`
+# and other bare-metal crates in this workspace.
+nexacore-types = { path = "../nexacore-types", default-features = false }
+
+[profile.release]
+lto             = true
+codegen-units   = 1
+panic           = "abort"
+strip           = "debuginfo"
+opt-level       = "z"
+
+[profile.dev]
+panic = "abort"

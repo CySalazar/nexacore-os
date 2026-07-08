@@ -1,0 +1,32 @@
+# =============================================================================
+# nexacore-cmd-nslookup — `nslookup` command for NexaCore OS
+# =============================================================================
+# DNS lookup command: A, AAAA, MX, PTR, TXT query types.
+#
+# Architecture:
+#   `no_std + alloc` library crate. Zero external production dependencies.
+#
+# References:
+#   - RFC 1035 (DNS)
+#   - NCIP-Net-N7.6 (nslookup command specification)
+# =============================================================================
+
+[package]
+name             = "nexacore-cmd-nslookup"
+description      = "nslookup command for NexaCore OS — DNS lookup."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+nexacore-types = { workspace = true }

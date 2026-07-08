@@ -1,0 +1,65 @@
+# =============================================================================
+# NexaCore OS — performance baseline + regression gate (WS13-07)
+# =============================================================================
+# Runs the benchmark suite (boot time, IPC throughput, inference tok/s, FS
+# IOPS — WS13-07.1-.4) under QEMU, emits a `current.json` in the
+# `nexacore-bench` schema, then runs the regression gate (WS13-07.8): the
+# committed baseline (WS13-07.5) and per-metric thresholds (WS13-07.6) decide
+# whether any metric regressed beyond budget. The gate CLI exits non-zero on a
+# regression, failing the job (WS13-07.10).
+#
+# Status: the gate comparator + schema + baseline + thresholds are host-complete
+# and unit-tested (`cargo test -p nexacore-bench`). The benchmark MEASUREMENT
+# step (`scripts/run-benchmarks.sh`) runs the QEMU harnesses and is the rig-side
+# half of WS13-07.1-.4; until those land it emits a placeholder run.
+#
+# Must run on x86_64 Linux for the QEMU bare-metal boot benchmarks.
+# =============================================================================
+
+name: perf-gate
+
+on:
+  push:
+    branches: ["main", "rebrand/**"]
+  pull_request: {}
+  workflow_dispatch: {}
+
+jobs:
+  perf-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - name: Build the regression-gate tool
+        run: cargo build -p nexacore-bench --release
+
+      - name: Run the benchmark suite (QEMU) → current.json
+        # WS13-07.1-.4 — boots the kernel-runner under QEMU and measures boot
+        # time / IPC throughput / inference tok/s / FS IOPS, writing a
+        # `nexacore-bench` BenchReport to current.json. The harness is the
+        # rig-side deliverable; the gate below is schema-validated regardless.
+        run: |
+          if [ -x scripts/run-benchmarks.sh ]; then
+            scripts/run-benchmarks.sh > current.json
+          else
+            echo "::warning::scripts/run-benchmarks.sh not present yet (WS13-07.1-.4); using the baseline as the current run so the gate self-checks."
+            cp crates/nexacore-bench/baseline.json current.json
+          fi
+
+      - name: Regression gate
+        # WS13-07.8/.10 — fails the job if any metric regressed beyond budget.
+        run: |
+          ./target/release/nexacore-bench-gate \
+            current.json \
+            crates/nexacore-bench/baseline.json \
+            crates/nexacore-bench/thresholds.json
+
+      - name: Upload benchmark run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-current
+          path: current.json

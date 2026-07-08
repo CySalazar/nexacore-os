@@ -1,0 +1,4 @@
+# cargo-fuzz writes its target tree and corpora here; never commit.
+target/
+corpus/
+artifacts/

@@ -1,0 +1,28 @@
+# =============================================================================
+# nexacore-context — Personal AI context store (local-first, privacy-budgeted)
+# =============================================================================
+# Local-first, encrypted-at-rest store of personal context (preferences, opt-in
+# documents, history) queryable by agents only via capability + privacy budget.
+# See plan.md WS16-05.
+# =============================================================================
+
+[package]
+name             = "nexacore-context"
+description      = "Local-first personal AI context store for NexaCore OS."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+serde     = { workspace = true }
+thiserror = { workspace = true }

@@ -1,0 +1,71 @@
+# =============================================================================
+# nexacore-display-image — TASK-19 (DE-C2/DE-C3) Ring 3 compositor image
+# =============================================================================
+#
+# Bootable `no_std + no_main` ELF that the kernel spawns as a Ring 3 process
+# to validate the full compositor + window manager pipeline on VM-103
+# (ADR-0041 D1 acceptance artifact).
+#
+# The image:
+#   ① Reads device-info from the deposit window (overloaded VirtioDeviceInfo
+#      fields carry display params per ADR-0040 D3 / TASK-18 shared contract).
+#   ② Locates the Display capability token via caps::find_token(7, ...).
+#   ③ DisplayMap(offset=0, len=fb_len_page_rounded) → front-buffer user VA.
+#   ④ Allocates a 32 MiB back buffer and constructs a Compositor.
+#   ⑤ Creates three overlapping test windows with distinct fill colours and
+#      title bars; composites and blits dirty rects to the front buffer.
+#   ⑥ Runs a perpetual input loop: Tab = cycle_focus + repaint,
+#      'c' = destroy focused window + repaint, other keys = log.
+#
+# Exit codes:
+#   0   — (unreachable in normal operation; the daemon loops indefinitely)
+#   1   — panic handler invoked
+#   2   — no device-info in deposit window
+#   3   — no Display cap token in deposit window
+#   40+ — DisplayMap failed; suffix is the raw kernel errno
+#
+# Built out-of-workspace via:
+#   cargo build --manifest-path crates/nexacore-display-image/Cargo.toml \
+#               --target x86_64-unknown-none --release
+# =============================================================================
+
+[package]
+name         = "nexacore-display-image"
+description  = "TASK-19 (DE-C2/DE-C3) Ring 3 compositor + WM bootable image for NexaCore OS"
+version      = "0.1.0"
+edition      = "2024"
+rust-version = "1.85"
+authors      = ["cySalazar <hello@nexacoreos.com>"]
+license      = "Apache-2.0"
+repository   = "https://github.com/CySalazar/nexacore-os"
+homepage     = "https://nexacoreos.com"
+publish      = false
+
+[[bin]]
+name = "nexacore-display-image"
+path = "src/main.rs"
+
+[dependencies]
+# The compositor + window manager core (TASK-19, ADR-0041).
+nexacore-display = { path = "../nexacore-display" }
+# nexacore-types carries DisplayInputEvent and the canonical wire encoder/decoder.
+# `default-features = false` strips uuid + getrandom so this builds for
+# x86_64-unknown-none.
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+# nexacore-driver-shared provides the capability deposit window parser
+# (`caps::find_token`) and the device-info reader (`device_info::read`).
+nexacore-driver-shared = { path = "../nexacore-driver-shared" }
+# serde with no_std + alloc: needed for the postcard encode/decode helpers
+# used to deserialise DisplayInputEvent from the input channel.
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+# postcard 1.x: the canonical NexaCore wire encoding (NCIP-Serde-004).
+postcard = { version = "1.0", default-features = false, features = ["alloc"] }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+lto           = true
+codegen-units = 1
+panic         = "abort"
+opt-level     = "z"

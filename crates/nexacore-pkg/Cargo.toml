@@ -1,0 +1,31 @@
+# =============================================================================
+# nexacore-pkg — Federated content-addressed package manager (NCIP-Pkg-008)
+# =============================================================================
+# Implements the NexaCore OS package manager: capability-declaring manifests, a
+# content-addressed package store, mandatory Sigstore + CT-log verification,
+# and atomic upgrade/rollback. See plan.md WS9-02.
+# =============================================================================
+
+[package]
+name             = "nexacore-pkg"
+description      = "Federated content-addressed package manager for NexaCore OS (NCIP-Pkg-008)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+nexacore-types      = { workspace = true }
+nexacore-crypto     = { workspace = true }
+nexacore-capability = { workspace = true }
+serde           = { workspace = true }
+thiserror       = { workspace = true }

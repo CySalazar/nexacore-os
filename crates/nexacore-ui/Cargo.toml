@@ -1,0 +1,52 @@
+# =============================================================================
+# nexacore-ui — GUI toolkit core (TASK-20, DE-C4/DE-C5)
+# =============================================================================
+# Host-testable widget toolkit for NexaCore OS.  `no_std + alloc` so it compiles
+# for both the developer host (`x86_64-unknown-linux-gnu`) and the bare-metal
+# Ring-3 target (`x86_64-unknown-none`).
+#
+# Design: ADR-0042 — widgets render into a borrowed `Canvas` (ARGB pixel
+# buffer), decoupled from the `nexacore-display` compositor surface.  The app
+# bridges canvas → surface.  The bootable demo image (crates/nexacore-ui-demo-image,
+# workspace-excluded) is the TASK-20 VM-103 verification artifact; it is NOT
+# created here.
+# =============================================================================
+
+[package]
+name             = "nexacore-ui"
+description      = "NexaCore OS GUI toolkit — brand-themed widgets, layout engine, text rendering (ADR-0042, TASK-20, DE-C4/DE-C5)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+# `nexacore-display` provides `geometry::Rect` (ADR-0041, TASK-19).
+[dependencies]
+nexacore-display = { path = "../nexacore-display", version = "0.2.0" }
+# `nexacore-config` backs the theme engine's settings persistence (WS17-03.11).
+# `no_std + alloc`, dep-free — keeps the x86_64-unknown-none build clean.
+nexacore-config  = { path = "../nexacore-config", version = "0.2.0" }
+# `nexacore-types` provides `display_channel::DisplayInputEvent` (ADR-0040, TASK-18).
+# `version` field required by cargo-deny's wildcard-ban policy (deny.toml
+# `wildcards = "deny"`).  `default-features = false` strips `id-generation`
+# (which pulls getrandom + uuid) for x86_64-unknown-none cleanliness.
+nexacore-types   = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+# `font8x8` is already a workspace dependency (the kernel banner uses it).
+# `default-features = false` keeps it no_std-clean.  MIT/Apache-2.0 licensed.
+font8x8      = { version = "0.3", default-features = false }
+
+[dev-dependencies]
+# Real brand fonts, to validate anti-aliased text rendering (draw_text_aa).
+nexacore-fonts = { workspace = true }

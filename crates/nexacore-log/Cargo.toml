@@ -1,0 +1,32 @@
+# =============================================================================
+# nexacore-log — structured logging service (WS12-03)
+# =============================================================================
+# A journald-class structured logging core: a typed record schema with syslog
+# severities, an ingestion bus that assigns monotonic sequence numbers, a
+# persistent ring store with rotation behind a `LogSink` seam, service/severity
+# indices, a query API, and a summary surface for the system monitor.
+#
+# Dep-free `no_std + alloc` so it builds for `x86_64-unknown-none` and can be
+# consumed by both the kernel-adjacent service and userspace tooling.
+# =============================================================================
+
+[package]
+name = "nexacore-log"
+description = "Structured logging service for NexaCore OS — records, ingestion bus, persistent ring, query API."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+
+[dev-dependencies]

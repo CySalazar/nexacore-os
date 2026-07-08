@@ -1,0 +1,19 @@
+# Dependabot — dependency update automation.
+# Scope: mail-relay only (npm). The Rust workspace is deliberately excluded:
+# its toolchain/versions are pinned per docs/09-tech-specifications.md and
+# updates go through the NCIP/spec process, not automated PRs.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/mail-relay"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"

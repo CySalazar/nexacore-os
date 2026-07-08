@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NexaCore OS — Monogram (mark only)
+  Usage: favicon, app icon, social avatar, in-text inline glyph
+  Minimum size: 16px (favicon)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" role="img" aria-label="NexaCore OS — monogram">
+  <circle cx="40" cy="40" r="32" fill="none" stroke="#0F4C5C" stroke-width="1.8" opacity="0.35"/>
+  <circle cx="40" cy="8" r="5" fill="#0F4C5C"/>
+  <circle cx="67.7" cy="24" r="5" fill="#0F4C5C"/>
+  <circle cx="67.7" cy="56" r="5" fill="#0F4C5C"/>
+  <circle cx="40" cy="72" r="5" fill="#0F4C5C"/>
+  <circle cx="12.3" cy="56" r="5" fill="#0F4C5C"/>
+  <circle cx="12.3" cy="24" r="5" fill="#0F4C5C"/>
+  <circle cx="40" cy="40" r="6" fill="#C03221"/>
+</svg>

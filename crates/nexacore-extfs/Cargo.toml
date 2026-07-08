@@ -1,0 +1,31 @@
+# =============================================================================
+# nexacore-extfs — read-only ext2/3/4 parser (WS3-05.2/.3)
+# =============================================================================
+# Host-testable, dependency-free reader for the ext filesystem family. It parses
+# the superblock and block-group descriptors, locates and reads inodes, and
+# (WS3-05.3) resolves file/directory data through the ext4 extent tree — strictly
+# READ-ONLY, over an immutable image seam.
+#
+# This is the ext member of the WS3-05 "compat read-only FS" set (FAT is
+# `nexacore-fatfs`, NTFS is a sibling). It carries no crypto and no `std`, so it
+# builds for both the developer host and the `x86_64-unknown-none` Ring-3 target.
+# =============================================================================
+
+[package]
+name             = "nexacore-extfs"
+description      = "NexaCore OS read-only ext2/3/4 filesystem reader — superblock + block-group descriptors, inode reads, and ext4 extent-tree file/directory reads over an immutable image seam (WS3-05)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]

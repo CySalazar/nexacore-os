@@ -1,0 +1,38 @@
+name: Bug report
+description: Report a defect in NexaCore OS
+labels: ["kind:bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please do **not** use this form for security
+        vulnerabilities — see SECURITY.md for coordinated disclosure.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps, commands, or a failing test.
+      placeholder: |
+        1. cargo run -p ...
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: crate
+    attributes:
+      label: Affected crate / area
+      description: e.g. nexacore-kernel, nexacore-net, desktop shell.
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, `rustc --version`, commit SHA, QEMU/hardware target.
+    validations:
+      required: true

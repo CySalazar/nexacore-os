@@ -1,0 +1,136 @@
+# =============================================================================
+# nexacore-runtime — AI Runtime Service
+# =============================================================================
+# Privileged user-space service exposing AI as a system primitive. Manages
+# model lifecycle, inference scheduling, capability validation, and tier
+# routing across local / personal cluster / federated mesh / cloud.
+# =============================================================================
+
+[package]
+name             = "nexacore-runtime"
+description      = "AI Runtime Service for NexaCore OS — model lifecycle, inference scheduling, tier routing."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Feature flags (TASK-13-pre, ADR-0034)
+# -----------------------------------------------------------------------------
+# `std` (default-on): the full runtime service surface (serving, providers,
+# relay, audit, model registry).  Disable with `default-features = false` for
+# the `no_std + alloc` inference-engine subset (gguf, tensor_loader, bpe,
+# decode) used by the Ring 3 `nexacore-runtime-image` on `x86_64-unknown-none`.
+# -----------------------------------------------------------------------------
+[features]
+default = ["std"]
+std = [
+    "dep:nexacore-crypto",
+    "dep:nexacore-capability",
+    "dep:nexacore-tee",
+    "dep:nexacore-fs",
+    "dep:tokio",
+    "dep:async-trait",
+    "dep:serde",
+    "dep:serde_json",
+    "dep:nexacore-cmd-curl",
+    "dep:parking_lot",
+    "dep:blake3",
+    "nexacore-hal/std",
+    "nexacore-hal/mock",
+    "nexacore-types/id-generation",
+    "tracing/std",
+]
+# `ollama-integration-tests` enables the live integration test that hits a
+# real Ollama (`GET /api/tags`) on the dev network (LXC 101). OFF by
+# default and never in CI — it requires reachable dev infrastructure. Run
+# with `cargo test -p nexacore-runtime --features ollama-integration-tests`.
+ollama-integration-tests = []
+# `fixture-model` compiles the canonical tiny Q8_0 fixture (`crate::fixture`)
+# into non-test builds.  Used by the Ring 3 `nexacore-runtime-image`, which
+# embeds the fixture as its on-device model (TASK-13-pre / ADR-0034).
+fixture-model = []
+
+[dependencies]
+# Foundational deps of the no_std inference-engine subset.  Declared with
+# explicit paths because a member cannot override the workspace dependency's
+# `default-features` (same pattern as nexacore-kernel/nexacore-hal; ADR-0034).
+nexacore-types      = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-hal        = { path = "../nexacore-hal",   version = "0.2.0", default-features = false }
+# `hashbrown` replaces `std::collections::HashMap` in the BPE tokenizer so it
+# builds without std — it IS the std HashMap implementation (ADR-0034 §3).
+hashbrown       = { workspace = true }
+# tracing core works in no_std; the `std` feature (forwarded above) adds the
+# std::error::Error integration.  Declared path-style for the same
+# default-features reason as nexacore-types.
+tracing         = { version = "0.1", default-features = false }
+# thiserror 2 is no_std-capable (workspace pin already disables defaults).
+thiserror       = { workspace = true }
+
+# --- std-only service surface (gated behind the `std` feature) ---
+nexacore-crypto     = { workspace = true, optional = true }
+nexacore-capability = { workspace = true, optional = true }
+nexacore-tee        = { workspace = true, optional = true }
+# NCFS in-memory filesystem — used by model_loader to read GGUF files.
+nexacore-fs         = { workspace = true, optional = true }
+tokio           = { workspace = true, optional = true }
+async-trait     = { workspace = true, optional = true }
+serde           = { workspace = true, optional = true }
+# `serde_json` parses Ollama's JSON request/response bodies in the
+# `provider::ollama` RemoteGpu backend (TASK-09). Ollama speaks JSON over
+# HTTP; postcard (the NexaCore wire format) does not apply to that boundary.
+serde_json      = { workspace = true, optional = true }
+# `nexacore-cmd-curl` is the no_std HTTP/1.1 protocol library (request build +
+# response parse). `provider::ollama` reuses it rather than duplicating
+# the wire logic (TASK-09 context: "preferire riuso a duplicazione").
+nexacore-cmd-curl   = { workspace = true, optional = true }
+# `parking_lot` is the workspace-standard sync Mutex (no PoisonError; see
+# clippy.toml disallowed_methods). Used by `provider::health` for the
+# hysteresis trackers and by the `audit::AuditSink` impl over
+# `Mutex<impl AuditLog>` (TASK-10).
+parking_lot     = { workspace = true, optional = true }
+# BLAKE3 is the NexaCore OS protocol-level hash (workspace pin: 1.5).
+# Used by ModelRegistry::load_from_bytes to verify model data integrity
+# against the signed hash in the model manifest.
+blake3          = { workspace = true, optional = true }
+
+[dev-dependencies]
+mockall  = { workspace = true }
+proptest = { workspace = true }
+# `test-util` enables tokio's paused virtual clock
+# (`#[tokio::test(start_paused = true)]`), used to test the periodic
+# health-probe task (TASK-10) without real-time sleeps. Test-only.
+tokio    = { workspace = true, features = ["test-util"] }
+# `trybuild` drives the compile-fail fixture that pins the Tier-0-only
+# invariant of `BackendRouter` (a `Tier1Request` must not type-check
+# against the router). Same pattern as nexacore-types' typestate fixtures.
+trybuild = { workspace = true }
+# `criterion` is used for benchmark harness (tech-spec pin: 0.5.x).
+# Apache-2.0/MIT dual-licensed; allowlist-compatible.
+criterion = { version = "0.5", features = ["html_reports"] }
+# TASK-17 Phase-2 gate: the zero-PII-boundary E2E test chains the
+# tokenization pipeline into the inference engine. Test-only — no
+# dependency cycle (nexacore-tokenization does NOT depend on nexacore-runtime).
+nexacore-tokenization = { workspace = true }
+nexacore-tee          = { workspace = true }
+
+[[bench]]
+name    = "decode_bench"
+harness = false
+
+# Q4_K dequantization throughput benchmark (TASK-16 / ADR-0038).
+# Uses criterion (std-only). The bench target is implicitly excluded from
+# bare-metal builds (`--target x86_64-unknown-none`) because Cargo does not
+# compile [[bench]] targets for non-host targets.
+[[bench]]
+name    = "q4k_dequant"
+harness = false

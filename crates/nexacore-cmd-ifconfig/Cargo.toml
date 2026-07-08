@@ -1,0 +1,40 @@
+# =============================================================================
+# nexacore-cmd-ifconfig — `ifconfig` command for NexaCore OS
+# =============================================================================
+# Network interface configuration command: list interfaces, show details,
+# set addresses, bring up/down.
+#
+# Architecture:
+#   `no_std + alloc` library crate. Zero external production dependencies.
+#
+# References:
+#   - NCIP-Net-N7.3 (ifconfig command specification)
+# =============================================================================
+
+[package]
+name             = "nexacore-cmd-ifconfig"
+description      = "ifconfig command for NexaCore OS — network interface configuration."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# Explicit path+version (not `workspace = true`) because Cargo does not allow
+# a member to override `default-features` on an inherited workspace
+# dependency. `default-features = false` opts out of `nexacore-types`'s
+# `id-generation` feature (pulls in `uuid` + `getrandom`, unsupported on
+# `x86_64-unknown-none`) — this crate only uses the plain wire types
+# (`Ipv4Addr`, `MacAddress`), so there's nothing here that needs it. Required
+# so this crate can be linked into bare-metal binaries (e.g. `nexacore-shell`'s
+# `ifconfig` command).
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }

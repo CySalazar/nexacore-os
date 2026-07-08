@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NexaCore OS — nexacore-attestation
+  Shield with checkmark — TEE attestation
+  Direction: C — Civic Tech / Generational
+  Source sprite: ../icons.svg (this is a single-icon extraction for inspection / direct use)
+  Geometry: 24x24 viewBox, 1.5 stroke, currentColor (defaults to charcoal #1F2421)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="nexacore-attestation" color="#1F2421">
+<g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M12 3 L20 6 V12 a9 9 0 0 1-8 9 a9 9 0 0 1-8-9 V6 Z"/>
+      <path d="M8.5 12 L11 14.5 L16 9.5"/>
+    </g>
+</svg>

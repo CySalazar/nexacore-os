@@ -1,0 +1,89 @@
+# =============================================================================
+# nexacore-usys — NexaCore OS userspace syscall wrapper library (mini-libc)
+# =============================================================================
+# This crate is the userspace complement of `nexacore-kernel`'s syscall ABI.
+# It wraps every syscall defined in `crates/nexacore-kernel/src/syscall.rs` behind
+# a safe Rust `Syscall` trait, enabling:
+#   - Type-safe syscall invocation in userspace programs and commands.
+#   - Mockable unit testing via the `Syscall` trait without a real kernel.
+#   - A `bare-metal` feature that activates `no_std + inline-asm` stubs for
+#     the actual NexaCore OS `x86_64-unknown-none` target.
+#
+# Design rationale:
+#   - A trait-based design keeps all callers testable on developer hosts
+#     (Linux/macOS) without a QEMU-based kernel environment.
+#   - `std` is the default: external shell commands and userspace daemons
+#     all need `String`, `Vec`, and `std::io` on Phase 1 host runs.
+#   - `bare-metal` feature switches the crate to `no_std + alloc` and
+#     compiles the `KernelSyscall` backend using `asm!` for the real kernel.
+#   - No external production dependencies: the kernel ABI is pure
+#     registers/pointers; no serialisation layer is needed.
+#
+# References:
+#   - crates/nexacore-kernel/src/syscall.rs  — SyscallNumber enum + ABI notes
+#   - docs/09-tech-specifications.md     — dependency policy
+#   - NCIP-Phase2-Entry-021              — Phase 2 userspace surface
+# =============================================================================
+
+[package]
+name             = "nexacore-usys"
+description      = "NexaCore OS userspace syscall wrapper library (mini-libc)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Features
+# -----------------------------------------------------------------------------
+[features]
+default = []
+# When building for the actual NexaCore OS kernel target (x86_64-unknown-none),
+# enable `no_std + alloc` mode and compile the `KernelSyscall` backend that
+# uses inline `asm!` to issue real `syscall` instructions.
+#
+# Without this feature the crate compiles normally against `std`, which is
+# correct for Phase 1 developer-host builds and for unit-testing userspace
+# logic on Linux/macOS.
+bare-metal = []
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+# Production: `nexacore-types` provides the socket request/response types, the
+# display-channel input event type, and the `wire::{encode_canonical,
+# decode_canonical}` audit point used by the `net` and `display` modules.
+# The syscall ABI for non-network / non-display calls is pure register/pointer
+# manipulation with no further dependencies.
+#
+# `default-features = false` suppresses `id-generation` (which pulls in
+# `getrandom` via `uuid`) so the crate builds cleanly on
+# `x86_64-unknown-none` when the `bare-metal` feature is active.  The `net`
+# and `display` modules only need `serde`/`postcard`-backed wire types; those
+# are compiled unconditionally by `nexacore-types` when the `serde` feature is
+# enabled (which it always is in the workspace's `nexacore-types` declaration).
+[dependencies]
+# `default-features = false` suppresses `id-generation` (which pulls in
+# `getrandom` via `uuid`) so the crate builds cleanly on
+# `x86_64-unknown-none` when the `bare-metal` feature is active.
+# Using an explicit path reference rather than `workspace = true` because
+# Cargo does not allow `default-features = false` to override the workspace
+# declaration's defaults (error: `default-features = false` cannot override
+# workspace's `default-features`).  The `serde` and `postcard`-backed wire
+# types needed by `net` and `display` are always compiled in `nexacore-types`
+# regardless of the `id-generation` feature.
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+
+# Dev-only: test harnesses that validate Errno mapping, flag constants, and
+# the mock Syscall implementation.  All deps are already workspace-pinned.
+[dev-dependencies]
+proptest = { workspace = true }

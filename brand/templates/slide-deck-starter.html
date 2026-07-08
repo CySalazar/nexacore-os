@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<!--
+  NexaCore OS / NexaCore Foundation — Slide deck starter (single-file HTML)
+  Direction:  C — Civic Tech / Generational
+  Use:        Open in a browser, press F for fullscreen, arrow keys to navigate.
+              Export to PDF via browser print dialog (page size: 1920×1080 landscape).
+  Customize:  Edit the .slide sections. Each <section class="slide"> is one slide.
+  Authoritative brand strategy: brand/STRATEGY.md
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexaCore Foundation — Deck Title</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  /* --- Brand tokens (subset of brand/colors/tokens.css and type-tokens.css) --- */
+  :root {
+    --petrol-500: #0F4C5C;
+    --petrol-700: #0A323C;
+    --petrol-200: #94B3BC;
+    --cream-300: #F4EBD0;
+    --cream-100: #FAF5E6;
+    --brick-500: #C03221;
+    --sage-500: #7A9E7E;
+    --charcoal-800: #1F2421;
+    --charcoal-500: #3E423E;
+    --font-display: 'Source Serif 4', Georgia, serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--charcoal-800); }
+  body {
+    font-family: var(--font-body);
+    color: var(--charcoal-800);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  .deck { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+  .slide {
+    position: absolute;
+    inset: 0;
+    background: var(--cream-300);
+    padding: 5vw 7vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+  .slide-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-family: var(--font-mono);
+    font-size: 0.85vw;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--charcoal-500);
+  }
+  .slide-header .mark {
+    display: flex;
+    align-items: center;
+    gap: 0.6vw;
+  }
+  .slide-header .mark svg { width: 1.8vw; height: 1.8vw; }
+  .slide-body { display: flex; flex-direction: column; justify-content: center; flex: 1; max-width: 86%; }
+  .slide-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-family: var(--font-mono);
+    font-size: 0.7vw;
+    letter-spacing: 0.1em;
+    color: var(--charcoal-500);
+  }
+
+  /* --- Slide variants --- */
+
+  /* Title slide */
+  .slide.title { background: var(--petrol-500); color: var(--cream-300); }
+  .slide.title .slide-header { color: var(--cream-300); opacity: 0.7; }
+  .slide.title .slide-footer { color: var(--cream-300); opacity: 0.7; }
+  .slide.title h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 6vw;
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    margin-bottom: 1.5vw;
+  }
+  .slide.title .subtitle {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 2vw;
+    opacity: 0.9;
+    max-width: 60%;
+  }
+
+  /* Section / divider slide */
+  .slide.section { background: var(--charcoal-800); color: var(--cream-300); }
+  .slide.section .slide-header { color: var(--cream-300); opacity: 0.55; }
+  .slide.section .slide-footer { color: var(--cream-300); opacity: 0.55; }
+  .slide.section .section-num {
+    font-family: var(--font-mono);
+    font-size: 1vw;
+    letter-spacing: 0.3em;
+    color: var(--brick-500);
+    margin-bottom: 2vw;
+  }
+  .slide.section h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 5vw;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+  }
+
+  /* Content slide */
+  .slide.content h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 3.2vw;
+    line-height: 1.1;
+    margin-bottom: 0.8vw;
+    color: var(--petrol-500);
+    letter-spacing: -0.01em;
+  }
+  .slide.content .lede {
+    font-family: var(--font-display);
+    font-size: 1.6vw;
+    color: var(--charcoal-500);
+    margin-bottom: 2vw;
+    max-width: 70%;
+    line-height: 1.4;
+  }
+  .slide.content .body { font-size: 1.3vw; line-height: 1.55; max-width: 80%; }
+  .slide.content ul { list-style: none; }
+  .slide.content ul li {
+    padding-left: 1.6vw;
+    position: relative;
+    margin-bottom: 0.8vw;
+  }
+  .slide.content ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.7vw;
+    width: 0.6vw;
+    height: 0.6vw;
+    border-radius: 50%;
+    background: var(--petrol-500);
+  }
+  .slide.content code, .slide.content pre {
+    font-family: var(--font-mono);
+    background: var(--cream-100);
+    padding: 0.2vw 0.4vw;
+    border-radius: 2px;
+    font-size: 0.95em;
+  }
+
+  /* Pull-quote slide */
+  .slide.quote { background: var(--cream-100); }
+  .slide.quote .quote-text {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 600;
+    font-size: 3.5vw;
+    line-height: 1.25;
+    color: var(--petrol-500);
+    max-width: 80%;
+    border-left: 0.4vw solid var(--brick-500);
+    padding-left: 2vw;
+  }
+  .slide.quote .attribution {
+    font-family: var(--font-mono);
+    font-size: 0.9vw;
+    color: var(--charcoal-500);
+    margin-top: 2vw;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* Closing slide */
+  .slide.closing { background: var(--petrol-500); color: var(--cream-300); }
+  .slide.closing .slide-header { color: var(--cream-300); opacity: 0.7; }
+  .slide.closing .slide-footer { color: var(--cream-300); opacity: 0.7; }
+  .slide.closing h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 4vw;
+    line-height: 1.1;
+    margin-bottom: 2vw;
+  }
+  .slide.closing .contact { font-family: var(--font-mono); font-size: 1.2vw; line-height: 1.7; letter-spacing: 0.06em; }
+
+  /* Navigation hint */
+  .nav-hint {
+    position: fixed;
+    bottom: 1vw;
+    right: 1vw;
+    font-family: var(--font-mono);
+    font-size: 0.7vw;
+    color: var(--charcoal-500);
+    opacity: 0.5;
+    letter-spacing: 0.15em;
+    pointer-events: none;
+  }
+  .slide.title .nav-hint, .slide.section .nav-hint, .slide.closing .nav-hint { color: var(--cream-300); }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- ============================================================
+       SLIDE 1 — TITLE
+       ============================================================ -->
+  <section class="slide title active">
+    <div class="slide-header">
+      <span>NexaCore Foundation · Stichting NexaCore</span>
+      <span class="mark">
+        <svg viewBox="0 0 80 80" aria-hidden="true">
+          <circle cx="40" cy="40" r="32" fill="none" stroke="#F4EBD0" stroke-width="1.8" opacity="0.5"/>
+          <circle cx="40" cy="8" r="5" fill="#F4EBD0"/><circle cx="67.7" cy="24" r="5" fill="#F4EBD0"/>
+          <circle cx="67.7" cy="56" r="5" fill="#F4EBD0"/><circle cx="40" cy="72" r="5" fill="#F4EBD0"/>
+          <circle cx="12.3" cy="56" r="5" fill="#F4EBD0"/><circle cx="12.3" cy="24" r="5" fill="#F4EBD0"/>
+          <circle cx="40" cy="40" r="6" fill="#C03221"/>
+        </svg>
+        NexaCore&nbsp;OS
+      </span>
+    </div>
+    <div class="slide-body">
+      <h1>Deck title goes here.</h1>
+      <p class="subtitle">An optional one-sentence subtitle. Source Serif 4 italic. Keep it short.</p>
+    </div>
+    <div class="slide-footer">
+      <span>Author · Role</span>
+      <span>2026-05-13 · v0.1</span>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 2 — SECTION DIVIDER
+       ============================================================ -->
+  <section class="slide section">
+    <div class="slide-header">
+      <span>NexaCore Foundation · Section</span>
+      <span>02</span>
+    </div>
+    <div class="slide-body">
+      <div class="section-num">PART 01 / 04</div>
+      <h2>Why now.</h2>
+    </div>
+    <div class="slide-footer">
+      <span>Deck title</span>
+      <span>02 / xx</span>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 3 — CONTENT WITH LEDE + BULLETS
+       ============================================================ -->
+  <section class="slide content">
+    <div class="slide-header">
+      <span>NexaCore OS · Phase 0</span>
+      <span>03</span>
+    </div>
+    <div class="slide-body">
+      <h2>Privacy by construction.</h2>
+      <p class="lede">The mesh protocol enforces privacy cryptographically — not by policy. A non-compliant node cannot produce valid traffic.</p>
+      <div class="body">
+        <ul>
+          <li>PII tokenization at the OS API level</li>
+          <li>Format-preserving encryption for routing metadata</li>
+          <li>zk-SNARK compliance proofs on every payload</li>
+          <li>TEE-bound decryption envelopes — mesh participation requires attestable hardware</li>
+        </ul>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Source: docs/04-security-model.md</span>
+      <span>03 / xx</span>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 4 — PULL QUOTE
+       ============================================================ -->
+  <section class="slide quote">
+    <div class="slide-header">
+      <span>NexaCore OS · Voice</span>
+      <span>04</span>
+    </div>
+    <div class="slide-body">
+      <p class="quote-text">We are building for the next 25 years. Decisions are evaluated on whether they will still be defensible in 2051.</p>
+      <p class="attribution">brand/STRATEGY.md · Direction C · 2026-05-13</p>
+    </div>
+    <div class="slide-footer">
+      <span>Deck title</span>
+      <span>04 / xx</span>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 5 — CLOSING
+       ============================================================ -->
+  <section class="slide closing">
+    <div class="slide-header">
+      <span>NexaCore Foundation · Stichting NexaCore</span>
+      <span>End</span>
+    </div>
+    <div class="slide-body">
+      <h2>Thank you.</h2>
+      <div class="contact">
+        cySalazar &nbsp;·&nbsp; hello@nexacoreos.com<br>
+        github.com/CySalazar/nexacore-os<br>
+        nexacoreos.com
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>NexaCore Foundation · Stichting NexaCore · Amsterdam</span>
+      <span>2026-05-13 · v0.1</span>
+    </div>
+  </section>
+
+  <div class="nav-hint">← → · F fullscreen</div>
+</div>
+
+<script>
+  // Minimal navigation logic — keyboard only. No external dependencies.
+  (function () {
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    let index = 0;
+    function show(i) {
+      slides.forEach(s => s.classList.remove('active'));
+      slides[i].classList.add('active');
+    }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        index = Math.min(index + 1, slides.length - 1); show(index); e.preventDefault();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        index = Math.max(index - 1, 0); show(index); e.preventDefault();
+      } else if (e.key === 'f' || e.key === 'F') {
+        if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); }
+        else { document.exitFullscreen(); }
+      } else if (e.key === 'Home') { index = 0; show(0); }
+      else if (e.key === 'End') { index = slides.length - 1; show(index); }
+    });
+  })();
+</script>
+</body>
+</html>

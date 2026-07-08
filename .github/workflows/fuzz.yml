@@ -1,0 +1,83 @@
+# =============================================================================
+# NexaCore OS — parser/wire-format fuzzing (WS13-02.8/.9/.10)
+# =============================================================================
+# Runs each cargo-fuzz target (WS13-02.2-.4) for a bounded time on a persisted
+# seed corpus and uploads any crash reproducer on failure:
+#   - one matrix job per fuzz target, N seconds each            (WS13-02.8)
+#   - the per-target corpus is cached across runs               (WS13-02.9)
+#   - on a crash, the reproducer is uploaded as an artifact     (WS13-02.10)
+#
+# Runs on PRs touching the fuzzed crates, on a weekly schedule (deeper soak),
+# and on demand. cargo-fuzz needs nightly + libFuzzer (the `llvm-tools` rustup
+# component ships the runtime).
+# =============================================================================
+
+name: fuzz
+
+on:
+  pull_request:
+    paths:
+      - "crates/nexacore-types/**"
+      - "crates/nexacore-fs/**"
+      - "crates/nexacore-net/**"
+  schedule:
+    - cron: "23 4 * * 1"   # Mondays 04:23 UTC — weekly soak
+  workflow_dispatch:
+    inputs:
+      max_total_time:
+        description: "Seconds to run each fuzz target"
+        required: false
+        default: "180"
+
+permissions:
+  contents: read
+
+env:
+  # Per-target wall-clock budget; the dispatch input overrides on manual runs.
+  FUZZ_SECONDS: ${{ github.event.inputs.max_total_time || '180' }}
+
+jobs:
+  fuzz:
+    name: fuzz ${{ matrix.crate }}/${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { crate: omni-types, target: wire_decode }
+          - { crate: omni-fs, target: ondisk_mount }
+          - { crate: omni-net, target: packet_parse }
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install nightly + cargo-fuzz
+        run: |
+          rustup toolchain install nightly --profile minimal --component rust-src --component llvm-tools-preview
+          cargo install cargo-fuzz --locked
+
+      - name: Restore fuzz corpus cache
+        uses: actions/cache@v4
+        with:
+          path: crates/${{ matrix.crate }}/fuzz/corpus/${{ matrix.target }}
+          # Versioned key so a new seed commit starts a fresh cache lineage;
+          # restore-keys lets a run inherit the previous corpus.
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.sha }}
+          restore-keys: |
+            fuzz-corpus-${{ matrix.target }}-
+
+      - name: Run fuzz target
+        env:
+          CRATE: ${{ matrix.crate }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          cd "crates/${CRATE}"
+          cargo +nightly fuzz run "${TARGET}" -- -max_total_time="${FUZZ_SECONDS}"
+
+      - name: Upload crash reproducer
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crash-${{ matrix.target }}
+          path: crates/${{ matrix.crate }}/fuzz/artifacts/${{ matrix.target }}/
+          if-no-files-found: ignore

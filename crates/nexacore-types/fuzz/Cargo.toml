@@ -1,0 +1,33 @@
+# =============================================================================
+# nexacore-types fuzz harness (cargo-fuzz) — WS13-02.2
+# =============================================================================
+# Fuzzes the postcard canonical wire codec (`nexacore_types::wire`). NOT a
+# workspace member — cargo-fuzz requires a standalone bin package (see the
+# workspace root `Cargo.toml` `[workspace] exclude` list).
+#
+# Usage (Rust nightly + cargo-fuzz):
+#   cargo install cargo-fuzz
+#   cd crates/nexacore-types
+#   cargo +nightly fuzz run wire_decode
+# =============================================================================
+
+[package]
+name = "nexacore-types-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "Apache-2.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+nexacore-types = { path = "..", default-features = false }
+
+[[bin]]
+name = "wire_decode"
+path = "fuzz_targets/wire_decode.rs"
+test = false
+doc = false
+bench = false

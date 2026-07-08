@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NexaCore OS — GitHub social preview (1280 × 640)
+  Direction:  C — Civic Tech / Generational
+  Use:        Repository "Settings → Options → Social preview" upload
+  Export:     PNG 1280×640 — GitHub recommends ≥640 px height; we use the recommended dimensions exactly
+  Authoritative: brand/STRATEGY.md
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1280 640"
+     role="img"
+     aria-label="NexaCore OS — An AI-native operating system. Local-first. Decentralized.">
+  <defs>
+    <style>
+      .label    { font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
+      .wordmark { font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif; font-weight: 700; }
+      .tagline  { font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif; font-weight: 400; }
+      .meta     { font-family: 'IBM Plex Mono', monospace; font-weight: 400; }
+    </style>
+  </defs>
+
+  <!-- Cream canvas (matches dev-tooling docs aesthetic) -->
+  <rect width="1280" height="640" fill="#F4EBD0"/>
+
+  <!-- Top status strip -->
+  <rect x="0" y="0" width="1280" height="48" fill="#0F4C5C"/>
+  <text x="64" y="30" class="label" font-size="14" fill="#F4EBD0" letter-spacing="3">
+    GITHUB.COM/CYSALAZAR/NexaCore · PHASE 0 · v0.1-DRAFT
+  </text>
+
+  <!-- Mark and wordmark, centered vertically -->
+  <g transform="translate(64,180)" aria-hidden="true">
+    <circle cx="60" cy="60" r="52" fill="none" stroke="#0F4C5C" stroke-width="2" opacity="0.35"/>
+    <circle cx="60"  cy="8"   r="8" fill="#0F4C5C"/>
+    <circle cx="105" cy="34"  r="8" fill="#0F4C5C"/>
+    <circle cx="105" cy="86"  r="8" fill="#0F4C5C"/>
+    <circle cx="60"  cy="112" r="8" fill="#0F4C5C"/>
+    <circle cx="15"  cy="86"  r="8" fill="#0F4C5C"/>
+    <circle cx="15"  cy="34"  r="8" fill="#0F4C5C"/>
+    <circle cx="60" cy="60" r="10" fill="#C03221"/>
+  </g>
+
+  <!-- Wordmark + tagline block -->
+  <text x="240" y="240" class="wordmark" font-size="96" fill="#0F4C5C" letter-spacing="-1">NexaCore OS</text>
+  <text x="240" y="296" class="tagline" font-size="32" fill="#1F2421" letter-spacing="-0.3">
+    An AI-native operating system. Local-first. Decentralized.
+  </text>
+
+  <!-- Hairline divider -->
+  <line x1="240" y1="332" x2="1216" y2="332" stroke="#0F4C5C" stroke-width="0.6" opacity="0.4"/>
+
+  <!-- Three quick-facts row -->
+  <g class="meta" font-size="15" fill="#1F2421" letter-spacing="0.4">
+    <text x="240" y="368">LANGUAGE</text>
+    <text x="240" y="394" font-size="20" font-weight="600" fill="#0F4C5C">Rust 2024</text>
+  </g>
+  <g class="meta" font-size="15" fill="#1F2421" letter-spacing="0.4">
+    <text x="500" y="368">MODEL ARCHITECTURE</text>
+    <text x="500" y="394" font-size="20" font-weight="600" fill="#0F4C5C">Mixture of Experts</text>
+  </g>
+  <g class="meta" font-size="15" fill="#1F2421" letter-spacing="0.4">
+    <text x="820" y="368">LICENSE</text>
+    <text x="820" y="394" font-size="20" font-weight="600" fill="#0F4C5C">AGPL-3.0 / dual</text>
+  </g>
+
+  <!-- Bottom strip: governance commitment -->
+  <rect x="0" y="568" width="1280" height="72" fill="#1F2421"/>
+  <text x="64" y="612" class="tagline" font-style="italic" font-size="24" fill="#F4EBD0">
+    Privacy enforced cryptographically — not by policy.
+  </text>
+  <text x="1216" y="612" class="label" font-size="14" fill="#F4EBD0" opacity="0.75" text-anchor="end" letter-spacing="3">
+    STEWARDED BY NexaCore FOUNDATION
+  </text>
+</svg>

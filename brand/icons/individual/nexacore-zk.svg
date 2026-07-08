@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NexaCore OS — nexacore-zk
+  Eye with strikethrough — zero-knowledge proof
+  Direction: C — Civic Tech / Generational
+  Source sprite: ../icons.svg (this is a single-icon extraction for inspection / direct use)
+  Geometry: 24x24 viewBox, 1.5 stroke, currentColor (defaults to charcoal #1F2421)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="nexacore-zk" color="#1F2421">
+<g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M2 12 Q 7 5 12 5 Q 17 5 22 12 Q 17 19 12 19 Q 7 19 2 12 Z"/>
+      <circle cx="12" cy="12" r="2.5"/>
+      <line x1="4" y1="4" x2="20" y2="20"/>
+    </g>
+</svg>

@@ -1,0 +1,35 @@
+# =============================================================================
+# nexacore-agent — Five-Agent framework (NCIP-022)
+# =============================================================================
+# Five-agent architecture for NexaCore OS: Orchestrator, Guidance, SysAdmin,
+# Security & Performance, and Task. Each agent is a first-class OS primitive
+# with declared policy, persistent context, capability tokens, computational
+# budget, and sandboxed execution.
+# =============================================================================
+
+[package]
+name             = "nexacore-agent"
+description      = "Five-agent framework for NexaCore OS — Orchestrator, Guidance, SysAdmin, Security, and Task agents."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+nexacore-types      = { workspace = true }
+nexacore-capability = { workspace = true }
+nexacore-runtime    = { workspace = true }
+tokio           = { workspace = true }
+async-trait     = { workspace = true }
+serde           = { workspace = true }
+tracing         = { workspace = true }
+thiserror       = { workspace = true }

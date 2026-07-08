@@ -1,0 +1,33 @@
+# =============================================================================
+# nexacore-ntfs — read-only NTFS (MFT) parser (WS3-05.6/.7)
+# =============================================================================
+# Host-testable, dependency-free reader for NTFS volumes. It parses the boot
+# sector geometry, applies the update-sequence (fixup) protection, decodes MFT
+# FILE records and their attributes ($STANDARD_INFORMATION / $FILE_NAME /
+# $DATA), and decodes non-resident data runs — strictly READ-ONLY, over an
+# immutable image seam.
+#
+# This is the NTFS member of the WS3-05 "compat read-only FS" set (FAT is
+# `nexacore-fatfs`, ext is `nexacore-extfs`). It carries no crypto and no `std`,
+# so it builds for both the developer host and the `x86_64-unknown-none` Ring-3
+# target.
+# =============================================================================
+
+[package]
+name             = "nexacore-ntfs"
+description      = "NexaCore OS read-only NTFS filesystem reader — boot-sector geometry, MFT FILE records + attribute parsing, update-sequence fixups, and non-resident data-run decoding over an immutable image seam (WS3-05)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]

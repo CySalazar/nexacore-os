@@ -1,0 +1,117 @@
+# =============================================================================
+# nexacore-container — NexaCore OS micro-VM container engine
+# =============================================================================
+# Reference implementation for `NCIP-Container-006`. Provides a Rust-native
+# container engine implementing the Firecracker/Kata micro-VM pattern with
+# per-container TEE attestation (Intel TDX / AMD SEV-SNP) as default on
+# capable hardware.
+#
+# Unlike the foundational `no_std + alloc` crates (`nexacore-types`,
+# `nexacore-crypto`, `nexacore-capability`, `nexacore-tee`, `nexacore-kernel`), this crate
+# is **std-enabled**. It runs as a userspace service on the host NexaCore OS:
+# it talks to KVM via ioctls, manages an OCI image cache on disk, spawns
+# per-virtio-backend processes, and exposes a REST API for management
+# tools (per `NCIP-Container-006` § 10). std is required for `std::fs`,
+# `std::process`, `std::sync`, and `std::net` primitives.
+#
+# Feature flags (per `NCIP-Container-006` § 10):
+#   - `kvm`     (default) — KVM-based hypervisor backend. Placeholder
+#                            in v0.1; the real implementation lands in
+#                            follow-up NCIPs (engine, image, virtio
+#                            backends).
+#   - `tdx`               — Intel TDX confidential VM. Transitively
+#                            enables `kvm`.
+#   - `sev-snp`           — AMD SEV-SNP confidential VM. Transitively
+#                            enables `kvm`.
+#   - `all-backends`      — convenience aggregate enabling every
+#                            hardware backend; useful for the
+#                            `--all-features` audit run on developer
+#                            machines.
+# =============================================================================
+
+[package]
+name             = "nexacore-container"
+description      = "NexaCoreContainer — micro-VM container engine for NexaCore OS (Linux + Windows-via-Wine) per NCIP-Container-006."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Feature flags
+# -----------------------------------------------------------------------------
+[features]
+default      = ["kvm"]
+kvm          = []
+tdx          = ["kvm"]
+sev-snp      = ["kvm"]
+all-backends = ["kvm", "tdx", "sev-snp"]
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+[dependencies]
+# Internal crates from the workspace.
+#
+# `nexacore-types`     — workspace error taxonomy + the canonical
+#                    wire-encoding helper (`nexacore-types::wire`). Per
+#                    `NCIP-Serde-004`, no direct `postcard::*` calls are
+#                    allowed in this crate; serialization MUST route
+#                    through the helper.
+# `nexacore-capability`— `CapabilityToken` is the unit of authorization for
+#                    every virtio backend's host-side capability check.
+# `nexacore-tee`       — provides the `TeeBackend` abstraction used by
+#                    `attestation.rs` to generate per-container quotes.
+nexacore-types      = { workspace = true }
+nexacore-capability = { workspace = true }
+nexacore-tee        = { workspace = true }
+
+# Error derive. `thiserror` v2 is the workspace-wide error-derive
+# crate (see `docs/09-tech-specifications.md`).
+thiserror = { workspace = true }
+
+# Synchronization. `parking_lot::Mutex` is the workspace-preferred replacement
+# for `std::sync::Mutex` (no PoisonError, simpler audit surface). The
+# `clippy.toml` disallowed-methods policy bans `std::sync::Mutex::new` and
+# redirects to `parking_lot`. Version pinned to workspace.
+parking_lot = { workspace = true }
+
+# Serialization. Used for `OciImageRef`, the NexaCore extension manifest in
+# image annotations, and `CapabilityProfile` definitions stored as TOML/
+# JSON on disk. Outbound encoding routes through `nexacore-types::wire`.
+serde = { workspace = true }
+
+# Async runtime. The engine's `provision` / `run` / `suspend` /
+# `terminate` methods are async-friendly because virtio backends are
+# spawned as separate processes and managed via IPC. We keep
+# `async-trait` to declare the trait surface; concrete async runtime
+# selection (tokio vs. smol) is intentionally deferred to a follow-up
+# NCIP so this scaffold stays minimal.
+async-trait = { workspace = true }
+
+# Structured logging at engine and virtio boundaries.
+tracing = { workspace = true }
+
+# -----------------------------------------------------------------------------
+# Dev-dependencies
+# -----------------------------------------------------------------------------
+[dev-dependencies]
+# Property-based tests for state-machine transitions and profile parsing.
+proptest = { workspace = true }
+# Future trait-level mocks for `ContainerEngine` when concrete backends
+# land; currently unused but retained so `cargo test --all-features` has
+# a stable dep graph across the v0.1 → v0.2 transition.
+mockall = { workspace = true }
+# `MockTeeBackend` drives the host-side confidential-VM attestation tests in
+# `confidential.rs`. The `mock` feature is dev-only so production builds keep
+# the lean attestation dependency surface.
+nexacore-tee = { workspace = true, features = ["mock"] }

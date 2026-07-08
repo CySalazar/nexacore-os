@@ -1,0 +1,28 @@
+# =============================================================================
+# nexacore-driver-tpm — TPM 2.0 driver (WS2-15)
+# =============================================================================
+# Host-testable core of the discrete-TPM 2.0 driver: the TIS and CRB MMIO
+# register maps plus TPM 2.0 command serialization (the command/response header,
+# password auth area, TPM2_PCR_Extend, and TPM2_Quote) and response-header
+# parsing. The MMIO locality handshake + command/response transfer land on the
+# rig (swtpm). `no_std + alloc`, big-endian wire, dependency-free.
+# =============================================================================
+
+[package]
+name             = "nexacore-driver-tpm"
+description      = "NexaCore OS TPM 2.0 driver core — TIS/CRB register maps, TPM2 command serialization (WS2-15)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]

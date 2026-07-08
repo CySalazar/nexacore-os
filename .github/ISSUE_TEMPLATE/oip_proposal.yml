@@ -1,0 +1,45 @@
+name: OIP proposal (pre-discussion)
+description: Float an OpenCore Improvement Proposal before drafting the full document
+labels: ["oip-required", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this to let the editors pre-validate scope **before** you write a full
+        OIP. The canonical process is [`oips/oip-process-001.md`](https://github.com/CySalazar/nexacore-os/blob/main/oips/oip-process-001.md);
+        the cover template is [`brand/templates/oip-cover.md`](https://github.com/CySalazar/nexacore-os/blob/main/brand/templates/oip-cover.md).
+  - type: input
+    id: title
+    attributes:
+      label: One-sentence abstract
+      description: If you cannot state it in one sentence, the proposal is not yet scoped.
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Standards Track
+        - Process
+        - Informational
+        - Meta
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Layer
+      options:
+        - "1 — Protocol"
+        - "2 — Specification"
+        - "3 — Operational"
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: The problem, and the specific docs / code paths that surfaced it.
+    validations:
+      required: true

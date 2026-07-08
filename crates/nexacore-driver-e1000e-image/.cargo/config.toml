@@ -1,0 +1,12 @@
+# =============================================================================
+# nexacore-driver-e1000e-image — cargo target configuration
+# =============================================================================
+# Mirrors the `kernel-runner/.cargo/config.toml` rationale (MB13.b): the
+# `x86_64-unknown-none` target spec produces ET_DYN/PIE ELFs by default,
+# which is what the kernel's `spawn_from_elf` expects (the ELF loader
+# was built against PIE per MB13.b). No relocation-model overrides are
+# required; the file is intentionally minimal so the workspace
+# `.cargo/config.toml` rustflags (force-soft SIMD cfgs) merge cleanly.
+# =============================================================================
+
+# This file is intentionally empty for the `x86_64-unknown-none` target.

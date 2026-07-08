@@ -1,0 +1,33 @@
+# =============================================================================
+# nexacore-image — Image viewer/editor core (WS8-03)
+# =============================================================================
+# Host-testable, device- and library-independent core of the NexaCore image
+# app: format sniffing + header parsing, an RGBA8 image buffer with crop /
+# rotate / flip, an integer zoom/pan viewport, an annotation layer (highlight /
+# arrow / text-block) with alpha compositing, and decode/encode trait seams
+# (the real PNG/JPEG/WebP/AVIF codecs are library-gated, mirroring WS8-02).
+# =============================================================================
+
+[package]
+name             = "nexacore-image"
+description      = "NexaCore OS image viewer/editor core — format parsing, RGBA buffer + crop/rotate/flip, zoom/pan viewport, annotations, decode/encode seams (WS8-03)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+# Self-contained `no_std + alloc` leaf crate: no workspace deps. Every effect
+# that needs a real codec library sits behind a trait, so the core is pure.
+[dependencies]

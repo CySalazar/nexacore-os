@@ -1,0 +1,112 @@
+NexaCore OS Mesh Handshake — Tamarin proof run record
+====================================================
+
+Date:               2026-05-12
+Operator:           cySalazar (implementer pass, founder review pending)
+Tamarin version:    1.12.0 (homebrew tap `tamarin-prover/tap`, arm64 bottle)
+Maude version:      3.5.1
+Source:             protocol-proofs/handshake.spthy (post-fix-pass — see
+                    commit recording this run for the model corrections)
+Command:            tamarin-prover handshake.spthy --prove
+Processing time:    ~1.36 s
+Exit code:          0
+
+Lemma verification summary
+--------------------------
+
+  mutual_authentication (all-traces):           verified (2 steps)   — I1
+  forward_secrecy (all-traces):                 verified (2 steps)   — I2
+  replay_resistance (all-traces):               verified (4 steps)   — I4 (partial)
+  kci_resistance (all-traces):                  verified (2 steps)   — I5
+  protocol_version_binding (all-traces):        verified (2 steps)   — I7
+  mutual_tee_attestation_binding (all-traces):  verified (2 steps)   — I3
+  measurement_root_binding (all-traces):        verified (4 steps)   — I7-extended
+  compliance_capability_no_downgrade            verified (2 steps)   — I8
+    (all-traces):
+
+All 8 declared lemmas verify under the symbolic adversary model with the
+restriction `caps_intersect_meet` (idempotence + commutativity of
+caps_intersect/2) and the builtins `diffie-hellman`, `signing`,
+`symmetric-encryption`, `hashing`.
+
+Model corrections applied during this run
+-----------------------------------------
+
+The pre-existing handshake.spthy committed under `feat(ncip): file
+NCIP-Voting-005 — voting weight formula (retire bootstrap defaults)` and
+its predecessor commits never executed under tamarin-prover (per the
+"Status of proofs (last manual run): TBD — execution deferred to P3.2"
+footer). This run surfaced four structural defects, which were fixed
+in-place to allow the prover to load the theory:
+
+1. `functions: pk/1` collided with the `signing` builtin (which provides
+   `pk/1` as a reserved function name in Tamarin 1.12). The user
+   declaration was removed.
+
+2. Rule `Responder_Receive_M3` referenced `dh2` in its `let`-binding
+   without binding it via state or input. Fix: pre-compute `chain_key_1`
+   in `Responder_Receive_M1_Send_M2` (where all the inputs to it are
+   available) and carry it through `Resp_Wait_M3` state instead of
+   re-deriving in M3.
+
+3. Action label `Verified_Sig_M3` was used as a bare identifier with no
+   argument list, which Tamarin parses as malformed. Fix:
+   `Verified_Sig_M3($B)`.
+
+4. Lemma `compliance_capability_no_downgrade` quantified over `A, B`
+   that did not appear in the body, violating Tamarin's guardedness
+   rule. Fix: extended `Verified_Caps_Negotiation` action label to
+   carry `$A, $B` so the lemma's universal quantifiers are guarded.
+
+5. Lemma bodies used `_` wildcards (`Sent_M2(B, _)`) and free term
+   variables (`Sent_M1(A, t1)`, `Advertised_Allowlist(A, allowlistA)`)
+   without existential quantification. Fix: introduced explicit
+   `Ex <name> #j.` quantifiers and re-formatted the disjunctions.
+
+Outstanding wellformedness warning (1)
+--------------------------------------
+
+  Message Derivation Checks
+  =========================
+  Rule Responder_Receive_M1_Send_M2:
+    Failed to derive Variable(s): mrA
+  Rule Initiator_Receive_M2_Send_M3:
+    Failed to derive Variable(s): capsB_recv, epk_B, k_resp_0, mrB,
+                                  mr_root_B, negCaps, nonceB, sigB
+  Rule Responder_Receive_M3:
+    (cleared after the chain_key_1 / dh2 fix)
+
+Interpretation: the responder and initiator rules pattern-match on
+variables that the symbolic adversary cannot freely construct (peer
+TEE measurements, peer nonces, peer ephemeral keys, peer capability
+sets). Tamarin's derivation checker therefore cannot rule out
+"unintended pattern matching", which is a heuristic concern — it does
+NOT contradict the lemmas that verified, because each lemma is proved
+over the action traces actually reachable in the model.
+
+The cryptographer reviewer (P3.2) should:
+
+  (a) Confirm that the adversary's actual capabilities in the
+      attestation chain match the assumptions the model encodes (in
+      particular, that the attacker does NOT receive measurement
+      values for honest peers as free inputs).
+  (b) Decide whether to convert any of these implicit assumptions into
+      explicit `restrictions:` blocks for completeness.
+  (c) Optionally add lemmas for I4 (full nonce-uniqueness) and I6 (UKS
+      resistance) per the original footer task list.
+
+Reproducing the run
+-------------------
+
+  cd protocol-proofs
+  tamarin-prover handshake.spthy --prove
+
+Expected output: every lemma on its own line ending in `verified
+(<N> steps)`; one wellformedness warning ("Failed to derive Variable(s)
+… in Responder_Receive_M1_Send_M2 / Initiator_Receive_M2_Send_M3"); no
+"falsified" lemma; no parse errors.
+
+The proof is symbolic and abstracts away side-channel attacks, timing
+attacks, implementation bugs, and the soundness of the TEE attestation
+chain itself. The cryptographer's review is what converts these
+symbolic proofs into a credible end-to-end security argument.

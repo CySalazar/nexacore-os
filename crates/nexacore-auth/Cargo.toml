@@ -1,0 +1,41 @@
+# =============================================================================
+# nexacore-auth — users / auth / identity core (WS12-05)
+# =============================================================================
+# Host-testable core of NexaCore's multi-user identity layer: the user-store
+# schema, passphrase hashing (behind a `PasswordHasher` seam — Argon2id is the
+# production backend, wired from `nexacore-crypto`), a PAM-class pluggable auth
+# stack, per-user privileges (the per-user root capability), per-user home-key
+# derivation, and account creation.
+#
+# Design: every strength-critical or platform-bound effect sits behind a trait
+# so the orchestration logic is exercised entirely host-side —
+#   - `PasswordHasher` abstracts the memory-hard hash (the crate ships a
+#     BLAKE3 placeholder; Argon2id plugs in at integration);
+#   - the TEE-bound credential (WS12-05.3) is the caller's sealing provider;
+#   - the auth stack composes `AuthModule`s with PAM-style control flow.
+# `no_std + alloc` so it compiles for the developer host and the Ring-3 target.
+# =============================================================================
+
+[package]
+name             = "nexacore-auth"
+description      = "NexaCore OS users/auth/identity core — user store, passphrase-hash seam (Argon2id), PAM-class auth stack, per-user privileges + home-key derivation, account creation (WS12-05)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# BLAKE3 for the placeholder password hasher and per-user home-key derivation
+# (keyed hashing). `no_std`-compatible; workspace pin. The production memory-hard
+# hasher (Argon2id, `nexacore-crypto::kdf`) plugs in behind the `PasswordHasher`
+# seam at integration.
+blake3 = { workspace = true }

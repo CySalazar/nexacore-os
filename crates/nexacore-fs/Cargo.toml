@@ -1,0 +1,42 @@
+# =============================================================================
+# nexacore-fs — Filesystem service skeleton for NexaCore OS
+# =============================================================================
+# Phase-1 skeleton: registers the BLK channel and returns
+# `FsResponse::NotImplemented` for every request.  Phase-2 grows this
+# into the native NCFS host per NCIP-FS-018.
+# =============================================================================
+
+[package]
+name             = "nexacore-fs"
+description      = "Filesystem service for NexaCore OS — NCFS Phase-2 on-disk format."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[dependencies]
+# `default-features = false` strips `id-generation` (uuid + getrandom), which
+# cannot build for `x86_64-unknown-none`. nexacore-fs only consumes
+# `nexacore_types::{blk, wire}`, both no_std-clean. Path-style because a member
+# cannot override the workspace dep's default-features (same pattern as
+# nexacore-hal/nexacore-runtime, ADR-0034). TASK-15.
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+# `serde` with `derive` and `alloc` features for `FileMetadata` wire serialization.
+# `default-features = false` keeps this crate `no_std + alloc` compatible,
+# consistent with the workspace `no_std` policy in /docs/09-tech-specifications.md.
+serde      = { workspace = true }
+# ChaCha20-Poly1305 AEAD for per-block integrity tags (NCIP-FS-Wire-023 §S4).
+# `alloc` feature required for no_std + alloc environments.
+chacha20poly1305 = { workspace = true }
+# BLAKE3 for future HKDF key derivation and FSCK content hashing (Phase 3).
+# `no_std`-compatible; workspace pin at 1.5.
+blake3 = { workspace = true }
+
+[lints]
+workspace = true

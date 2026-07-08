@@ -1,0 +1,51 @@
+# =============================================================================
+# nexacore-cmd-ping — `ping` command for NexaCore OS
+# =============================================================================
+# Provides ICMP echo request/reply packet construction, response parsing, RTT
+# calculation, and statistics aggregation for the `ping` network diagnostic
+# tool.
+#
+# Architecture:
+#   This is a `no_std + alloc` library crate following the driver pattern:
+#   the bare-metal binary entry point lives in a sibling `-image` crate
+#   (added when the command enters bring-up in the NexaCore OS image).
+#   The library is fully unit-testable on the developer host.
+#
+# Dependencies:
+#   - `nexacore-types`: foundational ICMP/IP wire types (IcmpHeader, Ipv4Addr, …)
+#   - Zero external production dependencies (dep-free by design)
+#
+# References:
+#   - RFC 792 (ICMP)
+#   - NCIP-Net-N7.1 (ping command specification)
+#   - nexacore_types::net — ICMP and IP wire types
+# =============================================================================
+
+[package]
+name             = "nexacore-cmd-ping"
+description      = "ping command for NexaCore OS — ICMP echo request/reply."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+# Production: `nexacore-types` only — ICMP / IP wire type surface.
+# No new external crates are introduced; this is dep-minimal by design.
+[dependencies]
+nexacore-types = { workspace = true }
+
+# Dev-only: property-based testing.
+[dev-dependencies]
+proptest = { workspace = true }

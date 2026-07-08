@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:rgba(15,76,92,0.22)}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:rgba(136,141,136,0.35);border-radius:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+  :root{
+    --bg-canvas:#F4EBD0; --bg-surface:#FFFFFF; --bg-surface-2:#FAF6EA;
+    --text-primary:#1F2421; --text-secondary:#3E423E; --text-tertiary:#8A8F86;
+    --text-accent:#0F4C5C; --border-default:#E7DFC8; --border-soft:#EFE9D8; --rule:#94B3BC;
+    --chrome-bg:rgba(250,245,230,0.72); --chrome-border:rgba(31,36,33,0.09);
+    --dock-bg:rgba(250,245,230,0.58); --dock-solid:rgba(249,245,234,0.94); --dock-border:rgba(31,36,33,0.11);
+    --tile-bg:rgba(15,76,92,0.07); --tile-hover:rgba(15,76,92,0.13);
+    --launcher-bg:rgba(252,250,244,0.90); --launcher-border:rgba(31,36,33,0.10);
+    --scrim:rgba(24,24,20,0.26);
+    --petrol:#0F4C5C; --petrol-50:#E6EEF0; --brick:#C03221; --sage:#7A9E7E; --sage-700:#587657; --warning:#B58D32;
+    --term-bg:#06202A; --term-text:#F4EBD0;
+    --shadow-win:0 26px 60px -14px rgba(5,25,33,0.30), 0 6px 16px rgba(5,25,33,0.10);
+    --shadow-dock:0 12px 34px -8px rgba(5,25,33,0.28);
+  }
+  [data-theme="dark"]{
+    --bg-canvas:#14171A; --bg-surface:#1E2225; --bg-surface-2:#252A2C;
+    --text-primary:#F4EBD0; --text-secondary:#D0CBB8; --text-tertiary:#8A8F86;
+    --text-accent:#F4EBD0; --border-default:#2C3134; --border-soft:#262B2E; --rule:#2C3134;
+    --chrome-bg:rgba(18,21,24,0.64); --chrome-border:rgba(255,255,255,0.07);
+    --dock-bg:rgba(26,30,33,0.80); --dock-solid:rgba(23,27,30,0.95); --dock-border:rgba(255,255,255,0.10);
+    --tile-bg:rgba(244,235,208,0.10); --tile-hover:rgba(244,235,208,0.18);
+    --launcher-bg:rgba(24,28,31,0.88); --launcher-border:rgba(255,255,255,0.08);
+    --scrim:rgba(0,0,0,0.44);
+    --term-bg:#06141A;
+    --shadow-win:0 32px 70px -14px rgba(0,0,0,0.62), 0 6px 16px rgba(0,0,0,0.4);
+    --shadow-dock:0 14px 40px -8px rgba(0,0,0,0.6);
+  }
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+  @keyframes lIn{from{opacity:0;transform:translateY(-8px) scale(0.985)}to{opacity:1;transform:none}}
+  @keyframes wIn{from{opacity:0;transform:translateY(6px) scale(0.99)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<div ref="{{ setRoot }}" style="position:fixed;inset:0;overflow:hidden;background:var(--bg-canvas);font-family:'Inter',sans-serif;color:var(--text-primary)">
+
+  <!-- WALLPAPER -->
+  <div style="{{ wallStyle }}"></div>
+  <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(1100px 600px at 78% -8%, rgba(15,76,92,0.10), transparent 60%)"></div>
+
+  <!-- ============ MENU BAR ============ -->
+  <div style="position:absolute;top:0;left:0;right:0;height:34px;z-index:900;display:flex;align-items:center;gap:2px;padding:0 12px;background:var(--chrome-bg);backdrop-filter:blur(26px) saturate(1.4);-webkit-backdrop-filter:blur(26px) saturate(1.4);border-bottom:1px solid var(--chrome-border)">
+    <div onClick="{{ openLauncher }}" title="Menu NexaCore" style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;cursor:pointer;color:var(--text-accent)">
+      <svg width="17" height="17" viewBox="0 0 80 80"><g fill="currentColor"><circle cx="40" cy="10" r="4.6"/><circle cx="66" cy="25" r="4.6"/><circle cx="66" cy="55" r="4.6"/><circle cx="40" cy="70" r="4.6"/><circle cx="14" cy="55" r="4.6"/><circle cx="14" cy="25" r="4.6"/></g><circle cx="40" cy="40" r="6.4" fill="#C03221"/></svg>
+    </div>
+    <span style="font-size:13px;font-weight:700;letter-spacing:-0.01em;padding:0 10px 0 5px">{{ focusedApp }}</span>
+    <span style="width:1px;height:14px;background:var(--chrome-border)"></span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-tertiary);letter-spacing:0.04em;padding-left:10px">nodo-01 Â· spazio 1</span>
+
+    <div style="flex:1"></div>
+
+    <!-- AI status â€” the NexaCore signature -->
+    <div title="Backend IA locale Â· fail-close" style="display:flex;align-items:center;gap:7px;height:22px;padding:0 10px;border-radius:999px;background:var(--tile-bg);cursor:default">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--sage);box-shadow:0 0 0 3px rgba(122,158,126,0.20)"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.02em;color:var(--text-primary)">IA Â· GPU Â· gemma4</span>
+    </div>
+
+    <div title="Mesh Â· 3 peer attestati" style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;cursor:default;color:var(--text-secondary)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="1.5"/><circle cx="19" cy="16" r="1.5"/><circle cx="5" cy="16" r="1.5"/><path d="M12 6v4M11 11l-5 4M13 11l5 4"/></svg>
+    </div>
+    <div title="Volume" style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;cursor:default;color:var(--text-secondary)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h3l5 4V5L7 9H4z"/><path d="M16 9.5a3.5 3.5 0 0 1 0 5"/></svg>
+    </div>
+    <div onClick="{{ openLauncher }}" title="Cerca (Spotlight)" style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;cursor:pointer;color:var(--text-secondary)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+    </div>
+    <div onClick="{{ toggleTheme }}" title="Aspetto chiaro / scuro" style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;cursor:pointer;color:var(--text-secondary)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">{{ themeIcon }}</svg>
+    </div>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-primary);padding:0 6px 0 6px;letter-spacing:0.01em;cursor:default">{{ clock }}</span>
+    <div title="cySalazar" style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#0F4C5C,#0A323C);color:#F4EBD0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;cursor:default">S</div>
+  </div>
+
+  <!-- ============ WINDOWS ============ -->
+
+  <!-- Terminal -->
+  <div style="{{ winTerminal.style }}">
+    <div onPointerDown="{{ winTerminal.focus }}" style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--term-bg);border:1px solid var(--border-default);border-radius:17px;overflow:hidden;box-shadow:var(--shadow-win);animation:wIn .28s cubic-bezier(0,0,0.2,1)">
+      <div onPointerDown="{{ winTerminal.drag }}" style="position:relative;height:42px;flex:none;display:flex;align-items:center;padding:0 14px;background:rgba(6,20,26,0.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06);cursor:grab">
+        <sc-if value="{{ winTerminal.focused }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;top:0;left:16px;right:16px;height:2px;background:var(--brick);border-radius:0 0 2px 2px"></div></sc-if>
+        <span style="font-size:12.5px;font-weight:500;color:#D0CBB8;font-family:'IBM Plex Mono',monospace;pointer-events:none">Terminal â€” omni-shell</span>
+        <div style="flex:1"></div>
+        <div style="display:flex;gap:2px;align-items:center;background:rgba(127,133,130,0.10);border-radius:11px;padding:3px">
+          <button onClick="{{ winTerminal.min }}" title="Riduci" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#9aa39a;cursor:pointer;padding:0" style-hover="background:rgba(181,141,50,0.24);color:#d9b25e"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10.5l5 4.5 5-4.5"/></svg></button>
+          <button onClick="{{ winTerminal.max }}" title="Ingrandisci" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#9aa39a;cursor:pointer;padding:0" style-hover="background:rgba(122,158,126,0.26);color:#9cbc9f"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5H5.2v4.3M14.5 5H18.8v4.3M9.5 19H5.2v-4.3M14.5 19H18.8v-4.3"/></svg></button>
+          <button onClick="{{ winTerminal.close }}" title="Chiudi" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#9aa39a;cursor:pointer;padding:0" style-hover="background:#C03221;color:#ffffff"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+        </div>
+      </div>
+      <div ref="{{ setTermBody }}" onClick="{{ focusTermInput }}" style="flex:1;overflow:auto;padding:14px 16px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.65;color:var(--term-text);white-space:pre-wrap;word-break:break-word;cursor:text">
+        <sc-for list="{{ term.lines }}" as="ln" hint-placeholder-count="8"><div style="min-height:1px">{{ ln }}</div></sc-for>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:2px">
+          <span style="color:var(--sage);flex:none">guest@nexacore</span><span style="color:#6C7B7A;flex:none">~</span><span style="color:var(--brick);flex:none">â¯</span>
+          <input ref="{{ setTermInput }}" value="{{ term.value }}" onInput="{{ term.onInput }}" onKeyDown="{{ term.onKey }}" spellcheck="false" autocomplete="off" style="flex:1;min-width:0;background:transparent;border:none;outline:none;color:var(--term-text);font-family:'IBM Plex Mono',monospace;font-size:12.5px;caret-color:var(--sage)"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NexaCore Helper -->
+  <div style="{{ winHelper.style }}">
+    <div onPointerDown="{{ winHelper.focus }}" style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:17px;overflow:hidden;box-shadow:var(--shadow-win);animation:wIn .28s cubic-bezier(0,0,0.2,1)">
+      <div onPointerDown="{{ winHelper.drag }}" style="position:relative;height:42px;flex:none;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border-soft);cursor:grab">
+        <sc-if value="{{ winHelper.focused }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;top:0;left:16px;right:16px;height:2px;background:var(--brick);border-radius:0 0 2px 2px"></div></sc-if>
+        <span style="font-size:13px;font-weight:600;color:var(--text-primary);pointer-events:none">NexaCore Helper</span>
+        <div style="flex:1"></div>
+        <div style="display:flex;gap:2px;align-items:center;background:rgba(127,133,130,0.10);border-radius:11px;padding:3px">
+          <button onClick="{{ winHelper.min }}" title="Riduci" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;padding:0" style-hover="background:rgba(181,141,50,0.20);color:#9a7526"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10.5l5 4.5 5-4.5"/></svg></button>
+          <button onClick="{{ winHelper.max }}" title="Ingrandisci" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;padding:0" style-hover="background:rgba(122,158,126,0.22);color:#587657"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5H5.2v4.3M14.5 5H18.8v4.3M9.5 19H5.2v-4.3M14.5 19H18.8v-4.3"/></svg></button>
+          <button onClick="{{ winHelper.close }}" title="Chiudi" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;padding:0" style-hover="background:#C03221;color:#ffffff"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+        </div>
+      </div>
+      <div style="flex:none;display:flex;align-items:center;gap:8px;padding:9px 16px;border-bottom:1px solid var(--border-soft);background:var(--bg-surface-2)">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--sage)"></span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-secondary);letter-spacing:0.02em">LOCALE Â· GPU Â· gemma4:latest Â· fail-close</span>
+      </div>
+      <div ref="{{ setHelperBody }}" style="flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:14px">
+        <sc-for list="{{ helper.msgs }}" as="m" hint-placeholder-count="4">
+          <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ true }}">
+            <div style="align-self:flex-end;max-width:82%;background:var(--petrol);color:#F4EBD0;padding:9px 13px;border-radius:14px 14px 4px 14px;font-size:13.5px;line-height:1.5">{{ m.text }}</div>
+          </sc-if>
+          <sc-if value="{{ m.isBot }}" hint-placeholder-val="{{ true }}">
+            <div style="align-self:flex-start;max-width:88%;display:flex;flex-direction:column;gap:6px">
+              <div style="background:var(--bg-surface-2);color:var(--text-primary);padding:10px 13px;border-radius:14px 14px 14px 4px;font-size:13.5px;line-height:1.55;border:1px solid var(--border-soft)">{{ m.text }}</div>
+              <div style="display:flex;align-items:center;gap:6px;padding-left:4px">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:0.04em;color:var(--sage-700);background:rgba(122,158,126,0.16);padding:2px 7px;border-radius:3px">{{ m.badge }}</span>
+              </div>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+      <div style="flex:none;padding:12px 14px;border-top:1px solid var(--border-soft);display:flex;align-items:center;gap:9px;background:var(--bg-surface)">
+        <input value="{{ helper.value }}" onInput="{{ helper.onInput }}" onKeyDown="{{ helper.onKey }}" placeholder="Chiedi a NexaCore â€” gira in locale sul tuo nodo" spellcheck="false" style="flex:1;min-width:0;background:var(--bg-surface-2);border:1px solid var(--border-default);border-radius:10px;padding:10px 13px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text-primary);outline:none"/>
+        <button onClick="{{ helper.send }}" style="flex:none;width:38px;height:38px;border:none;border-radius:10px;background:var(--petrol);color:#F4EBD0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Files -->
+  <div style="{{ winFiles.style }}">
+    <div onPointerDown="{{ winFiles.focus }}" style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:17px;overflow:hidden;box-shadow:var(--shadow-win);animation:wIn .28s cubic-bezier(0,0,0.2,1)">
+      <div onPointerDown="{{ winFiles.drag }}" style="position:relative;height:42px;flex:none;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border-soft);cursor:grab">
+        <sc-if value="{{ winFiles.focused }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;top:0;left:16px;right:16px;height:2px;background:var(--brick);border-radius:0 0 2px 2px"></div></sc-if>
+        <span style="font-size:13px;font-weight:600;color:var(--text-primary);pointer-events:none">File</span>
+        <div style="flex:1"></div>
+        <div style="display:flex;gap:2px;align-items:center;background:rgba(127,133,130,0.10);border-radius:11px;padding:3px">
+          <button onClick="{{ winFiles.min }}" title="Riduci" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;padding:0" style-hover="background:rgba(181,141,50,0.20);color:#9a7526"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10.5l5 4.5 5-4.5"/></svg></button>
+          <button onClick="{{ winFiles.max }}" title="Ingrandisci" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;padding:0" style-hover="background:rgba(122,158,126,0.22);color:#587657"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5H5.2v4.3M14.5 5H18.8v4.3M9.5 19H5.2v-4.3M14.5 19H18.8v-4.3"/></svg></button>
+          <button onClick="{{ winFiles.close }}" title="Chiudi" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;padding:0" style-hover="background:#C03221;color:#ffffff"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;min-height:0">
+        <div style="width:172px;flex:none;background:var(--bg-surface-2);border-right:1px solid var(--border-soft);padding:12px 8px;overflow:auto">
+          <div style="font-size:10.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-tertiary);padding:6px 8px 4px">Locale</div>
+          <div style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:7px;font-size:12.5px;background:rgba(15,76,92,0.10);color:var(--text-accent);font-weight:500"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a2 2 0 0 1 2-2h3.2l1.8 2H19a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Documenti</span></div>
+          <div style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:7px;font-size:12.5px;color:var(--text-secondary)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a2 2 0 0 1 2-2h3.2l1.8 2H19a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Scaricati</span></div>
+          <div style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:7px;font-size:12.5px;color:var(--text-secondary)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a2 2 0 0 1 2-2h3.2l1.8 2H19a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>oip-drafts</span></div>
+          <div style="font-size:10.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-tertiary);padding:14px 8px 4px">Mesh</div>
+          <div style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:7px;font-size:12.5px;color:var(--text-secondary)"><span style="width:6px;height:6px;border-radius:50%;background:var(--sage);margin-left:3px;margin-right:2px"></span><span>node-02</span></div>
+          <div style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:7px;font-size:12.5px;color:var(--text-secondary)"><span style="width:6px;height:6px;border-radius:50%;background:var(--sage);margin-left:3px;margin-right:2px"></span><span>node-03</span></div>
+        </div>
+        <div style="flex:1;overflow:auto;padding:8px 6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;font-size:13px"><span style="display:flex;align-items:center;gap:10px;color:var(--text-primary)"><span style="color:var(--text-tertiary);display:flex"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h6.5L18 8v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><path d="M13 3.5V8h5"/></svg></span>README.md</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-tertiary)">4 KB</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;font-size:13px"><span style="display:flex;align-items:center;gap:10px;color:var(--text-primary)"><span style="color:var(--text-tertiary);display:flex"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h6.5L18 8v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><path d="M13 3.5V8h5"/></svg></span>kernel.log</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-tertiary)">128 KB</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;font-size:13px"><span style="display:flex;align-items:center;gap:10px;color:var(--text-primary)"><span style="color:var(--text-tertiary);display:flex"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h6.5L18 8v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><path d="M13 3.5V8h5"/></svg></span>mesh-peers.toml</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-tertiary)">2 KB</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;font-size:13px"><span style="display:flex;align-items:center;gap:10px;color:var(--text-primary)"><span style="color:var(--sage-700);display:flex"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></span>attest.sig</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--sage-700)">verificato</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Monitor -->
+  <div style="{{ winMonitor.style }}">
+    <div onPointerDown="{{ winMonitor.focus }}" style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:17px;overflow:hidden;box-shadow:var(--shadow-win);animation:wIn .28s cubic-bezier(0,0,0.2,1)">
+      <div onPointerDown="{{ winMonitor.drag }}" style="position:relative;height:42px;flex:none;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border-soft);cursor:grab">
+        <sc-if value="{{ winMonitor.focused }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;top:0;left:16px;right:16px;height:2px;background:var(--brick);border-radius:0 0 2px 2px"></div></sc-if>
+        <span style="font-size:13px;font-weight:600;color:var(--text-primary);pointer-events:none">Monitor di sistema</span>
+        <div style="flex:1"></div>
+        <div style="display:flex;gap:2px;align-items:center;background:rgba(127,133,130,0.10);border-radius:11px;padding:3px">
+          <button onClick="{{ winMonitor.min }}" title="Riduci" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;padding:0" style-hover="background:rgba(181,141,50,0.20);color:#9a7526"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10.5l5 4.5 5-4.5"/></svg></button>
+          <button onClick="{{ winMonitor.max }}" title="Ingrandisci" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;padding:0" style-hover="background:rgba(122,158,126,0.22);color:#587657"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5H5.2v4.3M14.5 5H18.8v4.3M9.5 19H5.2v-4.3M14.5 19H18.8v-4.3"/></svg></button>
+          <button onClick="{{ winMonitor.close }}" title="Chiudi" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;padding:0" style-hover="background:#C03221;color:#ffffff"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+        </div>
+      </div>
+      <div style="flex:1;overflow:auto;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start">
+        <div style="grid-column:1/3;border:1px solid var(--border-soft);border-radius:11px;padding:14px 15px;background:var(--bg-surface-2);display:flex;align-items:center;gap:13px">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(122,158,126,0.16);display:flex;align-items:center;justify-content:center;color:var(--sage-700)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="6" width="6" height="12" rx="0.75"/><line x1="3" y1="9" x2="9" y2="9"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="3" y1="15" x2="9" y2="15"/><line x1="15" y1="12" x2="21" y2="12"/><polyline points="18.5 9.5 21 12 18.5 14.5"/></svg></div>
+          <div style="flex:1">
+            <div style="font-size:13.5px;font-weight:600">Backend IA â€” GPU</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-secondary);margin-top:2px">127.0.0.1 Â· gemma4:latest Â· locale</div>
+          </div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:0.05em;color:var(--sage-700);background:rgba(122,158,126,0.16);padding:3px 9px;border-radius:999px">HEALTHY</span>
+        </div>
+
+        <div style="border:1px solid var(--border-soft);border-radius:11px;padding:14px 15px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="1.5"/><circle cx="19" cy="16" r="1.5"/><circle cx="5" cy="16" r="1.5"/><path d="M12 6v4M11 11l-5 4M13 11l5 4"/></svg> Mesh Â· 3 peer</div>
+          <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-secondary);padding:3px 0"><span><span style="color:var(--sage)">â—</span> node-01</span><span>1.2 ms</span></div>
+          <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-secondary);padding:3px 0"><span><span style="color:var(--sage)">â—</span> node-02</span><span>3.4 ms</span></div>
+          <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-secondary);padding:3px 0"><span><span style="color:var(--sage)">â—</span> node-03</span><span>4.1 ms</span></div>
+        </div>
+
+        <div style="border:1px solid var(--border-soft);border-radius:11px;padding:14px 15px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L20 6 V12 a9 9 0 0 1-8 9 a9 9 0 0 1-8-9 V6 Z"/><path d="M8.5 12 L11 14.5 L16 9.5"/></svg> Attestazione TEE</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-secondary);line-height:1.7">stato&#9;<span style="color:var(--sage-700)">verificato</span><br/>measure&#9;0x9f3aâ€¦c2e1<br/>quote&#9;SEV-SNP</div>
+        </div>
+
+        <div style="grid-column:1/3;display:flex;gap:12px">
+          <div style="flex:1;border:1px solid var(--border-soft);border-radius:11px;padding:12px 14px"><div style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-tertiary)">CPU</div><div style="font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;color:var(--text-primary);margin-top:3px">18%</div></div>
+          <div style="flex:1;border:1px solid var(--border-soft);border-radius:11px;padding:12px 14px"><div style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-tertiary)">Memoria</div><div style="font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;color:var(--text-primary);margin-top:3px">3.2 GB</div></div>
+          <div style="flex:1;border:1px solid var(--border-soft);border-radius:11px;padding:12px 14px"><div style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-tertiary)">Uptime</div><div style="font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;color:var(--text-primary);margin-top:3px">4h 12m</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings / Control Center -->
+  <div style="{{ winSettings.style }}">
+    <div onPointerDown="{{ winSettings.focus }}" style="width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:17px;overflow:hidden;box-shadow:var(--shadow-win);animation:wIn .28s cubic-bezier(0,0,0.2,1)">
+      <div onPointerDown="{{ winSettings.drag }}" style="position:relative;height:42px;flex:none;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border-soft);cursor:grab">
+        <sc-if value="{{ winSettings.focused }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;top:0;left:16px;right:16px;height:2px;background:var(--brick);border-radius:0 0 2px 2px"></div></sc-if>
+        <span style="font-size:13px;font-weight:600;color:var(--text-primary);pointer-events:none">Centro di controllo</span>
+        <div style="flex:1"></div>
+        <div style="display:flex;gap:2px;align-items:center;background:rgba(127,133,130,0.10);border-radius:11px;padding:3px">
+          <button onClick="{{ winSettings.min }}" title="Riduci" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;padding:0" style-hover="background:rgba(181,141,50,0.20);color:#9a7526"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10.5l5 4.5 5-4.5"/></svg></button>
+          <button onClick="{{ winSettings.max }}" title="Ingrandisci" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;padding:0" style-hover="background:rgba(122,158,126,0.22);color:#587657"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5H5.2v4.3M14.5 5H18.8v4.3M9.5 19H5.2v-4.3M14.5 19H18.8v-4.3"/></svg></button>
+          <button onClick="{{ winSettings.close }}" title="Chiudi" style="width:30px;height:24px;border:none;background:transparent;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;padding:0" style-hover="background:#C03221;color:#ffffff"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+        </div>
+      </div>
+      <div style="flex:1;overflow:auto;padding:18px 20px;display:flex;flex-direction:column;gap:20px">
+        <div>
+          <div style="font-family:'Source Serif 4',serif;font-size:17px;font-weight:600;margin-bottom:12px">Aspetto</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:13.5px;color:var(--text-secondary)">Tema del sistema</span>
+            <div style="display:flex;padding:3px;border-radius:9px;background:var(--bg-surface-2);border:1px solid var(--border-default)">
+              <button onClick="{{ setLight }}" style="{{ segLight }}">Chiaro</button>
+              <button onClick="{{ setDark }}" style="{{ segDark }}">Scuro</button>
+            </div>
+          </div>
+        </div>
+        <div style="height:1px;background:var(--border-soft)"></div>
+        <div>
+          <div style="font-family:'Source Serif 4',serif;font-size:17px;font-weight:600;margin-bottom:12px">Intelligenza e Privacy</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">
+            <div><div style="font-size:13.5px">Local-first</div><div style="font-size:11.5px;color:var(--text-tertiary);margin-top:1px">Nessun byte lascia il nodo. Fail-close.</div></div>
+            <div style="width:42px;height:24px;border-radius:999px;background:var(--sage);position:relative;flex:none"><span style="position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:#fff"></span></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">
+            <div><div style="font-size:13.5px">Backend IA</div><div style="font-size:11.5px;color:var(--text-tertiary);margin-top:1px">GPU remoto â†’ CPU locale in fallback</div></div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-secondary);background:var(--bg-surface-2);border:1px solid var(--border-default);padding:5px 10px;border-radius:7px">GPU Â· gemma4</span>
+          </div>
+        </div>
+        <div style="height:1px;background:var(--border-soft)"></div>
+        <div>
+          <div style="font-family:'Source Serif 4',serif;font-size:17px;font-weight:600;margin-bottom:12px">DensitÃ </div>
+          <div style="display:flex;gap:8px">
+            <span style="flex:1;text-align:center;font-size:12.5px;padding:8px;border-radius:8px;border:1px solid var(--border-default);color:var(--text-secondary)">Compatta</span>
+            <span style="flex:1;text-align:center;font-size:12.5px;padding:8px;border-radius:8px;border:1.5px solid var(--petrol);color:var(--text-accent);font-weight:600;background:rgba(15,76,92,0.06)">Regolare</span>
+            <span style="flex:1;text-align:center;font-size:12.5px;padding:8px;border-radius:8px;border:1px solid var(--border-default);color:var(--text-secondary)">Comoda</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DOCK ============ -->
+  <div style="position:absolute;left:14px;top:120px;width:64px;height:444px;z-index:920;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:9px 8px;border-radius:20px;background:rgba(18,22,25,0.92);border:1px solid rgba(255,255,255,0.10);box-shadow:0 16px 44px -8px rgba(0,0,0,0.55)">
+    <div onClick="{{ openLauncher }}" title="Menu e ricerca NexaCore" style="width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#F4EBD0;transition:transform .16s cubic-bezier(0.2,0,0,1)" onMouseEnter="{{ tileEnter }}" onMouseLeave="{{ tileLeave }}"><svg width="25" height="25" viewBox="0 0 80 80"><g fill="currentColor"><circle cx="40" cy="10" r="4.6"/><circle cx="66" cy="25" r="4.6"/><circle cx="66" cy="55" r="4.6"/><circle cx="40" cy="70" r="4.6"/><circle cx="14" cy="55" r="4.6"/><circle cx="14" cy="25" r="4.6"/></g><circle cx="40" cy="40" r="6.4" fill="#C03221"/></svg></div>
+    <div style="width:34px;height:1px;background:rgba(255,255,255,0.11)"></div>
+    <div onClick="{{ winFiles.open }}" title="File" style="position:relative;width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(244,235,208,0.09);color:#F4EBD0;cursor:pointer;transition:transform .16s cubic-bezier(0.2,0,0,1)" onMouseEnter="{{ tileEnter }}" onMouseLeave="{{ tileLeave }}"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a2 2 0 0 1 2-2h4l2 2.4h6a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><sc-if value="{{ winFiles.running }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;left:-6px;top:50%;transform:translateY(-50%);width:3px;height:16px;border-radius:2px;background:#7A9E7E"></span></sc-if></div>
+    <div onClick="{{ winTerminal.open }}" title="Terminal" style="position:relative;width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(244,235,208,0.09);color:#F4EBD0;cursor:pointer;transition:transform .16s cubic-bezier(0.2,0,0,1)" onMouseEnter="{{ tileEnter }}" onMouseLeave="{{ tileLeave }}"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M7 10l3 2-3 2M12.5 14.5H16"/></svg><sc-if value="{{ winTerminal.running }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;left:-6px;top:50%;transform:translateY(-50%);width:3px;height:16px;border-radius:2px;background:#7A9E7E"></span></sc-if></div>
+    <div onClick="{{ winHelper.open }}" title="NexaCore Helper" style="position:relative;width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(244,235,208,0.09);color:#F4EBD0;cursor:pointer;transition:transform .16s cubic-bezier(0.2,0,0,1)" onMouseEnter="{{ tileEnter }}" onMouseLeave="{{ tileLeave }}"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20 V18 a4 4 0 0 1 4-4 H15 a4 4 0 0 1 4 4 V20"/><circle cx="12" cy="8" r="4.5"/><line x1="10" y1="8" x2="14" y2="8"/><line x1="12" y1="6" x2="12" y2="10"/></svg><sc-if value="{{ winHelper.running }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;left:-6px;top:50%;transform:translateY(-50%);width:3px;height:16px;border-radius:2px;background:#7A9E7E"></span></sc-if></div>
+    <div onClick="{{ winMonitor.open }}" title="Monitor di sistema" style="position:relative;width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(244,235,208,0.09);color:#F4EBD0;cursor:pointer;transition:transform .16s cubic-bezier(0.2,0,0,1)" onMouseEnter="{{ tileEnter }}" onMouseLeave="{{ tileLeave }}"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="2"/></svg><sc-if value="{{ winMonitor.running }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;left:-6px;top:50%;transform:translateY(-50%);width:3px;height:16px;border-radius:2px;background:#7A9E7E"></span></sc-if></div>
+    <div style="width:34px;height:1px;background:rgba(255,255,255,0.11)"></div>
+    <div onClick="{{ winSettings.open }}" title="Centro di controllo" style="position:relative;width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(244,235,208,0.09);color:#F4EBD0;cursor:pointer;transition:transform .16s cubic-bezier(0.2,0,0,1)" onMouseEnter="{{ tileEnter }}" onMouseLeave="{{ tileLeave }}"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 7 12 3 21 7"/><line x1="4" y1="9.5" x2="20" y2="9.5"/><line x1="7" y1="9.5" x2="7" y2="17"/><line x1="12" y1="9.5" x2="12" y2="17"/><line x1="17" y1="9.5" x2="17" y2="17"/><line x1="4" y1="19" x2="20" y2="19"/></svg><sc-if value="{{ winSettings.running }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;left:-6px;top:50%;transform:translateY(-50%);width:3px;height:16px;border-radius:2px;background:#7A9E7E"></span></sc-if></div>
+  </div>
+
+  <!-- ============ LAUNCHER ============ -->
+  <sc-if value="{{ launcher.open }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ launcher.close }}" style="position:absolute;inset:0;z-index:1000;background:var(--scrim);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;justify-content:center;align-items:flex-start;padding-top:118px">
+      <div onClick="{{ stop }}" style="width:min(640px,92vw);background:var(--launcher-bg);backdrop-filter:blur(40px) saturate(1.5);-webkit-backdrop-filter:blur(40px) saturate(1.5);border:1px solid var(--launcher-border);border-radius:16px;box-shadow:0 40px 90px -18px rgba(0,0,0,0.5);overflow:hidden;animation:lIn .18s cubic-bezier(0,0,0.2,1)">
+        <div style="display:flex;align-items:center;gap:13px;padding:16px 18px;border-bottom:1px solid var(--border-soft)">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+          <input ref="{{ setLauncherInput }}" value="{{ launcher.query }}" onInput="{{ launcher.onQuery }}" onKeyDown="{{ launcher.onKey }}" placeholder="Cerca app, file, impostazioni â€” o chiedi a NexaCoreâ€¦" spellcheck="false" style="flex:1;min-width:0;background:transparent;border:none;outline:none;font-size:18px;font-family:'Inter',sans-serif;color:var(--text-primary)"/>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-tertiary);border:1px solid var(--border-default);border-radius:5px;padding:3px 6px">esc</span>
+        </div>
+        <div style="max-height:52vh;overflow:auto;padding:8px">
+          <sc-if value="{{ launcher.hasAi }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ launcher.askAi }}" style="display:flex;align-items:center;gap:13px;padding:11px 12px;border-radius:10px;cursor:pointer;background:rgba(15,76,92,0.07);margin-bottom:4px">
+              <div style="width:34px;height:34px;flex:none;border-radius:9px;background:var(--petrol);color:#F4EBD0;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20 V18 a4 4 0 0 1 4-4 H15 a4 4 0 0 1 4 4 V20"/><circle cx="12" cy="8" r="4.5"/><line x1="10" y1="8" x2="14" y2="8"/><line x1="12" y1="6" x2="12" y2="10"/></svg></div>
+              <div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:var(--text-primary)">Chiedi a NexaCore Helper</div><div style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"{{ launcher.query }}" â€” eseguito in locale sul nodo</div></div>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.05em;color:var(--petrol);background:rgba(15,76,92,0.12);padding:3px 7px;border-radius:4px;flex:none">IA</span>
+            </div>
+          </sc-if>
+          <div style="font-size:10.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-tertiary);padding:8px 12px 4px">{{ launcher.heading }}</div>
+          <sc-for list="{{ launcher.results }}" as="r" hint-placeholder-count="5">
+            <div onClick="{{ r.go }}" style="display:flex;align-items:center;gap:13px;padding:9px 12px;border-radius:10px;cursor:pointer">
+              <div style="width:32px;height:32px;flex:none;border-radius:8px;background:var(--tile-bg);color:var(--text-accent);display:flex;align-items:center;justify-content:center;font-size:15px">{{ r.glyph }}</div>
+              <div style="flex:1;min-width:0"><div style="font-size:13.5px;color:var(--text-primary)">{{ r.title }}</div><div style="font-size:11.5px;color:var(--text-tertiary)">{{ r.sub }}</div></div>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.05em;color:var(--text-tertiary);border:1px solid var(--border-default);padding:2px 7px;border-radius:4px;flex:none">{{ r.kind }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:820},&quot;initialTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;dark&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;wallpaper&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;constellation&quot;,&quot;options&quot;:[&quot;constellation&quot;,&quot;agent-mesh&quot;,&quot;token-rivers&quot;,&quot;attestation-rings&quot;,&quot;minimal-hero&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    const W = {
+      terminal:{running:true, min:false, x:452, y:112, z:5, w:486, h:398},
+      helper:{running:true, min:false, x:98, y:88, z:4, w:376, h:430},
+      files:{running:false, min:false, x:250, y:150, z:1, w:600, h:392},
+      monitor:{running:false, min:false, x:300, y:120, z:1, w:568, h:452},
+      settings:{running:false, min:false, x:360, y:150, z:1, w:520, h:438},
+    };
+    this.state = {
+      theme: (props.initialTheme === 'light' ? 'light' : 'dark'),
+      wins: W, focused:'terminal', topZ:5,
+      launcherOpen:false, query:'',
+      clock:'',
+      term:{ value:'', lines:this.welcome() },
+      helper:{ value:'', msgs:[
+        {role:'user', text:'Riesci a girare del tutto in locale, senza cloud?'},
+        {role:'bot', text:"SÃ¬. L'inferenza gira sul tuo nodo con il backend GPU (gemma4:latest). Se il GPU non Ã¨ raggiungibile, il sistema fa fail-close sul CPU locale â€” nessun byte lascia la macchina.", badge:'GPU Â· 42 ms'},
+        {role:'user', text:"E l'audit delle risposte?"},
+        {role:'bot', text:"Ogni risposta Ã¨ firmata e registrata in locale. Puoi verificarla con `attest` nel Terminal.", badge:'GPU Â· 55 ms'},
+      ]},
+    };
+    this.APPNAMES = {terminal:'Terminal', helper:'NexaCore Helper', files:'File', monitor:'Monitor di sistema', settings:'Centro di controllo'};
+    this.WALL = {
+      constellation:'assets/wallpapers/constellation.png',
+      'agent-mesh':'assets/wallpapers/agent-mesh.png',
+      'token-rivers':'assets/wallpapers/token-rivers.png',
+      'attestation-rings':'assets/wallpapers/attestation-rings.png',
+      'minimal-hero':'assets/wallpapers/minimal-hero.png',
+    };
+    this.INDEX = [
+      {title:'Terminal', sub:'omni-shell', kind:'APP', glyph:'â¯', app:'terminal', kw:'shell console cli'},
+      {title:'NexaCore Helper', sub:'Assistente IA locale', kind:'APP', glyph:'â—ˆ', app:'helper', kw:'ai chat assistente ollama'},
+      {title:'File', sub:'Documenti e mesh', kind:'APP', glyph:'â–¤', app:'files', kw:'finder documenti browser'},
+      {title:'Monitor di sistema', sub:'Mesh Â· nodi Â· attestazione', kind:'APP', glyph:'â—‰', app:'monitor', kw:'attivita processi rete'},
+      {title:'Centro di controllo', sub:'Impostazioni', kind:'APP', glyph:'â–£', app:'settings', kw:'preferenze settings'},
+      {title:'Editor di testo', sub:'omni-text', kind:'APP', glyph:'âœŽ', app:null, kw:'note scrivere codice'},
+      {title:'Aspetto', sub:'Chiaro / scuro', kind:'IMP', glyph:'â—', setting:'theme', kw:'tema colore dark light'},
+      {title:'Rete e Mesh', sub:'3 peer attestati', kind:'IMP', glyph:'â¬¡', app:'monitor', kw:'wifi peer connessione'},
+      {title:'Backend IA', sub:'GPU Â· gemma4:latest', kind:'IMP', glyph:'â—ˆ', app:'settings', kw:'modello ollama inferenza'},
+      {title:'Privacy Â· Local-first', sub:'Fail-close, nessun cloud', kind:'IMP', glyph:'âš¿', app:'settings', kw:'sicurezza crittografia'},
+      {title:'README.md', sub:'~/Documenti', kind:'FILE', glyph:'â–ª', app:'files', kw:'documento testo'},
+      {title:'mesh-peers.toml', sub:'~/Documenti', kind:'FILE', glyph:'â–ª', app:'files', kw:'configurazione nodi'},
+      {title:'kernel.log', sub:'~/var/log', kind:'FILE', glyph:'â–ª', app:'files', kw:'log sistema'},
+    ];
+  }
+
+  welcome(){
+    return [
+      'NexaCore OS  Â·  omni-shell 0.4',
+      'â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€',
+      '  host      nexacore-node-01',
+      '  kernel    omni-kernel 0.4.2',
+      '  mesh      3 peer Â· attestati',
+      '  ia        GPU Â· gemma4:latest  (locale)',
+      '  uptime    4h 12m',
+      '',
+      "Scrivi 'help' per l'elenco dei comandi.",
+      '',
+    ];
+  }
+
+  componentDidMount(){
+    this.applyTheme();
+    this.tick();
+    this._clk = setInterval(()=>this.tick(), 1000);
+  }
+  componentWillUnmount(){ if(this._clk) clearInterval(this._clk); this.endDrag(); }
+
+  setRoot = (el)=>{ this.root = el; if(el) el.setAttribute('data-theme', this.state.theme); };
+  setTermBody = (el)=>{ this.termBody = el; };
+  setTermInput = (el)=>{ this.termInput = el; };
+  setHelperBody = (el)=>{ this.helperBody = el; };
+  setLauncherInput = (el)=>{ this.launcherInput = el; if(el) setTimeout(()=>{try{el.focus();}catch(e){}}, 30); };
+
+  applyTheme(){ if(this.root) this.root.setAttribute('data-theme', this.state.theme); }
+  toggleTheme = ()=>{ this.setState(s=>({theme: s.theme==='dark'?'light':'dark'}), ()=>this.applyTheme()); };
+  setLight = ()=>{ this.setState({theme:'light'}, ()=>this.applyTheme()); };
+  setDark = ()=>{ this.setState({theme:'dark'}, ()=>this.applyTheme()); };
+
+  tick(){
+    const d = new Date();
+    let day = new Intl.DateTimeFormat('it-IT',{weekday:'short', day:'numeric', month:'short'}).format(d);
+    const t = new Intl.DateTimeFormat('it-IT',{hour:'2-digit', minute:'2-digit'}).format(d);
+    this.setState({clock: day.replace('.','') + ' Â· ' + t});
+  }
+
+  focus = (id)=>{
+    this.setState(s=>{
+      const z = s.topZ + 1;
+      return { focused:id, topZ:z, wins:{...s.wins, [id]:{...s.wins[id], z}} };
+    });
+  };
+  openApp = (id)=>{
+    if(id === null) return;
+    this.setState(s=>{
+      const z = s.topZ + 1;
+      return { focused:id, topZ:z, wins:{...s.wins, [id]:{...s.wins[id], running:true, min:false, z}} };
+    });
+  };
+  closeWin = (id)=>{ this.setState(s=>({wins:{...s.wins, [id]:{...s.wins[id], running:false}}})); };
+  minWin = (id)=>{ this.setState(s=>({wins:{...s.wins, [id]:{...s.wins[id], min:true}}})); };
+  toggleMax = (id)=>{
+    this.setState(s=>{
+      const w = s.wins[id]; const z = s.topZ + 1;
+      if(w.maxi){
+        const r = w._r || {x:w.x, y:w.y, w:w.w, h:w.h};
+        return { focused:id, topZ:z, wins:{...s.wins, [id]:{...w, x:r.x, y:r.y, w:r.w, h:r.h, maxi:false, z}} };
+      }
+      const NW = Math.max(560, window.innerWidth - 104);
+      const NH = Math.max(360, window.innerHeight - 62);
+      return { focused:id, topZ:z, wins:{...s.wins, [id]:{...w, _r:{x:w.x, y:w.y, w:w.w, h:w.h}, x:90, y:44, w:NW, h:NH, maxi:true, z}} };
+    });
+  };
+
+  startDrag = (id, e)=>{
+    if(e.target && e.target.closest && e.target.closest('button')) { return; }
+    this.focus(id);
+    const w = this.state.wins[id];
+    this._drag = {id, sx:e.clientX, sy:e.clientY, ox:w.x, oy:w.y, lx:w.x, ly:w.y};
+    this._mm = (ev)=>this.dragMove(ev);
+    this._mu = ()=>this.endDrag();
+    window.addEventListener('pointermove', this._mm);
+    window.addEventListener('pointerup', this._mu);
+  };
+  dragMove(ev){
+    if(!this._drag) return;
+    this._drag.lx = this._drag.ox + (ev.clientX - this._drag.sx);
+    this._drag.ly = Math.max(0, this._drag.oy + (ev.clientY - this._drag.sy));
+    if(this._raf) return;
+    this._raf = requestAnimationFrame(()=>{
+      this._raf = 0;
+      if(!this._drag) return;
+      const {id, lx, ly} = this._drag;
+      this.setState(s=>({wins:{...s.wins, [id]:{...s.wins[id], x:lx, y:ly}}}));
+    });
+  }
+  endDrag(){
+    if(this._mm) window.removeEventListener('pointermove', this._mm);
+    if(this._mu) window.removeEventListener('pointerup', this._mu);
+    this._mm = this._mu = null; this._drag = null;
+  }
+
+  tileEnter = (e)=>{ e.currentTarget.style.transform = 'translateX(5px)'; if(e.currentTarget.style.background) e.currentTarget.style.background='rgba(244,235,208,0.17)'; };
+  tileLeave = (e)=>{ e.currentTarget.style.transform = 'none'; if(e.currentTarget.style.background) e.currentTarget.style.background='rgba(244,235,208,0.09)'; };
+
+  openLauncher = ()=>{ this.setState({launcherOpen:true, query:''}); };
+  closeLauncher = ()=>{ this.setState({launcherOpen:false}); };
+  stop = (e)=>{ e.stopPropagation(); };
+  onQuery = (e)=>{ this.setState({query: e.target.value}); };
+  chooseResult = (item)=>{
+    this.setState({launcherOpen:false});
+    if(item.setting === 'theme'){ this.toggleTheme(); return; }
+    if(item.app) this.openApp(item.app);
+  };
+  askAi = ()=>{
+    const q = this.state.query.trim();
+    this.setState({launcherOpen:false});
+    this.openApp('helper');
+    if(q) this.pushHelper(q);
+  };
+  onLauncherKey = (e)=>{
+    if(e.key === 'Escape'){ this.closeLauncher(); return; }
+    if(e.key === 'Enter'){
+      const q = this.state.query.trim();
+      const res = this.results();
+      if(q && res.length === 0){ this.askAi(); return; }
+      if(res.length){ this.chooseResult(res[0]); }
+    }
+  };
+
+  fuzzy(q, t){
+    q = q.toLowerCase(); let qi=0, score=0, prev=-2;
+    for(let i=0;i<t.length && qi<q.length;i++){
+      if(t[i].toLowerCase() === q[qi]){
+        score += 2;
+        if(prev === i-1) score += 5;
+        if(i===0 || ' -_./'.includes(t[i-1])) score += 8;
+        prev = i; qi++;
+      }
+    }
+    return qi === q.length ? score - Math.floor(t.length/4) : null;
+  }
+  results(){
+    const q = this.state.query.trim();
+    if(!q) return this.INDEX.filter(x=>x.kind==='APP').slice(0,5);
+    const hits = [];
+    for(const it of this.INDEX){
+      let best = this.fuzzy(q, it.title);
+      const k = this.fuzzy(q, it.kw||'');
+      if(k !== null) best = best===null ? k-6 : Math.max(best, k-6);
+      if(best !== null) hits.push({it, score:best});
+    }
+    hits.sort((a,b)=> b.score-a.score || a.it.title.length-b.it.title.length);
+    return hits.slice(0,6).map(h=>h.it);
+  }
+
+  runCmd(raw){
+    const cmd = raw.trim();
+    const echo = 'guest@nexacore ~ â¯ ' + raw;
+    if(cmd === 'clear'){ this.setState(s=>({term:{...s.term, value:'', lines:[]}})); return; }
+    let out = [];
+    const arg = cmd.split(/\s+/);
+    switch(arg[0]){
+      case '': out=[]; break;
+      case 'help': out=['Comandi:', '  help          questo messaggio', '  ls            elenca i file', '  mesh          stato della mesh', '  ai            stato del backend IA', '  attest        attestazione TEE', '  ping <host>   raggiungibilitÃ ', '  whoami        utente corrente', '  about         informazioni sul sistema', '  clear         pulisci lo schermo']; break;
+      case 'ls': out=['Documenti/   Scaricati/   oip-drafts/', 'README.md    kernel.log   mesh-peers.toml   attest.sig']; break;
+      case 'whoami': out=['guest  (uid 1000)  Â·  sessione locale']; break;
+      case 'mesh': out=['MESH Â· 3 peer Â· tutti attestati', '  â— node-01   1.2 ms   self', '  â— node-02   3.4 ms   SEV-SNP', '  â— node-03   4.1 ms   TDX']; break;
+      case 'ai': out=['Backend IA:  GPU Â· 127.0.0.1 Â· gemma4:latest', 'Stato:       healthy Â· locale Â· fail-close', 'Fallback:    CPU locale se il GPU Ã¨ irraggiungibile']; break;
+      case 'attest': out=['Attestazione TEE ...  verificato', '  measurement  0x9f3aâ€¦c2e1', '  quote        SEV-SNP', '  firma        ed25519 Â· valida']; break;
+      case 'ping': { const h = arg[1]||'node-02'; out=['PING '+h+':', '  64 byte  seq=1  rtt=1.9 ms', '  64 byte  seq=2  rtt=2.1 ms', '  64 byte  seq=3  rtt=1.8 ms', '  3 trasmessi, 3 ricevuti, 0% persi']; break; }
+      case 'about': out=['NexaCore OS â€” sistema operativo agentico, local-first.', 'Microkernel omni-kernel Â· mesh federata Â· auditable by design.', 'Amsterdam Â· Stichting NexaCore Â· CC0 / Apache-2.0']; break;
+      default: out=["omni-shell: comando non trovato: "+arg[0]+"   (prova 'help')"];
+    }
+    this.setState(s=>({term:{...s.term, value:'', lines:[...s.term.lines, echo, ...out, '']}}), ()=>{
+      if(this.termBody) this.termBody.scrollTop = this.termBody.scrollHeight;
+    });
+  }
+  onTermInput = (e)=>{ const v=e.target.value; this.setState(s=>({term:{...s.term, value:v}})); };
+  onTermKey = (e)=>{ if(e.key==='Enter'){ e.preventDefault(); this.runCmd(this.state.term.value); } };
+  focusTermInput = ()=>{ if(this.termInput) this.termInput.focus(); };
+
+  pushHelper(text){
+    const t = text.trim(); if(!t) return;
+    this.setState(s=>({helper:{...s.helper, value:'', msgs:[...s.helper.msgs, {role:'user', text:t}]}}), ()=>{
+      if(this.helperBody) this.helperBody.scrollTop = this.helperBody.scrollHeight;
+    });
+    setTimeout(()=>{
+      const reply = "Elaborato in locale sul tuo nodo. Nessun dato inviato al cloud â€” se il GPU non risponde, l'esecuzione passa al CPU locale (fail-close).";
+      const ms = 30 + Math.floor(Math.random()*60);
+      this.setState(s=>({helper:{...s.helper, msgs:[...s.helper.msgs, {role:'bot', text:reply, badge:'GPU Â· '+ms+' ms'}]}}), ()=>{
+        if(this.helperBody) this.helperBody.scrollTop = this.helperBody.scrollHeight;
+      });
+    }, 560);
+  }
+  onHelperInput = (e)=>{ const v=e.target.value; this.setState(s=>({helper:{...s.helper, value:v}})); };
+  onHelperKey = (e)=>{ if(e.key==='Enter'){ e.preventDefault(); this.pushHelper(this.state.helper.value); } };
+  helperSend = ()=>{ this.pushHelper(this.state.helper.value); };
+
+  winBundle(id){
+    const w = this.state.wins[id];
+    return {
+      style:{ position:'absolute', left:w.x+'px', top:w.y+'px', width:w.w+'px', height:w.h+'px', zIndex:w.z, display:(w.running && !w.min)?'block':'none' },
+      focused: this.state.focused === id,
+      running: w.running,
+      drag:(e)=>this.startDrag(id, e),
+      focus:()=>this.focus(id),
+      close:(e)=>{ e.stopPropagation(); this.closeWin(id); },
+      min:(e)=>{ e.stopPropagation(); this.minWin(id); },
+      max:(e)=>{ e.stopPropagation(); this.toggleMax(id); },
+      open:()=>this.openApp(id),
+    };
+  }
+
+  seg(active){
+    return active
+      ? { border:'none', borderRadius:'7px', padding:'5px 14px', fontSize:'12.5px', fontFamily:"'Inter',sans-serif", fontWeight:600, cursor:'pointer', background:'var(--petrol)', color:'#F4EBD0' }
+      : { border:'none', borderRadius:'7px', padding:'5px 14px', fontSize:'12.5px', fontFamily:"'Inter',sans-serif", fontWeight:500, cursor:'pointer', background:'transparent', color:'var(--text-secondary)' };
+  }
+
+  renderVals(){
+    const s = this.state;
+    const wall = this.WALL[this.props.wallpaper] || this.WALL.constellation;
+    const wallDark = { position:'absolute', inset:0, backgroundImage:'url('+wall+')', backgroundSize:'cover', backgroundPosition:'center', backgroundColor:'#0a0f12' };
+    const wallLight = { position:'absolute', inset:0, backgroundImage:'url(assets/wallpapers/light-constellation.png)', backgroundSize:'cover', backgroundPosition:'center', backgroundColor:'#F4EBD0' };
+    const q = s.query.trim();
+    const res = this.results().map(it=>({ ...it, go:()=>this.chooseResult(it) }));
+    const themeIcon = s.theme === 'dark'
+      ? '<circle cx="12" cy="12" r="4.2"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"></path>'
+      : '<path d="M20 14.5A8 8 0 0 1 9.5 4 7 7 0 1 0 20 14.5z"></path>';
+
+    return {
+      wallStyle: s.theme === 'dark' ? wallDark : wallLight,
+      clock: s.clock,
+      focusedApp: this.APPNAMES[s.focused] || 'NexaCore',
+      themeIcon: this.rawSvg(themeIcon),
+      toggleTheme: this.toggleTheme,
+      openLauncher: this.openLauncher,
+      setLight: this.setLight, setDark: this.setDark,
+      segLight: this.seg(s.theme==='light'), segDark: this.seg(s.theme==='dark'),
+      tileEnter: this.tileEnter, tileLeave: this.tileLeave, stop: this.stop,
+      setRoot: this.setRoot,
+      winTerminal: this.winBundle('terminal'),
+      winHelper: this.winBundle('helper'),
+      winFiles: this.winBundle('files'),
+      winMonitor: this.winBundle('monitor'),
+      winSettings: this.winBundle('settings'),
+      focusTermInput: this.focusTermInput,
+      setTermBody: this.setTermBody, setTermInput: this.setTermInput, setHelperBody: this.setHelperBody, setLauncherInput: this.setLauncherInput,
+      term: { lines: s.term.lines, value: s.term.value, onInput: this.onTermInput, onKey: this.onTermKey },
+      helper: {
+        value: s.helper.value, onInput: this.onHelperInput, onKey: this.onHelperKey, send: this.helperSend,
+        msgs: s.helper.msgs.map(m=>({ ...m, isUser: m.role==='user', isBot: m.role==='bot' })),
+      },
+      launcher: {
+        open: s.launcherOpen, query: s.query, onQuery: this.onQuery, onKey: this.onLauncherKey,
+        close: this.closeLauncher, results: res, askAi: this.askAi,
+        hasAi: q.length > 0,
+        heading: q ? 'Risultati' : 'Suggeriti',
+      },
+    };
+  }
+
+  rawSvg(html){ return React.createElement('g', { dangerouslySetInnerHTML: { __html: html } }); }
+}
+</script>
+</body>
+</html>

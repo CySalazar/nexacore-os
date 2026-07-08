@@ -1,0 +1,41 @@
+# =============================================================================
+# disk-image — NexaCore OS UEFI/BIOS disk image builder
+# =============================================================================
+# Host-side binary that wraps the `kernel-runner` ELF (compiled for
+# x86_64-unknown-none) into a bootable disk image using `bootloader 0.11`.
+#
+# Usage (called by qemu-boot-smoke.sh):
+#
+#   cargo run --manifest-path disk-image/Cargo.toml \
+#             -- <kernel-runner-elf-path>
+#
+# Outputs two files alongside the ELF:
+#   boot-uefi.img   — GPT + FAT partition with UEFI bootloader + kernel
+#   boot-bios.img   — MBR disk image with BIOS bootloader + kernel
+#
+# The crate is excluded from the default workspace (like kernel-runner) so
+# that normal `cargo build --workspace` on developer machines (which may
+# not have OVMF) does not pull in the large `bootloader` binary blobs.
+# =============================================================================
+
+[package]
+name        = "disk-image"
+version     = "0.1.0"
+edition     = "2024"
+publish     = false
+description = "NexaCore OS host-side UEFI/BIOS disk image builder"
+
+[[bin]]
+name = "disk-image"
+path = "src/main.rs"
+
+[dependencies]
+# `bootloader` 0.11 builder: provides `UefiBoot` and `BiosBoot` which wrap
+# a kernel ELF into bootable UEFI/BIOS disk images. Its build script invokes
+# `cargo -Z build-std=core` (via the CARGO env-var) to compile the bootloader
+# stages, so this crate MUST be built with a nightly toolchain:
+#
+#   cargo +nightly run --manifest-path disk-image/Cargo.toml -- <kernel-elf>
+#
+# The kernel itself (kernel-runner, nexacore-kernel) compiles on stable 1.85.
+bootloader = { version = "0.11", features = ["uefi", "bios"] }

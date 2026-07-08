@@ -1,0 +1,108 @@
+# =============================================================================
+# kernel-runner — NexaCore OS UEFI bootloader-runner harness
+# =============================================================================
+# Specified by NCIP-Kernel-005 § S1. This crate is the **bootable
+# artifact**: it consumes `nexacore-kernel` (built with the `bare-metal`
+# feature) as a `staticlib` and produces a UEFI-bootable disk image
+# via the `bootloader` crate's `DiskImageBuilder`.
+#
+# Excluded from the default workspace `cargo build` matrix (see the
+# root Cargo.toml `[workspace.exclude]` list) so developers without a
+# cross-toolchain still get `cargo build --workspace` green. To build
+# the runner image:
+#
+#   cargo build --manifest-path kernel-runner/Cargo.toml \
+#               --target x86_64-unknown-none --release
+#
+# Or, more conveniently, via the `Makefile.toml` `run-qemu-uefi`
+# task once the developer machine has OVMF installed.
+# =============================================================================
+
+[package]
+name             = "kernel-runner"
+description      = "NexaCore OS UEFI bootloader-runner harness (consumes nexacore-kernel; emits *.efi)"
+version          = "0.1.0"
+edition          = "2024"
+rust-version     = "1.85"
+authors          = ["cySalazar <hello@nexacoreos.com>"]
+license          = "Apache-2.0"
+repository       = "https://github.com/CySalazar/nexacore-os"
+homepage         = "https://nexacoreos.com"
+keywords         = ["operating-system", "kernel", "uefi", "bootloader"]
+categories       = ["os", "embedded"]
+publish          = false
+
+[[bin]]
+name = "kernel-runner"
+path = "src/main.rs"
+
+[dependencies]
+# `bootloader_api` 0.11 is the kernel-side companion to the `bootloader`
+# crate. It provides `BootInfo`, the `entry_point!` macro, `BootloaderConfig`,
+# and `FrameBuffer` / `FrameBufferInfo` for GOP framebuffer access. The
+# host-side disk-image builder lives in the separate `../disk-image` crate.
+# NCIP-Kernel-005 § S3 / § S4 (updated for bootloader 0.11).
+bootloader_api = { version = "0.11", default-features = false }
+nexacore-kernel    = { path = "../crates/nexacore-kernel", features = ["bare-metal"] }
+
+# WS13-08: force the portable Rust BLAKE3 implementation (the `pure` feature)
+# for the bare-metal image. `nexacore-kernel` pulls `blake3` transitively (via
+# `nexacore-crypto`); without `pure`, blake3 emits references to x86 SIMD
+# assembly symbols (`blake3_compress_in_place_sse41/avx512/sse2`,
+# `blake3_hash_many_*`) that a NON-x86 build host's cross-assembler (e.g. Apple
+# Silicon / aarch64) does not produce, so `rust-lld` fails with
+# `undefined symbol`. `pure` is bit-identical output, only slower — acceptable
+# for a boot-time hash. Declaring blake3 here unifies the feature ONTO the
+# transitive copy. This is correctly per-target: `kernel-runner` is the
+# bare-metal artifact and only ever builds for `x86_64-unknown-none`, so the
+# workspace's host/dev/CI builds keep fast SIMD blake3 (they never build this
+# crate — it is in the root `[workspace.exclude]`). Consistent with the
+# "force-soft" SIMD policy already applied to sha2/poly1305/curve25519 (ADR
+# MB13.a). See ADR-0053 and docs/11-tooling-and-ci.md.
+blake3 = { version = "1.5", default-features = false, features = ["pure"] }
+
+[features]
+default     = []
+# Forward the kernel's `mb8-smoke` feature through the runner so the QEMU
+# image built from this crate exercises the MB8 two-task preemption demo.
+# Track B MB8 (2026-05-17).
+mb8-smoke   = ["nexacore-kernel/mb8-smoke"]
+# Forward the kernel's `mb11-userprobe` feature so the QEMU image runs the
+# embedded Ring 3 user-probe (`WriteConsole("hello\n") + TaskExit(0)`).
+# Track B MB11 (2026-05-18).
+mb11-userprobe = ["nexacore-kernel/mb11-userprobe"]
+# Forward the kernel's `mb12-userprobe` feature so the QEMU image runs
+# the cross-process IPC smoke: a sender + receiver pair exchanging a
+# "ping" message through a kernel-pre-created channel. Mutually
+# exclusive with `mb11-userprobe` at the boot wiring level — when both
+# features are enabled in the same build, the MB11 block runs first.
+# Track B MB12 (2026-05-18).
+mb12-userprobe = ["nexacore-kernel/mb12-userprobe"]
+# Forward the kernel's `m0-netcheck` feature so the image spawns the M0
+# networking self-test client (`/bin/nexacore-netcheck`) at boot.
+m0-netcheck = ["nexacore-kernel/m0-netcheck"]
+# Forward the kernel's `iommu-te` feature so the boot path raises VT-d
+# `GCMD.TE` (WI-7b step 3, NCIP-026 R2). OPERATOR-GATED — never in CI.
+iommu-te = ["nexacore-kernel/iommu-te"]
+# Forward the §S9.1 NEGATIVE-test harness (ADR-0029). DEV-ONLY: faults the
+# e1000e on a deliberately out-of-window DMA to prove confinement enforces.
+iommu-negtest = ["nexacore-kernel/iommu-negtest"]
+# Forward the kernel's `display-probe` feature (TASK-18, DE-C1, ADR-0040):
+# spawns `/bin/nexacore-display-probe` with a deposited Display capability +
+# input-channel id, and runs the cooperative kmain input pump (PS/2 -> IPC
+# Notification) in place of the in-kernel desktop. DEV/verification only.
+display-probe = ["nexacore-kernel/display-probe"]
+
+# The runner is its own profile: it always builds with link-time
+# optimization in release (we ship the kernel as a single ELF, then
+# `bootloader` strips and embeds it). Inheriting the workspace's
+# release profile would force LTO on the rest of the workspace too,
+# which is unnecessary host-side.
+[profile.release]
+lto             = true
+codegen-units   = 1
+panic           = "abort"
+strip           = "debuginfo"
+
+[profile.dev]
+panic = "abort"

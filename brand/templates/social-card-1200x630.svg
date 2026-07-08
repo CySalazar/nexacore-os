@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NexaCore OS / NexaCore Foundation — Social card template (1200 × 630)
+  Direction: C — Civic Tech / Generational
+  Use:       Open Graph image, Twitter/X card, LinkedIn share preview, Mastodon, Bluesky
+  Variants:  Edit the .headline-line elements to customize message; mark + footer stay fixed.
+  Export:    Render to PNG at 1200×630 (or 2400×1260 for retina) with rsvg-convert / inkscape.
+  Authoritative: brand/STRATEGY.md
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1200 630"
+     role="img"
+     aria-label="NexaCore Foundation — A computer you actually control, with the full power of modern AI.">
+  <defs>
+    <style>
+      .label { font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
+      .headline { font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif; font-weight: 700; }
+      .footer { font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif; font-style: italic; }
+    </style>
+  </defs>
+
+  <!-- Petrol canvas -->
+  <rect width="1200" height="630" fill="#0F4C5C"/>
+
+  <!-- Hairline frame (8% inset) -->
+  <rect x="96" y="50" width="1008" height="530" fill="none" stroke="#F4EBD0" stroke-width="0.5" opacity="0.25"/>
+
+  <!-- Top label: foundation identity in mono -->
+  <text x="96" y="100" class="label" font-size="16" fill="#F4EBD0" opacity="0.85" letter-spacing="3">
+    NexaCore FOUNDATION · STICHTING NexaCore · AMSTERDAM
+  </text>
+
+  <!-- Mark (federated ring) at top-right -->
+  <g transform="translate(1014,76)" aria-hidden="true">
+    <circle cx="30" cy="30" r="26" fill="none" stroke="#F4EBD0" stroke-width="1.5" opacity="0.45"/>
+    <circle cx="30"  cy="4"  r="4" fill="#F4EBD0"/>
+    <circle cx="52.5" cy="17" r="4" fill="#F4EBD0"/>
+    <circle cx="52.5" cy="43" r="4" fill="#F4EBD0"/>
+    <circle cx="30"  cy="56" r="4" fill="#F4EBD0"/>
+    <circle cx="7.5"  cy="43" r="4" fill="#F4EBD0"/>
+    <circle cx="7.5"  cy="17" r="4" fill="#F4EBD0"/>
+    <circle cx="30" cy="30" r="5" fill="#C03221"/>
+  </g>
+
+  <!-- Headline (replace text to customize the share) -->
+  <text class="headline" font-size="64" fill="#F4EBD0" letter-spacing="-1">
+    <tspan x="96" y="310">A computer you actually control,</tspan>
+    <tspan x="96" y="386">with the full power of modern AI.</tspan>
+  </text>
+
+  <!-- Bottom rule -->
+  <line x1="96" y1="500" x2="1104" y2="500" stroke="#F4EBD0" stroke-width="0.5" opacity="0.35"/>
+
+  <!-- Footer: italic tagline at left, URL at right -->
+  <text x="96" y="540" class="footer" font-size="24" fill="#F4EBD0" opacity="0.9">
+    Built to outlive its founders. Forks welcome.
+  </text>
+  <text x="1104" y="540" class="label" font-size="14" fill="#F4EBD0" opacity="0.75" text-anchor="end" letter-spacing="2">
+    NexaCore-FOUNDATION.ORG
+  </text>
+</svg>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NexaCore OS — Stacked logo (mark above wordmark)
+  Usage: square or vertical contexts (avatar, app icon overlay, narrow column)
+  Minimum size: 80px wide / 20mm
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="NexaCore OS">
+  <defs><style>
+    .wordmark { font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; }
+    .tagline  { font-family: 'Inter', sans-serif; font-weight: 500; }
+  </style></defs>
+  <g transform="translate(70,30)">
+    <circle cx="30" cy="30" r="26" fill="none" stroke="#0F4C5C" stroke-width="1.5" opacity="0.35"/>
+    <circle cx="30" cy="4" r="4" fill="#0F4C5C"/>
+    <circle cx="52.5" cy="17" r="4" fill="#0F4C5C"/>
+    <circle cx="52.5" cy="43" r="4" fill="#0F4C5C"/>
+    <circle cx="30" cy="56" r="4" fill="#0F4C5C"/>
+    <circle cx="7.5" cy="43" r="4" fill="#0F4C5C"/>
+    <circle cx="7.5" cy="17" r="4" fill="#0F4C5C"/>
+    <circle cx="30" cy="30" r="5" fill="#C03221"/>
+  </g>
+  <text x="100" y="142" class="wordmark" font-size="32" fill="#0F4C5C" letter-spacing="-0.5" text-anchor="middle">NexaCore OS</text>
+  <text x="100" y="164" class="tagline" font-size="10" fill="#1F2421" letter-spacing="0.5" text-anchor="middle">A project of NexaCore Foundation</text>
+</svg>

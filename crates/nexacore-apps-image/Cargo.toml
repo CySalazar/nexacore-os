@@ -1,0 +1,83 @@
+# =============================================================================
+# nexacore-apps-image — TASK-22 (DE-D1/DE-D4) Ring 3 windowed terminal + editor
+# =============================================================================
+#
+# Bootable `no_std + no_main` ELF that the kernel spawns as the Ring 3 display
+# task for TASK-22.  It hosts TWO native nexacore-ui apps on the compositor:
+#
+#   - Terminal window (left): windowed nexacore-shell REPL via `process_line`.
+#   - Editor window (right): NCFS-backed text editor (/notes.txt).
+#
+# Tab cycles focus between the two windows.  Esc in the editor saves the buffer
+# to NCFS via the IPC FS service (TASK-22 / ADR-0044 D2).
+#
+# TASK-21 AI status bar is retained at the top of each window (optional; kept
+# if the `ai_status` channel resolves).
+#
+# Built out-of-workspace via:
+#   cargo build --manifest-path crates/nexacore-apps-image/Cargo.toml \
+#               --target x86_64-unknown-none --release
+# =============================================================================
+
+[package]
+name         = "nexacore-apps-image"
+description  = "TASK-22 (DE-D1/DE-D4) Ring 3 windowed terminal + text editor image (ADR-0044)"
+# Pinned to the shared workspace product version (all `nexacore-*` crates are
+# 0.2.0) so the System Info window's `env!("CARGO_PKG_VERSION")` surfaces the
+# real product version, not this image crate's historical 0.1.0. This crate is
+# built out-of-workspace (see the header), so it cannot inherit
+# `version.workspace = true` and must state the version literally.
+version      = "0.2.0"
+edition      = "2024"
+rust-version = "1.85"
+authors      = ["cySalazar <hello@nexacoreos.com>"]
+license      = "Apache-2.0"
+repository   = "https://github.com/CySalazar/nexacore-os"
+homepage     = "https://nexacoreos.com"
+publish      = false
+
+[[bin]]
+name = "nexacore-apps-image"
+path = "src/main.rs"
+
+[dependencies]
+# The compositor + window manager core (TASK-19, ADR-0041).
+nexacore-display = { path = "../nexacore-display" }
+# nexacore-ui provides the brand-themed widget toolkit (TASK-20, ADR-0042).
+nexacore-ui = { path = "../nexacore-ui" }
+# nexacore-desktop-shell provides the mockup window chrome (frame + titlebar),
+# design tokens (dark/light), and window-state machine (WS7 desktop parity M1,
+# Task 7).
+nexacore-desktop-shell = { path = "../nexacore-desktop-shell" }
+# nexacore-fonts embeds the brand OpenType faces (Inter UI, IBM Plex Mono) for
+# anti-aliased text rendering (WS7-19 F2).
+nexacore-fonts = { path = "../nexacore-fonts" }
+# nexacore-types carries DisplayInputEvent, BackendStatusEvent, FsRequest/FsResponse
+# and the canonical wire encoder/decoder.
+# `default-features = false` strips uuid + getrandom for x86_64-unknown-none.
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+# nexacore-driver-shared provides capability deposit window parser + device-info reader.
+nexacore-driver-shared = { path = "../nexacore-driver-shared" }
+# nexacore-shell provides the no_std REPL (process_line + FsQuery trait).
+# `default-features = false` disables tracing + std print! path.
+nexacore-shell = { path = "../nexacore-shell", default-features = false }
+# nexacore-net carries the NetConfigRequest/NetConfigResponse/InterfaceInfo
+# wire types for the `ifconfig` IPC client (NCIP N6.1).
+# `default-features = false` strips uuid + getrandom for x86_64-unknown-none.
+nexacore-net = { path = "../nexacore-net", version = "0.2.0", default-features = false }
+# nexacore-cmd-ifconfig provides the InterfaceDisplay type the Terminal's
+# `ifconfig` command formats against.
+nexacore-cmd-ifconfig = { path = "../nexacore-cmd-ifconfig", version = "0.2.0", default-features = false }
+# serde with no_std + alloc: needed for postcard encode/decode helpers.
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+# postcard 1.x: the canonical NexaCore wire encoding (NCIP-Serde-004).
+postcard = { version = "1.0", default-features = false, features = ["alloc"] }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+lto           = true
+codegen-units = 1
+panic         = "abort"
+opt-level     = "z"

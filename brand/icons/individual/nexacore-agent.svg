@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NexaCore OS — nexacore-agent
+  Head with internal process — AI agent
+  Direction: C — Civic Tech / Generational
+  Source sprite: ../icons.svg (this is a single-icon extraction for inspection / direct use)
+  Geometry: 24x24 viewBox, 1.5 stroke, currentColor (defaults to charcoal #1F2421)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="nexacore-agent" color="#1F2421">
+<g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M5 20 V18 a4 4 0 0 1 4-4 H15 a4 4 0 0 1 4 4 V20"/>
+      <circle cx="12" cy="8" r="4.5"/>
+      <line x1="10" y1="8" x2="14" y2="8"/>
+      <line x1="12" y1="6" x2="12" y2="10"/>
+    </g>
+</svg>

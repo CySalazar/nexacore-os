@@ -1,0 +1,32 @@
+# =============================================================================
+# nexacore-init — init / service manager (PID 1 supervisor)
+# =============================================================================
+# Ordered, dependency-aware service startup with health checks, restart-on-crash
+# with backoff, socket activation, and per-service capability injection
+# (WS12-01). `no_std + alloc`, zero production dependencies.
+#
+# All process/clock effects are abstracted behind the `ServiceHost` trait so the
+# supervisor logic is fully host-testable; the production host is backed by
+# `nexacore-usys` syscalls once it lands.
+# =============================================================================
+
+[package]
+name             = "nexacore-init"
+description      = "Init / service-manager (PID 1 supervisor) for NexaCore OS: ordered startup, health checks, restart-with-backoff, socket activation, capability injection."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+
+[dev-dependencies]

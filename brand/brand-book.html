@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexaCore Brand Book v0.1 · NexaCore Foundation</title>
+<meta name="description" content="NexaCore Foundation brand book — visual identity, voice, and applications for NexaCore OS and Stichting NexaCore.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     BRAND BOOK — print-ready stylesheet
+     Page format: A4 portrait (210 × 297 mm)
+     To produce PDF: open in browser, Print → Save as PDF, A4, no margins.
+     Or via headless Chrome:
+       chromium --headless --no-margins --print-to-pdf=brand-book.pdf file://$(pwd)/brand-book.html
+     ============================================================ */
+
+  :root {
+    --petrol-500: #0F4C5C;  --petrol-700: #0A323C;
+    --petrol-200: #94B3BC;  --petrol-50: #E6EEF0;
+    --petrol-300: #6390A0;
+    --cream-300: #F4EBD0;   --cream-100: #FAF5E6; --cream-50: #FDFBF4;
+    --brick-500: #C03221;   --brick-100: #EFB7B0;
+    --sage-500: #7A9E7E;    --sage-100: #C6D8C8;
+    --charcoal-800: #1F2421; --charcoal-500: #3E423E;
+    --charcoal-300: #888D88; --charcoal-100: #DCDEDC;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 11.5pt; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--charcoal-800);
+    background: #ddd; /* screen-only — pages float on grey */
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+
+  /* Page sheet metaphor */
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 10mm auto;
+    background: var(--cream-300);
+    padding: 22mm 20mm 20mm 20mm;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    position: relative;
+    page-break-after: always;
+    overflow: hidden;
+  }
+  .page.cover { background: var(--petrol-500); color: var(--cream-300); padding: 0; display: flex; flex-direction: column; }
+  .page.section-divider { background: var(--charcoal-800); color: var(--cream-300); display: flex; flex-direction: column; justify-content: center; padding: 30mm; }
+  .page.dark { background: var(--charcoal-800); color: var(--cream-300); }
+  .page:last-child { page-break-after: auto; }
+
+  /* Running header (suppress on cover/divider) */
+  .page-header {
+    position: absolute;
+    top: 10mm;
+    left: 20mm;
+    right: 20mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5pt;
+    letter-spacing: 0.08em;
+    color: var(--charcoal-500);
+    text-transform: uppercase;
+  }
+  .page-footer {
+    position: absolute;
+    bottom: 10mm;
+    left: 20mm;
+    right: 20mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5pt;
+    letter-spacing: 0.08em;
+    color: var(--charcoal-300);
+  }
+  .page.cover .page-footer { color: var(--cream-300); opacity: 0.7; bottom: 12mm; left: 20mm; right: 20mm; }
+  .page.section-divider .page-footer,
+  .page.dark .page-footer { color: var(--cream-300); opacity: 0.55; }
+
+  /* Typography */
+  h1.book-title {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 700;
+    font-size: 64pt;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+  h2 {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 700;
+    font-size: 26pt;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    color: var(--petrol-500);
+    margin-bottom: 4mm;
+  }
+  h3 {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 16pt;
+    line-height: 1.2;
+    color: var(--petrol-500);
+    margin: 8mm 0 3mm;
+    letter-spacing: -0.01em;
+  }
+  h4 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 11pt;
+    margin: 5mm 0 2mm;
+    color: var(--charcoal-800);
+  }
+  .lede {
+    font-family: 'Source Serif 4', serif;
+    font-style: italic;
+    font-size: 14pt;
+    line-height: 1.4;
+    color: var(--charcoal-500);
+    margin-bottom: 6mm;
+    max-width: 145mm;
+  }
+  p { font-size: 10.5pt; line-height: 1.55; margin-bottom: 3mm; max-width: 165mm; }
+  p.tight { margin-bottom: 1mm; }
+  .small { font-size: 9pt; line-height: 1.5; color: var(--charcoal-500); }
+  .mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5pt;
+    letter-spacing: 0.02em;
+  }
+  ul, ol { padding-left: 5mm; margin-bottom: 4mm; }
+  ul li, ol li { margin-bottom: 1.5mm; font-size: 10.5pt; line-height: 1.55; }
+  code { font-family: 'IBM Plex Mono', monospace; font-size: 9.5pt; background: var(--petrol-50); padding: 0.5mm 1.5mm; border-radius: 1pt; }
+
+  /* Eyebrow label (small caps mono above headings) */
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5pt;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brick-500);
+    margin-bottom: 4mm;
+    display: block;
+  }
+  .page.dark .eyebrow, .page.section-divider .eyebrow { color: var(--brick-500); }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 4mm; font-size: 10pt; }
+  th, td { text-align: left; padding: 2mm 3mm; border-bottom: 0.4pt solid var(--petrol-200); vertical-align: top; }
+  th { font-family: 'IBM Plex Mono', monospace; font-size: 8.5pt; letter-spacing: 0.08em; text-transform: uppercase; color: var(--charcoal-500); font-weight: 500; border-bottom: 1pt solid var(--petrol-500); }
+
+  /* Grids */
+  .grid { display: grid; gap: 6mm; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  /* Cards */
+  .card {
+    border: 0.5pt solid var(--petrol-200);
+    padding: 4mm;
+    border-radius: 1mm;
+    background: rgba(255,255,255,0.4);
+  }
+  .card h4 { margin-top: 0; }
+
+  /* Swatch box */
+  .swatch { display: flex; align-items: center; gap: 3mm; padding: 2mm 0; }
+  .swatch-chip { width: 12mm; height: 12mm; border-radius: 1mm; flex-shrink: 0; border: 0.4pt solid rgba(0,0,0,0.1); }
+  .swatch-meta { font-family: 'IBM Plex Mono', monospace; font-size: 8.5pt; line-height: 1.4; }
+  .swatch-meta .nm { font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .swatch-meta .hx { color: var(--charcoal-500); }
+
+  /* Pull-quote */
+  .pullquote {
+    font-family: 'Source Serif 4', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 18pt;
+    line-height: 1.3;
+    color: var(--petrol-500);
+    border-left: 1mm solid var(--brick-500);
+    padding-left: 6mm;
+    margin: 6mm 0;
+    max-width: 150mm;
+  }
+
+  /* Logo display block */
+  .logo-display {
+    background: white;
+    border: 0.4pt solid var(--petrol-200);
+    padding: 8mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1mm;
+    min-height: 40mm;
+  }
+  .logo-display svg { max-width: 100%; height: auto; max-height: 35mm; }
+
+  /* Icon grid */
+  .icon-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4mm; }
+  .icon-cell {
+    border: 0.4pt solid var(--petrol-200);
+    padding: 4mm;
+    text-align: center;
+    background: rgba(255,255,255,0.5);
+    border-radius: 1mm;
+  }
+  .icon-cell svg { color: var(--charcoal-800); margin-bottom: 2mm; }
+  .icon-cell .nm { font-family: 'IBM Plex Mono', monospace; font-size: 8pt; letter-spacing: 0.04em; }
+
+  /* Don't-do indicator */
+  .dont {
+    position: relative;
+    border-color: var(--brick-500);
+  }
+  .dont::after {
+    content: '✕';
+    position: absolute;
+    top: 2mm; right: 2mm;
+    color: var(--brick-500);
+    font-weight: 700;
+    font-size: 14pt;
+    line-height: 1;
+  }
+  .do { border-color: var(--sage-500); }
+  .do::after {
+    content: '✓';
+    position: absolute;
+    top: 2mm; right: 2mm;
+    color: var(--sage-700, #587657);
+    font-weight: 700;
+    font-size: 14pt;
+    line-height: 1;
+  }
+
+  /* Section divider page styles */
+  .section-divider .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12pt;
+    letter-spacing: 0.4em;
+    color: var(--brick-500);
+    margin-bottom: 8mm;
+  }
+  .section-divider h2 {
+    font-size: 56pt;
+    line-height: 1;
+    color: var(--cream-300);
+    letter-spacing: -0.02em;
+  }
+  .section-divider .blurb {
+    font-family: 'Source Serif 4', serif;
+    font-style: italic;
+    font-size: 14pt;
+    color: var(--cream-300);
+    opacity: 0.8;
+    max-width: 130mm;
+    margin-top: 6mm;
+  }
+
+  /* Cover styling */
+  .cover-body { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 25mm; }
+  .cover-mark { margin-bottom: 12mm; }
+  .cover-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10pt;
+    letter-spacing: 0.4em;
+    color: var(--cream-300);
+    opacity: 0.7;
+    margin-bottom: 8mm;
+    text-transform: uppercase;
+  }
+  .cover-subtitle {
+    font-family: 'Source Serif 4', serif;
+    font-style: italic;
+    font-size: 18pt;
+    color: var(--cream-300);
+    margin-top: 10mm;
+    max-width: 140mm;
+    line-height: 1.35;
+    opacity: 0.92;
+  }
+
+  /* Print rules */
+  @page { size: A4 portrait; margin: 0; }
+  @media print {
+    body { background: white; }
+    .page { margin: 0; box-shadow: none; min-height: 297mm; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     PAGE 1 — COVER
+     ================================================================ -->
+<article class="page cover">
+  <div class="cover-body">
+    <div class="cover-mark">
+      <svg width="120" height="120" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" aria-label="NexaCore OS">
+        <circle cx="40" cy="40" r="32" fill="none" stroke="#F4EBD0" stroke-width="1.8" opacity="0.45"/>
+        <circle cx="40" cy="8" r="5" fill="#F4EBD0"/><circle cx="67.7" cy="24" r="5" fill="#F4EBD0"/>
+        <circle cx="67.7" cy="56" r="5" fill="#F4EBD0"/><circle cx="40" cy="72" r="5" fill="#F4EBD0"/>
+        <circle cx="12.3" cy="56" r="5" fill="#F4EBD0"/><circle cx="12.3" cy="24" r="5" fill="#F4EBD0"/>
+        <circle cx="40" cy="40" r="6" fill="#C03221"/>
+      </svg>
+    </div>
+    <div class="cover-eyebrow">Brand Book · Edition 0.1 · 2026-05-13</div>
+    <h1 class="book-title">NexaCore<br>Brand Book</h1>
+    <p class="cover-subtitle">Visual identity, voice, and applications for NexaCore OS &amp; NexaCore Foundation.</p>
+  </div>
+  <div class="page-footer">
+    <span>NexaCore Foundation · Stichting NexaCore · Amsterdam, NL</span>
+    <span>Direction C — Civic Tech / Generational</span>
+  </div>
+</article>
+
+<!-- ================================================================
+     PAGE 2 — FOREWORD / ABOUT THIS BOOK
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>NexaCore Brand Book</span><span>Foreword</span></div>
+  <span class="eyebrow">About this book</span>
+  <h2>Why a brand book.</h2>
+  <p class="lede">A brand book is a forcing function. It pins down decisions that would otherwise be re-litigated every time someone makes a slide, sends a press release, or files a grant cover letter.</p>
+  <p>This book is the public-facing surface of three documents that already exist in the NexaCore OS repository: the <code>README.md</code>, <code>docs/01-vision.md</code>, and <code>docs/05-governance.md</code>. It does not invent new positioning. It distills decisions already taken into a form that designers, developers, contributors, and external partners can apply without rereading the entire repository.</p>
+  <p>It is also a constraint document. The visual system, voice rules, and lexicon defined here are not suggestions. A draft that violates them is a brand error, and brand errors compound — they read as institutional drift, exactly the perception NexaCore OS is structurally designed to prevent.</p>
+  <h3>How to use it</h3>
+  <ul>
+    <li><strong>Developers</strong> writing READMEs, NCIPs, ADRs, technical docs: refer to §3 (Voice rules) and §6 (Templates). Drop in the README header template and you are 80% there.</li>
+    <li><strong>Designers</strong> producing slides, social cards, marketing copy: refer to §4 (Visual system) and §5 (Iconography). Every asset linked is the authoritative source.</li>
+    <li><strong>Foundation staff and trustees</strong> producing annual reports, contracts, official correspondence: refer to §1 (Naming architecture) and §6.6 (Email signature). The full lockup with the Dutch legal form is the required first-mention pattern.</li>
+    <li><strong>External partners and journalists</strong>: the public version of this book lives at <code>nexacoreos.com/brand</code> (TBD). Press kit is in <code>brand/press-kit/</code> (Phase 4 deliverable, not yet shipped).</li>
+  </ul>
+  <h3>Authority and updates</h3>
+  <p>The authoritative source of every chapter in this book is the linked file in the repository (e.g., <code>brand/STRATEGY.md</code>, <code>brand/colors/tokens.css</code>). Where this book and the source file disagree, the source file is authoritative — but in practice this book is regenerated whenever a source file changes, so the gap should remain zero.</p>
+  <p class="small" style="margin-top: 6mm;">Owner: Lead Architect (cySalazar) for years 1–5. After 2031-05-09, NexaCore Foundation Director. Review cadence: annually, or on any brand-affecting decision in <code>/docs/</code> or <code>/ncips/</code>.</p>
+  <div class="page-footer"><span>brand/STRATEGY.md</span><span>02</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 3 — SECTION DIVIDER 01
+     ================================================================ -->
+<article class="page section-divider">
+  <div class="section-num">PART 01 / 06</div>
+  <h2>Naming &amp; mission.</h2>
+  <p class="blurb">One product, two brands, a single mission. How NexaCore OS, NexaCore Foundation, and Stichting NexaCore relate. <em>Entity status: the legal form (foundation, company, or dual structure) is under evaluation — the Foundation / Stichting identities in this part are contingent on that decision; until then, public materials use only NexaCore&nbsp;OS.</em></p>
+  <div class="page-footer"><span>NexaCore Brand Book</span><span>03</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 4 — NAMING ARCHITECTURE
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>01 · Naming &amp; mission</span><span>Architecture</span></div>
+  <span class="eyebrow">§1 · Naming architecture</span>
+  <h2>Three names. One family.</h2>
+  <p class="lede">NexaCore operates with three identities serving three distinct purposes — legal, brand, product. This separation lets each be optimized without compromise.</p>
+
+  <table>
+    <thead>
+      <tr><th>Role</th><th>Identity</th><th>Where it appears</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Product</td><td><code>NexaCore OS</code></td><td>Source code, technical docs, READMEs, CLI banner, kernel <code>uname</code>, releases</td></tr>
+      <tr><td>International brand</td><td><code>NexaCore Foundation</code></td><td>Website, social, press releases, sponsor materials, grant applications outside NL</td></tr>
+      <tr><td>Legal entity</td><td><code>Stichting NexaCore</code></td><td>KVK registration, notarial deed (<em>statuten</em>), Dutch tax filings, contracts, ANBI</td></tr>
+      <tr><td>Full lockup</td><td colspan="2"><code>NexaCore Foundation — Stichting NexaCore, Amsterdam</code> — required first-mention pattern in formal materials</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Capitalization rules</h3>
+  <ul>
+    <li><code>NexaCore</code> is always set in all-caps. Treated as an initialism, not an acronym (we do not expand it).</li>
+    <li><code>OS</code> is always all-caps when paired with <code>NexaCore</code>. The two carry a non-breaking space (<code>NexaCore&amp;nbsp;OS</code>).</li>
+    <li><code>Stichting NexaCore</code> — Dutch proper-noun convention; <code>NexaCore Foundation</code> — both words initial-cap on the second token.</li>
+    <li>Possessive: <code>NexaCore OS's kernel</code>, never <code>NexaCore OS' kernel</code>.</li>
+  </ul>
+
+  <div class="pullquote">
+    "NexaCore Foundation legally is Stichting NexaCore. The split exists for the same reason Mozilla Foundation is just 'Mozilla' in the world."
+  </div>
+
+  <div class="page-footer"><span>brand/STRATEGY.md §1</span><span>04</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 5 — MISSION + VISION + PURPOSE
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>01 · Naming &amp; mission</span><span>Statement</span></div>
+  <span class="eyebrow">§2 · Mission &amp; vision</span>
+  <h2>One mission. Three voices.</h2>
+
+  <h3>Mission (funders &amp; policy)</h3>
+  <p>NexaCore Foundation develops and maintains NexaCore OS — an AI-native, privacy-by-construction, decentralized operating system — and stewards its governance in the public interest under an irrevocable Mission Anchor.</p>
+
+  <h3>Vision (mainstream)</h3>
+  <p>A world where everyone has the full power of modern AI on a computer they actually control.</p>
+
+  <h3>Purpose narrative (about-page, manifesto)</h3>
+  <p>The current generation of operating systems was designed before modern AI existed. Today AI capabilities are bolted on top — accessed through cloud APIs owned by a handful of companies, with the user's data as the implicit currency. We accept this because the alternative looks like running a model on a laptop with a fraction of the capability.</p>
+  <p>NexaCore OS proposes a different paradigm. AI runs locally by default. The operating system itself is the orchestrator. Computational scale is achieved by federating with other NexaCore OS instances over a peer-to-peer mesh — collective compute among people running the same software, not a service rented from a corporation. Privacy is not a setting in a menu; it is the only thing the protocol knows how to do. Non-compliant nodes cannot produce valid messages — it is mathematics, not policy.</p>
+  <p>We are building for the next 25 years. Stability of design comes before speed of delivery. Forks are welcome. The Foundation is structurally unable to capture the project.</p>
+
+  <div class="page-footer"><span>docs/01-vision.md · brand/STRATEGY.md §3</span><span>05</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 6 — SECTION DIVIDER 02
+     ================================================================ -->
+<article class="page section-divider">
+  <div class="section-num">PART 02 / 06</div>
+  <h2>Personality<br>&amp; voice.</h2>
+  <p class="blurb">Patient. Rigorous. Severe. Open. Honest. What we are — and what we never are.</p>
+  <div class="page-footer"><span>NexaCore Brand Book</span><span>06</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 7 — PERSONALITY
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>02 · Personality &amp; voice</span><span>Attributes</span></div>
+  <span class="eyebrow">§3 · Brand personality</span>
+  <h2>Five attributes.</h2>
+  <p class="lede">Each one tells you how to write a sentence and how to draw a panel.</p>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h4>Patient</h4>
+      <p class="small">25-year horizon phrasing. No urgency. Sunsets and dates anchored. Roadmap by quarter, not by hours.</p>
+    </div>
+    <div class="card">
+      <h4>Rigorous</h4>
+      <p class="small">Every claim names its mechanism. Numbers cited. Specs with line references. Visible grid in design.</p>
+    </div>
+    <div class="card">
+      <h4>Severe</h4>
+      <p class="small">Short sentences. No filler. Uncomfortable truths tolerated. No exclamation marks. Anywhere. Ever.</p>
+    </div>
+    <div class="card">
+      <h4>Open</h4>
+      <p class="small">Document the decision behind the decision. ADRs, NCIPs, signed commits. Source files ship next to artefacts.</p>
+    </div>
+    <div class="card">
+      <h4>Honest</h4>
+      <p class="small">Name the risks. <code>AWAITING_CRYPTO_REVIEW</code> markers stay until they don't apply. Status labels are document chrome.</p>
+    </div>
+    <div class="card" style="background: var(--brick-100); border-color: var(--brick-500);">
+      <h4 style="color: var(--brick-700, #8F2519);">Anti-personality</h4>
+      <p class="small">Never: excited, friendly-startup, cypherpunk-aesthetic, corporate-confident, crypto-finance.</p>
+    </div>
+  </div>
+
+  <h3>What "anti-personality" looks like</h3>
+  <table>
+    <thead><tr><th>We are NOT</th><th>Which looks like</th></tr></thead>
+    <tbody>
+      <tr><td>Excited</td><td>Exclamation marks · neon palettes · superlatives</td></tr>
+      <tr><td>Friendly-startup</td><td>"We love you" · mascots · rounded sans · gradients</td></tr>
+      <tr><td>Cypherpunk-aesthetic</td><td>Black/green CRT · Matrix references · glitch effects</td></tr>
+      <tr><td>Corporate-confident</td><td>Stock photography · testimonials · "trusted by" walls</td></tr>
+      <tr><td>Crypto-finance</td><td>Token charts · "decentralized" as marketing · web3 vocab · hex honeycomb</td></tr>
+    </tbody>
+  </table>
+
+  <div class="page-footer"><span>brand/STRATEGY.md §4</span><span>07</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 8 — VOICE RULES
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>02 · Personality &amp; voice</span><span>Rules</span></div>
+  <span class="eyebrow">§4 · The eight voice rules</span>
+  <h2>How NexaCore sounds.</h2>
+  <ol>
+    <li><strong>Name the mechanism.</strong> Don't say "secure"; say what makes it secure.</li>
+    <li><strong>Short sentences. Then a longer one for rhythm.</strong> Average 14–18 words.</li>
+    <li><strong>No exclamation marks. Ever.</strong> Including in error messages, social posts, and informal chat.</li>
+    <li><strong>No war / religion / sport / family metaphors.</strong> No "battle", "tribe", "mission-critical sacred trust".</li>
+    <li><strong>The reader is competent.</strong> Address developers and technical readers as peers.</li>
+    <li><strong>Sound the same in 5 years.</strong> Avoid trend vocabulary ("vibes", "agentic", "moat", "10x").</li>
+    <li><strong>Hedge precisely or not at all.</strong> "Probably secure" is forbidden.</li>
+    <li><strong>Cite yourself.</strong> Use stable file paths, not floating descriptions.</li>
+  </ol>
+
+  <h3>The lexicon — owned vs. rejected</h3>
+  <div class="grid grid-2">
+    <div class="card do">
+      <h4>Owned</h4>
+      <p class="small mono">AI-native · local-first · privacy by construction · mesh · attestation · TEE · peer-to-peer · compliance proof · Mission Anchor · 25-year horizon · NCIP · BDFL sunset · forks-welcome · quadratic vote · proof-of-uptime</p>
+    </div>
+    <div class="card dont">
+      <h4>Rejected</h4>
+      <p class="small mono">blockchain · token · web3 · DAO · trustless · agentic · vibes · superhuman · 10x · moat · disruptive · bulletproof · military-grade · revolutionary · paradigm shift · mission-critical</p>
+    </div>
+  </div>
+
+  <div class="pullquote">"Privacy is enforced cryptographically — not by policy. A non-compliant node cannot produce valid mesh traffic."</div>
+
+  <div class="page-footer"><span>brand/STRATEGY.md §5, §8</span><span>08</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 9 — MESSAGING HIERARCHY
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>02 · Personality &amp; voice</span><span>Hierarchy</span></div>
+  <span class="eyebrow">§5 · Messaging hierarchy</span>
+  <h2>From eight words to sixty seconds.</h2>
+  <p class="lede">Five graduated messages, designed to be cut from — not paraphrased.</p>
+
+  <h3>Tagline · 8 words</h3>
+  <p class="pullquote" style="font-size: 22pt; line-height: 1.2;">An AI-native operating system. Local-first. Decentralized.</p>
+
+  <h3>Short-context tagline · for bios &amp; signatures</h3>
+  <p class="mono" style="font-size: 12pt;">Local-first AI for a computer you actually control.</p>
+
+  <h3>Payoff · 16 words, sits under the wordmark</h3>
+  <p style="font-family: 'Source Serif 4', serif; font-size: 13pt; line-height: 1.45;"><em>AI as a system primitive — running on hardware you own, federating with peers who prove their compliance.</em></p>
+
+  <h3>30-second pitch</h3>
+  <p>NexaCore OS is an AI-native operating system. It treats inference, model orchestration, and intelligent agents the way classical operating systems treat processes and files — as kernel-level primitives. AI runs locally by default. When you need more compute than your machine has, NexaCore OS federates with other instances over a peer-to-peer mesh of attested nodes — collective compute among people running the same software, not a service you rent. Privacy is enforced cryptographically at the protocol layer. We are building for the next 25 years.</p>
+
+  <div class="page-footer"><span>brand/STRATEGY.md §6</span><span>09</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 10 — SECTION DIVIDER 03
+     ================================================================ -->
+<article class="page section-divider">
+  <div class="section-num">PART 03 / 06</div>
+  <h2>The mark.</h2>
+  <p class="blurb">Six federated peers around an irrevocable core. The geometry encodes the architecture.</p>
+  <div class="page-footer"><span>NexaCore Brand Book</span><span>10</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 11 — LOGO PRIMARY
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>03 · The mark</span><span>Primary lockups</span></div>
+  <span class="eyebrow">§6 · Visual identity</span>
+  <h2>The mark and its lockups.</h2>
+  <p class="lede">Six petrol nodes represent federated attested peers. The central red dot is the Mission Anchor — irrevocable by design.</p>
+
+  <h3>NexaCore OS · primary lockup</h3>
+  <div class="logo-display">
+    <svg viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg" style="width: 70%;">
+      <g transform="translate(24,30)">
+        <circle cx="30" cy="30" r="26" fill="none" stroke="#0F4C5C" stroke-width="1.5" opacity="0.35"/>
+        <circle cx="30" cy="4" r="4" fill="#0F4C5C"/><circle cx="52.5" cy="17" r="4" fill="#0F4C5C"/>
+        <circle cx="52.5" cy="43" r="4" fill="#0F4C5C"/><circle cx="30" cy="56" r="4" fill="#0F4C5C"/>
+        <circle cx="7.5" cy="43" r="4" fill="#0F4C5C"/><circle cx="7.5" cy="17" r="4" fill="#0F4C5C"/>
+        <circle cx="30" cy="30" r="5" fill="#C03221"/>
+      </g>
+      <text x="108" y="56" font-family="Source Serif 4, serif" font-size="36" font-weight="700" fill="#0F4C5C" letter-spacing="-0.5">NexaCore OS</text>
+      <text x="110" y="80" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#1F2421" letter-spacing="0.5">A project of NexaCore Foundation</text>
+    </svg>
+  </div>
+
+  <h3>NexaCore Foundation · sibling lockup</h3>
+  <div class="logo-display">
+    <svg viewBox="0 0 460 120" xmlns="http://www.w3.org/2000/svg" style="width: 78%;">
+      <g transform="translate(24,30)">
+        <circle cx="30" cy="30" r="26" fill="none" stroke="#0F4C5C" stroke-width="1.5" opacity="0.35"/>
+        <circle cx="30" cy="4" r="4" fill="#0F4C5C"/><circle cx="52.5" cy="17" r="4" fill="#0F4C5C"/>
+        <circle cx="52.5" cy="43" r="4" fill="#0F4C5C"/><circle cx="30" cy="56" r="4" fill="#0F4C5C"/>
+        <circle cx="7.5" cy="43" r="4" fill="#0F4C5C"/><circle cx="7.5" cy="17" r="4" fill="#0F4C5C"/>
+        <circle cx="30" cy="30" r="5" fill="#C03221"/>
+      </g>
+      <text x="108" y="56" font-family="Source Serif 4, serif" font-size="36" font-weight="700" fill="#0F4C5C" letter-spacing="-0.5">NexaCore</text>
+      <text x="222" y="55" font-family="Inter, sans-serif" font-size="22" font-weight="500" fill="#1F2421" letter-spacing="3">FOUNDATION</text>
+      <text x="110" y="80" font-family="Inter, sans-serif" font-size="11" fill="#1F2421" letter-spacing="0.5">Stewarding NexaCore OS in the public interest</text>
+    </svg>
+  </div>
+
+  <p class="small">Both lockups share the federated-ring mark — the deliberate sibling signal. The NexaCore OS lockup sits product-side; the NexaCore Foundation lockup sits steward-side. See <code>brand/logos/</code> for all variants (stacked, monogram, monochrome dark/light, full legal lockup with Dutch entity line).</p>
+
+  <div class="page-footer"><span>brand/logos/</span><span>11</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 12 — LOGO CONSTRUCTION + RULES
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>03 · The mark</span><span>Construction &amp; rules</span></div>
+  <span class="eyebrow">§6 · Visual identity</span>
+  <h2>Construction &amp; clear-space.</h2>
+
+  <div class="grid grid-2">
+    <div>
+      <div class="logo-display" style="background: var(--cream-100);">
+        <svg viewBox="0 0 280 280" xmlns="http://www.w3.org/2000/svg" style="width: 100%;">
+          <rect x="20" y="20" width="240" height="240" fill="none" stroke="#1F2421" stroke-width="0.5" stroke-dasharray="3 3" opacity="0.35"/>
+          <rect x="70" y="70" width="140" height="140" fill="none" stroke="#1F2421" stroke-width="0.5" opacity="0.45"/>
+          <circle cx="140" cy="140" r="52" fill="none" stroke="#0F4C5C" stroke-width="2" opacity="0.35"/>
+          <circle cx="140" cy="88" r="8" fill="#0F4C5C"/><circle cx="185" cy="114" r="8" fill="#0F4C5C"/>
+          <circle cx="185" cy="166" r="8" fill="#0F4C5C"/><circle cx="140" cy="192" r="8" fill="#0F4C5C"/>
+          <circle cx="95" cy="166" r="8" fill="#0F4C5C"/><circle cx="95" cy="114" r="8" fill="#0F4C5C"/>
+          <circle cx="140" cy="140" r="10" fill="#C03221"/>
+        </svg>
+      </div>
+    </div>
+    <div>
+      <h4>Geometry</h4>
+      <ul>
+        <li>6 nodes · 60° spacing · starts top (12 o'clock)</li>
+        <li>Node radius: 8 units (in a 140-unit mark)</li>
+        <li>Core radius: 10 units</li>
+        <li>Ring radius: 52 units</li>
+        <li>Clear-space envelope: 1× mark-height on all sides</li>
+      </ul>
+      <h4>Semantics</h4>
+      <p class="small">The core (brick) is the Mission Anchor (Article 3 of the bylaws — irrevocable). The six nodes (petrol) are federated attested peers. The dimming envelope ring signals inclusion without coercion.</p>
+    </div>
+  </div>
+
+  <h3>What you may never do</h3>
+  <div class="grid grid-3">
+    <div class="card dont">
+      <p class="small"><strong>Recolor</strong> the mark outside the four sanctioned states (full color, monochrome dark, monochrome light, single-ink).</p>
+    </div>
+    <div class="card dont">
+      <p class="small">Add <strong>effects</strong> — drop shadow, glow, bevel, gradient fill, animation in static identity.</p>
+    </div>
+    <div class="card dont">
+      <p class="small">Change <strong>proportions</strong>. Six nodes only. Ring/node/core ratios are fixed.</p>
+    </div>
+    <div class="card dont">
+      <p class="small"><strong>Flip, rotate, or invert</strong>. Orientation is fixed — one node always at 12 o'clock.</p>
+    </div>
+    <div class="card dont">
+      <p class="small">Typeset <code>NexaCore OS</code> in a <strong>different font</strong>. Source Serif 4 700 is the only sanctioned wordmark.</p>
+    </div>
+    <div class="card dont">
+      <p class="small">Crop the <strong>wordmark</strong> out of a primary or stacked lockup. Use the monogram if space is tight.</p>
+    </div>
+  </div>
+
+  <div class="page-footer"><span>brand/logos/nexacore-os-construction.svg</span><span>12</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 13 — PALETTE
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>03 · The mark</span><span>Palette</span></div>
+  <span class="eyebrow">§7 · Color system</span>
+  <h2>Palette.</h2>
+  <p class="lede">Five families. One canonical of each. Brick is the only warm accent — and only when meaning demands it.</p>
+
+  <div class="grid grid-2">
+    <div>
+      <div class="swatch"><span class="swatch-chip" style="background:#0F4C5C"></span>
+        <div class="swatch-meta"><div class="nm">Petrol 500</div><div class="hx">#0F4C5C — primary brand hue</div></div></div>
+      <div class="swatch"><span class="swatch-chip" style="background:#F4EBD0"></span>
+        <div class="swatch-meta"><div class="nm">Cream 300</div><div class="hx">#F4EBD0 — warm canvas</div></div></div>
+      <div class="swatch"><span class="swatch-chip" style="background:#C03221"></span>
+        <div class="swatch-meta"><div class="nm">Brick 500</div><div class="hx">#C03221 — Mission Anchor accent</div></div></div>
+      <div class="swatch"><span class="swatch-chip" style="background:#7A9E7E"></span>
+        <div class="swatch-meta"><div class="nm">Sage 500</div><div class="hx">#7A9E7E — community / status-OK</div></div></div>
+      <div class="swatch"><span class="swatch-chip" style="background:#1F2421"></span>
+        <div class="swatch-meta"><div class="nm">Charcoal 800</div><div class="hx">#1F2421 — body text + dark surfaces</div></div></div>
+    </div>
+    <div>
+      <h4>The single-red rule</h4>
+      <p class="small">Brick is the ONLY warm accent in the system. Sage warns/passes, charcoal carries, petrol leads. Brick is reserved for:</p>
+      <ul>
+        <li>The Mission Anchor dot in the mark</li>
+        <li>Governance-status pills (<code>Vetoed</code>, <code>Critical</code>)</li>
+        <li><code>SEC-CRITICAL</code>, <code>AWAITING_CRYPTO_REVIEW</code> markers</li>
+        <li>Roadmap phase indicators that intentionally signal "this matters"</li>
+      </ul>
+      <p class="small"><strong>Brick is never decorative.</strong> If a designer is "using brick to add warmth", they are misusing it.</p>
+    </div>
+  </div>
+
+  <h3>Contrast on cream-300 canvas</h3>
+  <table>
+    <thead><tr><th>Foreground</th><th>Ratio</th><th>WCAG</th></tr></thead>
+    <tbody>
+      <tr><td>charcoal-800 <code>#1F2421</code></td><td>12.2 : 1</td><td>AAA all sizes</td></tr>
+      <tr><td>petrol-500 <code>#0F4C5C</code></td><td>9.4 : 1</td><td>AAA all sizes</td></tr>
+      <tr><td>brick-500 <code>#C03221</code></td><td>4.7 : 1</td><td>AA body · AAA large</td></tr>
+      <tr><td>sage-700 <code>#587657</code></td><td>4.6 : 1</td><td>AA body · AAA large</td></tr>
+    </tbody>
+  </table>
+  <p class="small">Full contrast matrix: <code>brand/colors/palette.md</code>. CSS tokens: <code>brand/colors/tokens.css</code>. JSON tokens: <code>brand/colors/tokens.json</code>.</p>
+
+  <div class="page-footer"><span>brand/colors/</span><span>13</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 14 — TYPOGRAPHY
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>03 · The mark</span><span>Typography</span></div>
+  <span class="eyebrow">§8 · Typography</span>
+  <h2>Three families. One job each.</h2>
+
+  <div style="background: white; padding: 6mm; border: 0.4pt solid var(--petrol-200); margin-bottom: 4mm; border-radius: 1mm;">
+    <p class="small mono" style="color: var(--brick-500); letter-spacing: 0.18em; margin-bottom: 2mm;">SOURCE SERIF 4 · 700 · DISPLAY</p>
+    <p style="font-family: 'Source Serif 4', serif; font-weight: 700; font-size: 28pt; line-height: 1.1; color: var(--petrol-500); letter-spacing: -0.015em;">An AI-native operating system.</p>
+  </div>
+  <div style="background: white; padding: 6mm; border: 0.4pt solid var(--petrol-200); margin-bottom: 4mm; border-radius: 1mm;">
+    <p class="small mono" style="color: var(--brick-500); letter-spacing: 0.18em; margin-bottom: 2mm;">INTER · 400–500 · BODY &amp; UI</p>
+    <p style="font-family: 'Inter', sans-serif; font-size: 12pt; line-height: 1.55;">A non-compliant node cannot produce valid mesh traffic — not because we say so, because the cryptography says so. <strong>The reader is competent.</strong> We address developers and technical readers as peers.</p>
+  </div>
+  <div style="background: white; padding: 6mm; border: 0.4pt solid var(--petrol-200); margin-bottom: 4mm; border-radius: 1mm;">
+    <p class="small mono" style="color: var(--brick-500); letter-spacing: 0.18em; margin-bottom: 2mm;">IBM PLEX MONO · 400 · CODE &amp; METADATA</p>
+    <p class="mono" style="font-size: 11pt; line-height: 1.55;">$ nexacore-mesh attest --tee tdx --quote ./quote.bin<br>&gt; valid · trust-anchor: nexacore-fdn-2026</p>
+  </div>
+
+  <h3>Why all three are SIL OFL</h3>
+  <p class="small">The codebase is Apache-2.0; the protocol specs are CC0. Bundling a proprietary font would create a single non-open dependency in the brand layer that contradicts the project's posture. SIL Open Font License permits redistribution, embedding, modification, and forks. Forks of NexaCore OS can ship the same fonts without per-seat licensing.</p>
+
+  <h3>Type scale · modular 1.250 (major third)</h3>
+  <table>
+    <thead><tr><th>Token</th><th>Size</th><th>Use</th></tr></thead>
+    <tbody>
+      <tr><td><code>--nexacore-text-xs</code></td><td>12 px</td><td>Captions, metadata, footnotes, status pills</td></tr>
+      <tr><td><code>--nexacore-text-sm</code></td><td>14 px</td><td>UI default, table cells, secondary text</td></tr>
+      <tr><td><code>--nexacore-text-base</code></td><td>16 px</td><td>Body text default — minimum allowed body size</td></tr>
+      <tr><td><code>--nexacore-text-lg</code></td><td>20 px</td><td>Lede paragraph, callout</td></tr>
+      <tr><td><code>--nexacore-text-2xl</code></td><td>31 px</td><td>Page sub-headings (h2)</td></tr>
+      <tr><td><code>--nexacore-text-3xl</code></td><td>39 px</td><td>Page headings (h1)</td></tr>
+      <tr><td><code>--nexacore-text-4xl</code></td><td>49 px</td><td>Hero headings, blog title</td></tr>
+    </tbody>
+  </table>
+
+  <div class="page-footer"><span>brand/typography/</span><span>14</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 15 — SECTION DIVIDER 04
+     ================================================================ -->
+<article class="page section-divider">
+  <div class="section-num">PART 04 / 06</div>
+  <h2>Iconography.</h2>
+  <p class="blurb">Sixteen symbols. Single-stroke. No fill. Color inherited. Index, never illustrate.</p>
+  <div class="page-footer"><span>NexaCore Brand Book</span><span>15</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 16 — ICON CATALOG (16 symbols)
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>04 · Iconography</span><span>Catalog</span></div>
+  <span class="eyebrow">§9 · Iconography</span>
+  <h2>Sixteen concepts.</h2>
+  <p class="lede">Each icon indexes a concept defined in the lexicon. Symbols are abstract — they do not illustrate.</p>
+
+  <div class="icon-grid">
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="3" r="1.6"/><circle cx="20" cy="7.5" r="1.6"/><circle cx="20" cy="16.5" r="1.6"/>
+        <circle cx="12" cy="21" r="1.6"/><circle cx="4" cy="16.5" r="1.6"/><circle cx="4" cy="7.5" r="1.6"/>
+        <line x1="12" y1="4.6" x2="12" y2="9"/><line x1="13.4" y1="3.8" x2="18.6" y2="6.7"/>
+        <line x1="18.6" y1="17.3" x2="13.4" y2="20.2"/><line x1="10.6" y1="20.2" x2="5.4" y2="17.3"/>
+        <line x1="5.4" y1="6.7" x2="10.6" y2="3.8"/>
+      </svg>
+      <div class="nm">mesh</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>
+      </svg>
+      <div class="nm">node</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="5" width="18" height="12" rx="1.5"/><line x1="8" y1="20" x2="16" y2="20"/>
+        <line x1="12" y1="17" x2="12" y2="20"/><rect x="10" y="9.5" width="4" height="3.5" rx="0.5"/>
+        <path d="M10.7 9.5 V8.2 a1.3 1.3 0 0 1 2.6 0 V9.5"/>
+      </svg>
+      <div class="nm">local-first</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 16 H17 a4 4 0 0 0 0-8 a5 5 0 0 0-9.5 1 A3.5 3.5 0 0 0 6 16 Z"/>
+        <line x1="4" y1="4" x2="20" y2="20"/>
+      </svg>
+      <div class="nm">cloud-deny</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3 L20 6 V12 a9 9 0 0 1-8 9 a9 9 0 0 1-8-9 V6 Z"/>
+        <path d="M8.5 12 L11 14.5 L16 9.5"/>
+      </svg>
+      <div class="nm">attestation</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="5" y="5" width="14" height="14" rx="1.5"/>
+        <line x1="9" y1="3" x2="9" y2="5"/><line x1="15" y1="3" x2="15" y2="5"/>
+        <line x1="9" y1="19" x2="9" y2="21"/><line x1="15" y1="19" x2="15" y2="21"/>
+        <line x1="3" y1="9" x2="5" y2="9"/><line x1="3" y1="15" x2="5" y2="15"/>
+        <line x1="19" y1="9" x2="21" y2="9"/><line x1="19" y1="15" x2="21" y2="15"/>
+        <path d="M12 9 L15 10 V13 a3 3 0 0 1-3 3 a3 3 0 0 1-3-3 V10 Z"/>
+      </svg>
+      <div class="nm">tee</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="2"/>
+      </svg>
+      <div class="nm">kernel</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 20 V18 a4 4 0 0 1 4-4 H15 a4 4 0 0 1 4 4 V20"/>
+        <circle cx="12" cy="8" r="4.5"/>
+        <line x1="10" y1="8" x2="14" y2="8"/><line x1="12" y1="6" x2="12" y2="10"/>
+      </svg>
+      <div class="nm">agent</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="6" width="6" height="12" rx="0.75"/>
+        <line x1="3" y1="9" x2="9" y2="9"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="3" y1="15" x2="9" y2="15"/>
+        <line x1="15" y1="12" x2="21" y2="12"/><polyline points="18.5 9.5 21 12 18.5 14.5"/>
+      </svg>
+      <div class="nm">inference</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="6" width="18" height="12" rx="1"/>
+        <polyline points="3 7 12 13 21 7"/><circle cx="17" cy="17" r="2.5"/>
+        <line x1="17" y1="14.5" x2="17" y2="11"/><line x1="17" y1="12" x2="19" y2="12"/>
+      </svg>
+      <div class="nm">encryption</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="4" cy="12" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="12" cy="18" r="2"/>
+        <path d="M6 12 L10 7"/><path d="M14 7 L18 12"/><path d="M18 13 L14 17"/>
+      </svg>
+      <div class="nm">mesh-route</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="3 7 12 3 21 7"/>
+        <line x1="3" y1="9" x2="21" y2="9"/>
+        <line x1="6" y1="9" x2="6" y2="18"/><line x1="12" y1="9" x2="12" y2="18"/><line x1="18" y1="9" x2="18" y2="18"/>
+        <line x1="3" y1="20" x2="21" y2="20"/>
+      </svg>
+      <div class="nm">governance</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="9" r="2"/>
+        <line x1="6" y1="7" x2="6" y2="17"/>
+        <path d="M6 11 Q 6 9 8 9 L16 9"/>
+      </svg>
+      <div class="nm">fork</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 3 H14 L18 7 V21 H6 Z"/>
+        <polyline points="14 3 14 7 18 7"/>
+        <line x1="8.5" y1="11.5" x2="14.5" y2="11.5"/><line x1="8.5" y1="14.5" x2="14.5" y2="14.5"/>
+        <path d="M8.5 17.5 Q 10 16 11.5 17.5 T 14.5 17.5"/>
+      </svg>
+      <div class="nm">ncip</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12 Q 7 5 12 5 Q 17 5 22 12 Q 17 19 12 19 Q 7 19 2 12 Z"/>
+        <circle cx="12" cy="12" r="2.5"/>
+        <line x1="4" y1="4" x2="20" y2="20"/>
+      </svg>
+      <div class="nm">zk-proof</div>
+    </div>
+    <div class="icon-cell">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="5" r="2"/>
+        <line x1="12" y1="7" x2="12" y2="20"/><line x1="9" y1="10" x2="15" y2="10"/>
+        <path d="M5 14 Q 5 20 12 20 Q 19 20 19 14"/>
+        <line x1="3" y1="14" x2="7" y2="14"/><line x1="17" y1="14" x2="21" y2="14"/>
+      </svg>
+      <div class="nm">anchor</div>
+    </div>
+  </div>
+
+  <p class="small" style="margin-top: 4mm;">Geometry: 24×24 viewBox · 1.5 stroke · round caps/joins · <code>stroke="currentColor"</code>. Source: <code>brand/icons/icons.svg</code>.</p>
+  <div class="page-footer"><span>brand/icons/</span><span>16</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 17 — SECTION DIVIDER 05
+     ================================================================ -->
+<article class="page section-divider">
+  <div class="section-num">PART 05 / 06</div>
+  <h2>Applications.</h2>
+  <p class="blurb">Templates ready to drop in. The brand applied — not described.</p>
+  <div class="page-footer"><span>NexaCore Brand Book</span><span>17</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 18 — APPLICATIONS GALLERY
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>05 · Applications</span><span>Gallery</span></div>
+  <span class="eyebrow">§10 · Applications</span>
+  <h2>The brand applied.</h2>
+
+  <h3>Open Graph / social card (1200 × 630)</h3>
+  <div style="border: 0.4pt solid var(--petrol-200); border-radius: 1mm; overflow: hidden; margin-bottom: 6mm;">
+    <svg viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg" style="display: block; width: 100%;">
+      <rect width="1200" height="630" fill="#0F4C5C"/>
+      <rect x="96" y="50" width="1008" height="530" fill="none" stroke="#F4EBD0" stroke-width="0.5" opacity="0.25"/>
+      <text x="96" y="100" font-family="IBM Plex Mono, monospace" font-weight="500" font-size="16" fill="#F4EBD0" opacity="0.85" letter-spacing="3">NexaCore FOUNDATION · STICHTING NexaCore · AMSTERDAM</text>
+      <g transform="translate(1014,76)">
+        <circle cx="30" cy="30" r="26" fill="none" stroke="#F4EBD0" stroke-width="1.5" opacity="0.45"/>
+        <circle cx="30" cy="4" r="4" fill="#F4EBD0"/><circle cx="52.5" cy="17" r="4" fill="#F4EBD0"/>
+        <circle cx="52.5" cy="43" r="4" fill="#F4EBD0"/><circle cx="30" cy="56" r="4" fill="#F4EBD0"/>
+        <circle cx="7.5" cy="43" r="4" fill="#F4EBD0"/><circle cx="7.5" cy="17" r="4" fill="#F4EBD0"/>
+        <circle cx="30" cy="30" r="5" fill="#C03221"/>
+      </g>
+      <text font-family="Source Serif 4, serif" font-weight="700" font-size="64" fill="#F4EBD0" letter-spacing="-1">
+        <tspan x="96" y="310">A computer you actually control,</tspan>
+        <tspan x="96" y="386">with the full power of modern AI.</tspan>
+      </text>
+      <line x1="96" y1="500" x2="1104" y2="500" stroke="#F4EBD0" stroke-width="0.5" opacity="0.35"/>
+      <text x="96" y="540" font-family="Source Serif 4, serif" font-style="italic" font-size="24" fill="#F4EBD0" opacity="0.9">Built to outlive its founders. Forks welcome.</text>
+      <text x="1104" y="540" font-family="IBM Plex Mono, monospace" font-weight="500" font-size="14" fill="#F4EBD0" opacity="0.75" text-anchor="end" letter-spacing="2">NexaCore-FOUNDATION.ORG</text>
+    </svg>
+  </div>
+
+  <p class="small">Template source: <code>brand/templates/social-card-1200x630.svg</code>. Edit the two <code>tspan</code> elements to customize the headline. Export to PNG at 1200×630 (or 2400×1260 for retina).</p>
+
+  <h3>GitHub repository social preview (1280 × 640)</h3>
+  <p class="small">Template source: <code>brand/templates/github-social-1280x640.svg</code>. Upload via repository <em>Settings → Options → Social preview</em>.</p>
+
+  <h3>Other templates</h3>
+  <ul>
+    <li><code>brand/templates/README-header.md</code> — repository README header block</li>
+    <li><code>brand/templates/slide-deck-starter.html</code> — single-file presentation deck</li>
+    <li><code>brand/templates/ncip-cover.md</code> — NexaCore Improvement Proposal cover</li>
+    <li><code>brand/templates/email-signature.html</code> + <code>.txt</code> — email signature (HTML and plain)</li>
+  </ul>
+
+  <div class="page-footer"><span>brand/templates/</span><span>18</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 19 — SECTION DIVIDER 06
+     ================================================================ -->
+<article class="page section-divider">
+  <div class="section-num">PART 06 / 06</div>
+  <h2>Operating<br>the brand.</h2>
+  <p class="blurb">Which brand goes where. Co-branding. Forks. How to contribute.</p>
+  <div class="page-footer"><span>NexaCore Brand Book</span><span>19</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 20 — APPLICATION GUIDANCE
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>06 · Operating the brand</span><span>Guidance</span></div>
+  <span class="eyebrow">§11 · Application guidance</span>
+  <h2>Which brand goes where.</h2>
+
+  <table>
+    <thead><tr><th>Context</th><th>Identity</th></tr></thead>
+    <tbody>
+      <tr><td>Source code, technical docs, READMEs</td><td><code>NexaCore OS</code></td></tr>
+      <tr><td>Public website, social bios, blog</td><td><code>NexaCore Foundation</code> (+ product <code>NexaCore OS</code>)</td></tr>
+      <tr><td>Press release (first mention)</td><td><code>NexaCore Foundation (Stichting NexaCore)</code>, thereafter <code>NexaCore Foundation</code></td></tr>
+      <tr><td>International grant cover letter</td><td><code>NexaCore Foundation</code></td></tr>
+      <tr><td>Dutch grant (NLnet, NL bodies)</td><td><code>Stichting NexaCore ("NexaCore Foundation")</code></td></tr>
+      <tr><td>Contract / commercial license</td><td><code>Stichting NexaCore</code></td></tr>
+      <tr><td>Annual transparency report cover</td><td><code>NexaCore Foundation — Stichting NexaCore, Amsterdam</code></td></tr>
+      <tr><td>Email signature (Foundation staff)</td><td><code>NexaCore Foundation | Stichting NexaCore, Amsterdam</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Co-branding</h3>
+  <p>When acknowledging external entities (Open Philanthropy, NLnet, Mozilla MOSS, etc.), NexaCore is always the <strong>anchor</strong>, the external entity the <strong>endorser</strong>. Standard format:</p>
+  <p class="mono" style="background: var(--cream-100); padding: 3mm; border-left: 0.6mm solid var(--petrol-500);">NexaCore Foundation gratefully acknowledges [Funder] for [grant ID / project name].</p>
+  <p>Logo lockups: external logo to the right of the NexaCore Foundation wordmark, separated by a 2-rem rule. <strong>Never composite logos with no separator.</strong> Endorsement-of-the-month "trusted by" logo walls: forbidden. Funders are listed in the transparency report, not as decoration.</p>
+
+  <h3>Forks &amp; derivative works</h3>
+  <p>Per the public trademark policy (Article 10.3 of the bylaws):</p>
+  <ul>
+    <li>Protocol-compliant forks <strong>may</strong> use the <code>NexaCore OS</code> name, encouraged to add a distinguishing qualifier (<code>NexaCore OS — Acme Edition</code>).</li>
+    <li>Protocol-incompatible forks <strong>may not</strong> use <code>NexaCore OS</code> in their name. They may use <code>derived from NexaCore OS</code>.</li>
+    <li>The Foundation will not initiate trademark enforcement against good-faith uses. Bad-faith uses (impersonation, regulatory fraud) addressed case-by-case.</li>
+  </ul>
+
+  <div class="page-footer"><span>brand/STRATEGY.md §9</span><span>20</span></div>
+</article>
+
+<!-- ================================================================
+     PAGE 21 — CONTRIBUTING / CONTACT / COLOPHON
+     ================================================================ -->
+<article class="page">
+  <div class="page-header"><span>06 · Operating the brand</span><span>Contributing</span></div>
+  <span class="eyebrow">§12 · Contributing &amp; contact</span>
+  <h2>How to contribute.</h2>
+  <p class="lede">Brand changes follow the same review process as code. The brand is documented; the documentation is versioned; changes are signed.</p>
+
+  <h3>Adding to the brand</h3>
+  <ol>
+    <li>If you are adding a new <strong>concept</strong> to the lexicon, propose it via PR to <code>brand/STRATEGY.md</code> §8 first. Lexicon precedes iconography.</li>
+    <li>If you are adding a <strong>color token</strong>, add it to <code>brand/colors/tokens.css</code> + <code>tokens.json</code> + the contrast matrix in <code>palette.md</code>, in that order.</li>
+    <li>If you are adding a <strong>template</strong>, follow the consumption pattern documented in <code>brand/templates/README.md</code>.</li>
+    <li>If you are adding an <strong>icon</strong>, follow <code>brand/icons/README.md</code> §"Adding a new icon".</li>
+    <li>Open a Draft PR. Sign your commits (DCO). Brand changes get reviewed by the Lead Architect (for years 1–5) or the Foundation Director (from 2031-05-09 onward).</li>
+  </ol>
+
+  <h3>Reporting brand misuse</h3>
+  <p>Use of the NexaCore marks that violates the trademark policy or this book — by good-faith mistake or bad faith — can be reported to <code>brand@nexacoreos.com</code> (email TBD upon Foundation constitution; fall back to <code>hello@nexacoreos.com</code> until then). Good-faith corrections are resolved by documentation; bad-faith uses are addressed per the trademark policy.</p>
+
+  <h3>Contact</h3>
+  <p class="mono" style="background: var(--cream-100); padding: 3mm; border-left: 0.6mm solid var(--petrol-500);">
+    cySalazar &nbsp;·&nbsp; hello@nexacoreos.com<br>
+    github.com/CySalazar/nexacore-os<br>
+    nexacoreos.com (forthcoming)<br><br>
+    NexaCore Foundation · Stichting NexaCore · Amsterdam, NL
+  </p>
+
+  <h3>Colophon</h3>
+  <p class="small">This book was set in Source Serif 4 (Adobe, SIL OFL), Inter (Rasmus Andersson, SIL OFL), and IBM Plex Mono (IBM/Bold Monkey, SIL OFL). Direction C — Civic Tech / Generational. References include the design languages of Mozilla, Wikimedia, GOV.UK, the Internet Archive, and the Long Now Foundation. Authored by cySalazar for NexaCore Foundation.</p>
+
+  <div class="page-footer"><span>brand/STRATEGY.md · brand-book.html v0.1</span><span>21</span></div>
+</article>
+
+</body>
+</html>

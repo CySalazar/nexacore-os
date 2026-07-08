@@ -1,0 +1,179 @@
+# =============================================================================
+# nexacore-kernel — NexaCore OS microkernel
+# =============================================================================
+# The Rust microkernel: memory management, scheduling, IPC primitives, and
+# capability-based security. The kernel TCB is intentionally small;
+# everything that can run in user space (drivers, filesystems, networking,
+# AI runtime) does.
+#
+# Default build is `std` (so the workspace compiles end-to-end on developer
+# machines and CI). The `bare-metal` feature switches the crate to
+# `no_std + no_main` for the real kernel binary; that transition lands per
+# `/ncips/ncip-kernel-003.md` (P6.1 / P6.2 — UEFI bootloader integration).
+# =============================================================================
+
+[package]
+name             = "nexacore-kernel"
+description      = "NexaCore OS microkernel — capability-based, message-passing, written in Rust."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Feature flags
+# -----------------------------------------------------------------------------
+# `bare-metal` switches `lib.rs` to `#![no_std]` + `#![no_main]` and disables
+# every code path that uses libstd. Without the flag the crate compiles as a
+# normal Rust library so the workspace stays buildable end-to-end on
+# developer machines without a TDX-capable target.
+# -----------------------------------------------------------------------------
+[dependencies]
+# `nexacore-types` is the only first-party dep K3 needs: `bare_metal::panic`
+# encodes its `PanicRecord` via `nexacore_types::wire::encode_into_slice`.
+# Future modules (capabilities, IPC, syscall dispatch) will reintroduce
+# `nexacore-capability` and `nexacore-tee` as deps once they consume those
+# crates' types — at present the kernel's internal traits/types are
+# self-contained and pulling those deps only inflates the compile
+# closure (and breaks the bare-metal cross-build because their
+# transitive `getrandom`/`cmov` chain has no `x86_64-unknown-none`
+# implementation).
+# Bare-metal kernel cannot use `workspace = true` for nexacore-types
+# because `id-generation` (default-enabled) pulls `uuid` + `getrandom`,
+# neither of which build on `x86_64-unknown-none`. Pin path + version
+# directly with `default-features = false` to opt out cleanly.
+nexacore-types      = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+# `nexacore-capability` integration (MB13.c). The kernel calls
+# `CapabilityToken::verify_signature` from `Ed25519CapabilityProvider`
+# to authenticate IPC capability tokens minted by user space. The
+# `bare-metal` feature propagates `nexacore-crypto/bare-metal`, which
+# disables the `rng` path that would otherwise pull `getrandom` into
+# the `x86_64-unknown-none` build (MB13.a). `default-features = false`
+# is critical: the crate's own `[features].default` is empty (no
+# behaviour change) but Cargo refuses to override workspace inheritance
+# from a downstream member, so the path + version form is used.
+nexacore-capability = { path = "../nexacore-capability", version = "0.2.0", default-features = false, features = ["bare-metal"] }
+# `nexacore-crypto` (P6.7.3 — NCIP-013 driver framework). The kernel verifies
+# driver-manifest signatures (Ed25519) and image hashes (BLAKE3) at
+# `DriverLoad`. The `bare-metal` feature alias matches the existing
+# `nexacore-capability` pattern: it disables the `rng` default and keeps the
+# verify-only primitive surface, which compiles on `x86_64-unknown-none`.
+nexacore-crypto     = { path = "../nexacore-crypto",     version = "0.2.0", default-features = false, features = ["bare-metal"] }
+# `serde` is required by `bare_metal::panic::PanicRecord` (derive
+# Serialize). The workspace pins `default-features = false` + `derive`
+# + `alloc`, so the kernel pulls `serde` without `std`. NCIP-Kernel-012
+# § S1.
+serde           = { workspace = true }
+# `bootloader_api` 0.11 provides `BootInfo`, `MemoryRegions`, `FrameBuffer`,
+# and the `entry_point!` macro consumed by `bare_metal::heap::pick_region`
+# and `kmain`. The split between `bootloader_api` (kernel-side, no_std) and
+# `bootloader` (host-side builder) is the 0.11 design; we only need the
+# kernel-side half here. NCIP-Kernel-005 § S3 / § S4 (updated for 0.11).
+bootloader_api = { version = "0.11", optional = true, default-features = false }
+# `font8x8` provides a no_std-compatible 8×8 monospace bitmap font used by
+# `bare_metal::font` to render text on the GOP framebuffer. Zero dependencies,
+# zero allocation. Gated under `bare-metal` so host builds are unaffected.
+font8x8        = { version = "0.3", optional = true, default-features = false }
+# `rand_core` + `rand_chacha` back the Phase-1 kernel CSPRNG used by
+# P6.7.8.9 to mint `CapabilityToken` identifiers at `DriverLoad` time.
+# Both are pulled with `default-features = false`: `rand_core` then has
+# no features (in particular no `getrandom`, which does not build on
+# `x86_64-unknown-none`) and `rand_chacha` drops `std` + `serde1`. The
+# `nexacore-crypto[bare-metal]` path keeps its own `rand_core` optional
+# slot disabled, so on bare-metal the only `rand_core` consumer is the
+# kernel itself.
+rand_core      = { version = "0.6", default-features = false }
+rand_chacha    = { version = "0.3", default-features = false }
+# `spin` provides the no_std `Mutex` used by the global `KERNEL_CSPRNG`
+# wrapper. The `mutex` + `spin_mutex` features are enabled explicitly
+# (default would also bring `lazy`/`barrier` which we do not need).
+spin           = { version = "0.9", default-features = false, features = ["mutex", "spin_mutex"] }
+# `nexacore-shell` provides `process_line` and `ShellEnv` for the bare-metal
+# desktop terminal. Compiled without `std` so it uses the kernel's `alloc`
+# heap. Gated behind `bare-metal` so host builds are unaffected.
+nexacore-shell     = { path = "../nexacore-shell", version = "0.2.0", default-features = false, optional = true }
+
+[features]
+default     = []
+# `bare-metal` switches the crate to `no_std + no_main` (gated in
+# `lib.rs`) and enables the `bare_metal` module + its
+# `bootloader_api`-dependent surface (`kmain`, `pick_region`) and the
+# `font8x8` bitmap renderer used by the GOP framebuffer banner.
+# NCIP-Kernel-012 § S5 K3.a; NCIP-Kernel-005 § S3 K4.b (updated 0.11).
+bare-metal  = ["dep:bootloader_api", "dep:font8x8", "dep:nexacore-shell"]
+# `mb8-smoke` enables the two-task preemption smoke (Track B MB8):
+# spawns Task A and Task B that print 'A' and 'B' in tight loops and
+# never yield, so any interleaved output on serial proves that the
+# LAPIC timer is preempting them. The whole module is `#[cfg]`-gated
+# out of the production build, so VirtualBox / Proxmox deploys are
+# unaffected unless the flag is explicitly passed. Implies `bare-metal`
+# because the smoke uses the bare-metal SCHEDULER and FRAME_ALLOC.
+mb8-smoke   = ["bare-metal"]
+# `mb11-userprobe` enables the Ring 3 user-probe smoke (Track B MB11):
+# spawns the embedded `WriteConsole("hello\n") + TaskExit(0)` ELF as a
+# Ring 3 process, then transfers to user mode via `enter_user_mode`.
+# The kernel halts after `TaskExit`; the desktop demo is unreachable
+# under this feature. Gated like `mb8-smoke` for the same reasons.
+mb11-userprobe = ["bare-metal"]
+# `mb12-userprobe` enables the MB12 IPC cross-process smoke: spawns
+# two Ring 3 processes (sender + receiver) that exchange a "ping"
+# message through channel 1 with capability gating disabled (open
+# channel — capability check is exercised in the integration tests).
+# Mutually exclusive with `mb11-userprobe` at the boot wiring level:
+# `kmain` takes the first available userprobe feature and ignores the
+# rest. Gated like `mb8-smoke` for the same reasons.
+mb12-userprobe = ["bare-metal"]
+# `m0-netcheck` spawns the Ring 3 M0 networking self-test client
+# (`/bin/nexacore-netcheck`) at boot, after the nexacore-net service. The client
+# issues NetSocket/NetConnect syscalls and prints the results to the serial
+# console, validating the kernel→nexacore-net IPC relay end to end on hardware.
+# Off by default (a test probe, not a production workload); enabled only for
+# the M0 bring-up smoke build.
+m0-netcheck = ["bare-metal"]
+# `iommu-te` raises the IOMMU translation-enable gate (VT-d `GCMD.TE` /
+# AMD-Vi `CTRL.IommuEn`) once at least one per-device context entry has
+# been installed by `DriverLoad (73)`. OFF by default and OPERATOR-GATED:
+# with TE up every DMA-capable device is strictly confined to its
+# per-domain second-level page table, so an incomplete mapping faults ALL
+# of that device's DMA (networking + storage at once). Enable only in the
+# dedicated, hardware-verified WI-7b session (NCIP-026 R2 §S9.1, PLAN
+# TASK-07; ADR-0027).
+iommu-te = ["bare-metal"]
+# `iommu-negtest` is the NCIP-026 §S9.1 NEGATIVE-test harness (WI-7b step 3,
+# ADR-0029). DEV-ONLY: it deliberately gives the in-kernel e1000e (which M0
+# does not use) a translating context entry backed by an EMPTY second-level
+# page table, then forces a TX-ring DMA after `GCMD.TE` — the IOMMU must
+# block + fault that out-of-window DMA (recorded in FRCD), proving the
+# confinement actually enforces. It then revokes the entry (detach +
+# invalidation). Implies `iommu-te`. NEVER in CI / production.
+iommu-negtest = ["iommu-te"]
+# `display-probe` spawns the Ring 3 `/bin/nexacore-display-probe` image at boot
+# and activates the kernel input pump loop (TASK-18, DE-C1, ADR-0040 D4/D5).
+# Gated like `mb11-userprobe`/`mb12-userprobe` — a bring-up probe, not a
+# production workload. When enabled the kernel:
+#   1. Creates a no-cap IPC Notification channel (the display input channel).
+#   2. Spawns the probe from initramfs with a DisplayMap capability scoped to
+#      the whole framebuffer and an IpcSend capability for the input channel.
+#   3. Enters a cooperative poll loop: ps2_poll → encode DisplayInputEvent →
+#      ipc::send → task_yield.
+# OFF by default; enable only for the M3 display bring-up session.
+display-probe = ["bare-metal"]
+
+[dev-dependencies]
+proptest = { workspace = true }
+# MB13.c — host-side capability tests need the userspace mint path
+# (`CapabilityToken::mint`, `NexaCoreSigningKey::generate`). dev-dependencies
+# only apply to `cargo test`/`bench`, so the bare-metal `cargo build`
+# still resolves `nexacore-capability` with `bare-metal` features only.
+nexacore-capability = { path = "../nexacore-capability", version = "0.2.0", default-features = false, features = ["mint"] }
+nexacore-crypto     = { path = "../nexacore-crypto",     version = "0.2.0", default-features = false, features = ["rng"] }
+nexacore-types      = { path = "../nexacore-types",      version = "0.2.0", default-features = false, features = ["id-generation"] }

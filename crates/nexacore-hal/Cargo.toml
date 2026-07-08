@@ -1,0 +1,91 @@
+# =============================================================================
+# nexacore-hal — Hardware Abstraction Layer
+# =============================================================================
+# Uniform traits for tensor accelerators, networking, storage, and TEEs.
+# Userspace services target HAL traits; concrete backends are loaded at
+# runtime per available hardware.
+# =============================================================================
+
+[package]
+name             = "nexacore-hal"
+description      = "Hardware Abstraction Layer for NexaCore OS — Tensor, Network, Storage, and TEE traits."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Feature flags
+# -----------------------------------------------------------------------------
+# `std` (default-on): enables the async trait surface, SIMD detection, and
+# the `tee` module re-export.  Disable with `default-features = false` for
+# `no_std + alloc` builds (TASK-13-pre, ADR-0034).
+#
+# TEE features are forwarded to `nexacore-tee` so a consumer enabling `nexacore-hal/tdx`
+# transitively enables `nexacore-tee/tdx`.  TEE features imply `std` because the
+# TEE backends require the standard library.
+# -----------------------------------------------------------------------------
+[features]
+default      = ["std", "mock"]
+# Pull in async-trait and nexacore-tee; gate SIMD detection and the tee module.
+# All callers that just `use nexacore_hal;` will see the full std surface.
+std          = [
+    "dep:async-trait",
+    "dep:nexacore-tee",
+    "tracing/std",
+]
+mock         = ["std", "nexacore-tee/mock"]
+tdx          = ["std", "nexacore-tee/tdx"]
+sev-snp      = ["std", "nexacore-tee/sev-snp"]
+all-backends = ["tdx", "sev-snp", "mock"]
+
+[dependencies]
+# `default-features = false` strips `id-generation` (uuid + getrandom), which
+# cannot build for `x86_64-unknown-none` (no platform CSPRNG).  nexacore-hal only
+# consumes `nexacore_types::error`, which is no_std-clean; std consumers that need
+# identity types declare their own nexacore-types dependency (TASK-13-pre,
+# ADR-0034).  Cannot use `workspace = true`: a member cannot override the
+# workspace's `default-features` (same pattern as nexacore-kernel/nexacore-capability).
+nexacore-types  = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+# nexacore-tee is optional: only needed under the `std` feature (TEE backends are
+# not available in no_std contexts).
+nexacore-tee    = { workspace = true, optional = true }
+# async-trait is optional: the async TensorBackend trait is std-only.
+async-trait = { workspace = true, optional = true }
+# tracing: kept unconditional but with default-features=false so the `std`
+# feature of tracing is only pulled in when our own `std` feature is active
+# (tracing core works in no_std; the `std` feature adds std::error::Error impl).
+tracing     = { version = "0.1", default-features = false }
+thiserror   = { workspace = true }
+# NOTE: `tokio` is intentionally NOT a production dependency any more: the
+# no_std port (TASK-13-pre / ADR-0034) made the whole forward path synchronous
+# (`transformer_forward_cached` no longer drives a `block_on` bridge), so
+# tokio survives only in [dev-dependencies] for `#[tokio::test]` cases.
+# `libm` provides transcendental float functions (sqrt, exp, sin, cos, powf)
+# for no_std targets where these are not in `core` (stable Rust 1.85).
+# Non-optional: tiny, pure-Rust, MIT/Apache-2.0; always present so the math
+# shim compiles without a cfg forest.
+libm        = { workspace = true }
+
+[dev-dependencies]
+# `tokio` is required in dev-only context to drive `#[tokio::test]` async
+# test cases for the CpuBackend.  It is NOT a production dependency because
+# nexacore-hal's trait surface is executor-agnostic and the crate targets a
+# no_std future (Phase 6).
+tokio = { workspace = true }
+# `criterion` is used for benchmark harness (tech-spec pin: 0.5.x).
+# Apache-2.0/MIT dual-licensed; allowlist-compatible.
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name        = "quant_bench"
+harness     = false

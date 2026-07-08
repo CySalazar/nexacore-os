@@ -1,0 +1,66 @@
+# =============================================================================
+# nexacore-blkcheck-image — bare-metal TASK-14 BLK service smoke client
+# =============================================================================
+#
+# `no_std + no_main` ELF the kernel spawns as a Ring 3 process to validate
+# the NVMe BLK service loop end to end (TASK-14, ADR-0036 D7):
+#
+#   ① negative: `BlkLookup(78)` without a capability token → EACCES
+#   ② capability lookup via the kernel deposit window
+#   ③ `BlkLookup` with deposited token → (req_channel, reply_channel)
+#   ④ Write LBA 42 with a seeded 4096-byte pattern (inline 2×2048 chunks)
+#   ⑤ Flush
+#   ⑥ Read LBA 42 back (inline 2×2048 chunks)
+#   ⑦ Byte-compare; exit 0 on MATCH
+#   ⑧ Out-of-range negative: Read at LBA MAX/2 → expect OutOfRange
+#
+# A 64 KiB bump allocator backs the postcard encode/decode paths for
+# `BlkRequest` / `BlkResponse` (the fixed-frame types from
+# `nexacore-driver-shared::blk` are NOT used here — the IPC transport carries
+# postcard-encoded `nexacore_types::blk` enums per ADR-0036 D3).
+#
+# Built out-of-workspace via:
+#   cargo build --manifest-path crates/nexacore-blkcheck-image/Cargo.toml \
+#               --target x86_64-unknown-none --release
+# =============================================================================
+
+[package]
+name         = "nexacore-blkcheck-image"
+description  = "Bare-metal TASK-14 BLK service smoke client for NexaCore OS"
+version      = "0.1.0"
+edition      = "2024"
+rust-version = "1.85"
+authors      = ["cySalazar <hello@nexacoreos.com>"]
+license      = "Apache-2.0"
+repository   = "https://github.com/CySalazar/nexacore-os"
+homepage     = "https://nexacoreos.com"
+publish      = false
+
+[[bin]]
+name = "nexacore-blkcheck-image"
+path = "src/main.rs"
+
+[dependencies]
+# nexacore-types carries the BLK wire types (BlkRequest / BlkResponse) and the
+# canonical wire encoder/decoder. `default-features = false` strips uuid +
+# getrandom so this builds for x86_64-unknown-none.
+nexacore-types = { path = "../nexacore-types", default-features = false }
+# nexacore-driver-shared provides the capability deposit window parser
+# (`caps::find_token`) and the OMNICAPS well-known VA constants.
+# Dep-free and no_std; safe to link into Ring 3 images.
+nexacore-driver-shared = { path = "../nexacore-driver-shared" }
+# serde with no_std + alloc: needed for the postcard encode/decode helpers
+# that serialise BlkRequest / BlkResponse.
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+# postcard 1.x: the canonical NexaCore wire encoding (NCIP-Serde-004).
+postcard = { version = "1.0", default-features = false, features = ["alloc"] }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+lto           = true
+codegen-units = 1
+panic         = "abort"
+strip         = "debuginfo"
+opt-level     = "z"

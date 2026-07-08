@@ -1,0 +1,175 @@
+/* ============================================================
+   NexaCore OS — Typography tokens
+   Direction:    C — Civic Tech / Generational
+   Authoritative: brand/typography/typography.md
+   ============================================================ */
+
+/* Font-face declarations (local-first preferred — drop WOFF2 in ./fonts/) */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: local('Source Serif 4'), local('SourceSerif4-Variable'),
+       url('./fonts/SourceSerif4-VF.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+  src: local('Source Serif 4 Italic'), local('SourceSerif4-ItalicVariable'),
+       url('./fonts/SourceSerif4-Italic-VF.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: local('Inter'), local('Inter Variable'),
+       url('./fonts/Inter-VF.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 300 600;
+  font-display: swap;
+  src: local('IBM Plex Mono'),
+       url('./fonts/IBMPlexMono-Variable.woff2') format('woff2-variations');
+}
+
+:root {
+  /* Family stacks */
+  --nexacore-font-display: 'Source Serif 4', 'Source Serif Pro', 'Georgia', 'Times New Roman', serif;
+  --nexacore-font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --nexacore-font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', 'Menlo', 'Consolas', monospace;
+
+  /* Modular scale 1.250 */
+  --nexacore-text-xs:    0.75rem;    /* 12 px */
+  --nexacore-text-sm:    0.875rem;   /* 14 px */
+  --nexacore-text-base:  1rem;       /* 16 px */
+  --nexacore-text-lg:    1.25rem;    /* 20 px */
+  --nexacore-text-xl:    1.5625rem;  /* 25 px */
+  --nexacore-text-2xl:   1.953rem;   /* 31 px */
+  --nexacore-text-3xl:   2.441rem;   /* 39 px */
+  --nexacore-text-4xl:   3.052rem;   /* 49 px */
+  --nexacore-text-5xl:   3.815rem;   /* 61 px */
+
+  /* Line heights */
+  --nexacore-leading-tight:    1.15;
+  --nexacore-leading-snug:     1.4;
+  --nexacore-leading-normal:   1.55;
+  --nexacore-leading-relaxed:  1.6;
+
+  /* Letter spacing */
+  --nexacore-tracking-tight:   -0.015em;
+  --nexacore-tracking-normal:  0;
+  --nexacore-tracking-wide:    0.06em;
+  --nexacore-tracking-wider:   0.08em;
+  --nexacore-tracking-widest:  0.12em;
+
+  /* Weights */
+  --nexacore-weight-regular:   400;
+  --nexacore-weight-medium:    500;
+  --nexacore-weight-semibold:  600;
+  --nexacore-weight-bold:      700;
+}
+
+.nexacore-typography {
+  font-family: var(--nexacore-font-body);
+  font-size: var(--nexacore-text-base);
+  line-height: var(--nexacore-leading-normal);
+  font-feature-settings: "liga" on, "calt" on, "kern" on;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.nexacore-typography h1,
+.nexacore-typography h2,
+.nexacore-typography h3,
+.nexacore-typography .display {
+  font-family: var(--nexacore-font-display);
+  font-weight: var(--nexacore-weight-bold);
+  letter-spacing: var(--nexacore-tracking-tight);
+  line-height: var(--nexacore-leading-tight);
+}
+
+.nexacore-typography h1 { font-size: var(--nexacore-text-3xl); }
+.nexacore-typography h2 { font-size: var(--nexacore-text-2xl); }
+.nexacore-typography h3 { font-size: var(--nexacore-text-xl); }
+.nexacore-typography h4 { font-size: var(--nexacore-text-lg); font-family: var(--nexacore-font-body); font-weight: var(--nexacore-weight-semibold); }
+.nexacore-typography h5, .nexacore-typography h6 { font-size: var(--nexacore-text-base); font-family: var(--nexacore-font-body); font-weight: var(--nexacore-weight-semibold); }
+
+.nexacore-typography .lede {
+  font-family: var(--nexacore-font-display);
+  font-size: var(--nexacore-text-lg);
+  line-height: var(--nexacore-leading-normal);
+  color: var(--nexacore-text-secondary);
+}
+
+.nexacore-typography code,
+.nexacore-typography pre,
+.nexacore-typography kbd,
+.nexacore-typography samp {
+  font-family: var(--nexacore-font-mono);
+  font-size: 0.95em;
+  font-feature-settings: "liga" off, "calt" off;
+}
+
+.nexacore-typography pre {
+  line-height: var(--nexacore-leading-relaxed);
+  padding: 1rem 1.25rem;
+  background: var(--nexacore-bg-code);
+  border-left: 3px solid var(--nexacore-border-accent);
+  overflow-x: auto;
+}
+
+/* Owned patterns */
+.nexacore-status {
+  font-family: var(--nexacore-font-mono);
+  font-size: var(--nexacore-text-xs);
+  font-weight: var(--nexacore-weight-medium);
+  letter-spacing: var(--nexacore-tracking-wider);
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 2px;
+  display: inline-block;
+  white-space: nowrap;
+}
+.nexacore-status--draft    { background: var(--nexacore-bg-surface-2); color: var(--nexacore-text-secondary); border: 1px solid var(--nexacore-border-default); }
+.nexacore-status--review   { background: var(--nexacore-bg-surface-2); color: var(--nexacore-status-info); border: 1px solid var(--nexacore-status-info); }
+.nexacore-status--active   { background: var(--nexacore-sage-100); color: var(--nexacore-sage-900); }
+.nexacore-status--final    { background: var(--nexacore-petrol-500); color: var(--nexacore-cream-300); }
+.nexacore-status--vetoed,
+.nexacore-status--critical { background: var(--nexacore-brick-500); color: var(--nexacore-cream-300); }
+.nexacore-status--withdrawn { background: var(--nexacore-charcoal-100); color: var(--nexacore-charcoal-500); text-decoration: line-through; }
+
+.nexacore-doc-fingerprint {
+  font-family: var(--nexacore-font-mono);
+  font-size: var(--nexacore-text-xs);
+  letter-spacing: var(--nexacore-tracking-wide);
+  color: var(--nexacore-text-tertiary);
+}
+
+.nexacore-pullquote {
+  font-family: var(--nexacore-font-display);
+  font-style: italic;
+  font-weight: var(--nexacore-weight-semibold);
+  font-size: var(--nexacore-text-2xl);
+  line-height: var(--nexacore-leading-snug);
+  color: var(--nexacore-text-accent);
+  max-width: 38em;
+  padding-left: 1rem;
+  border-left: 3px solid var(--nexacore-border-accent);
+  margin: 1.5rem 0;
+}
+
+.nexacore-label-allcaps {
+  font-family: var(--nexacore-font-mono);
+  font-size: var(--nexacore-text-xs);
+  font-weight: var(--nexacore-weight-medium);
+  letter-spacing: var(--nexacore-tracking-wider);
+  text-transform: uppercase;
+  color: var(--nexacore-text-secondary);
+}

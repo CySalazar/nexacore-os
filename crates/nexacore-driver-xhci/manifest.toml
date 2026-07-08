@@ -1,0 +1,72 @@
+# =============================================================================
+# nexacore-driver-xhci — developer-authored driver manifest (TOML v1)
+# =============================================================================
+# Source format consumed by the `nexacore-driver-pack` build tool (NexaCore Forge,
+# user-space) per `NCIP-Driver-Framework-013` § S5.1. The tool compiles this
+# TOML into the canonical postcard payload embedded inside an
+# `NexaCore-Pack v1` binary container (§ S5.5) and signs it with the issuer's
+# Ed25519 key. The kernel does NOT parse TOML; it only validates the
+# NexaCore-Pack header and decodes the postcard manifest.
+#
+# Placeholder values (`nexacore_image_hash`, `nexacore_signature`,
+# `nexacore_issuer_pubkey`) are filled in by `nexacore-driver-pack` after the
+# driver image is built.
+#
+# At boot time the kernel uses the boot-spawn path (ADR-0048 D2,
+# mirroring the NVMe path): `find_by_class(0x0C, 0x03)` + prog_if `0x30`,
+# then `spawn_driver_and_deposit`. The signed-manifest DriverLoad(73) route
+# is the future userspace path; this manifest is maintained for parity.
+# =============================================================================
+
+[meta]
+name           = "nexacore-driver-xhci"
+version        = "0.2.0"
+nexacore_image_hash = "<filled-by-nexacore-driver-pack: 64-hex-char BLAKE3 of the ELF image>"
+nexacore_signature  = "<filled-by-nexacore-driver-pack: base64 Ed25519 over manifest.pc>"
+nexacore_issuer_pubkey = "<filled-by-nexacore-driver-pack: base64 Ed25519 public key, must be in KNOWN_ISSUERS>"
+
+# -----------------------------------------------------------------------------
+# Capabilities the driver requests at DriverLoad time.
+# -----------------------------------------------------------------------------
+[capabilities]
+# MMIO region: the xHCI BAR (BAR0, typically 64 KiB — covers capability
+# registers, operational registers, runtime registers, and doorbell array).
+mmio_regions = [
+    { phys_base = "<xHCI BAR0 phys base from PCI enum>", len = "0x10000" },
+]
+# DMA window: the arena for Command Ring, Event Ring, Transfer Rings,
+# DCBAA, slot/endpoint contexts, and descriptor buffers.
+# 4 MiB is sufficient for TASK-26 scope (root-hub enumeration only).
+dma_windows = [
+    { iova_base = "0x0100000000000", len = "0x400000" },
+]
+# IRQ lines: MSI-X vector for interrupter 0. Populated at runtime.
+irq_lines = []
+# PCI device: bound dynamically by PCI enumeration.
+pci_devices = [
+    { segment = 0, bus = "<dyn>", device = "<dyn>", function = 0 },
+]
+
+# -----------------------------------------------------------------------------
+# Auto-claim matchers (ADR-0048 D2, xHCI spec PCI class codes).
+# -----------------------------------------------------------------------------
+# xHCI is matched by PCI class 0x0C (Serial Bus Controller),
+# subclass 0x03 (USB Controller), prog_if 0x30 (xHCI).
+[matchers]
+pci_class = { class = "0x0C", subclass = "0x03", prog_if = "0x30" }
+pci_vendor_device = []   # empty → class match wins
+acpi_hid = []
+
+# -----------------------------------------------------------------------------
+# xHCI-specific parameters.
+# -----------------------------------------------------------------------------
+[xhci]
+# Command ring capacity (TRBs). One slot reserved for the Link TRB.
+command_ring_capacity = 64
+# Event ring segment capacity (TRBs per segment). TASK-26 uses one segment.
+event_ring_capacity = 128
+# Transfer ring capacity per endpoint (TRBs). One slot reserved for Link.
+transfer_ring_capacity = 64
+# Maximum number of slots to enable (bounded by HCSPARAMS1.MaxSlots at
+# runtime; this is the manifest ceiling).
+max_slots = 32

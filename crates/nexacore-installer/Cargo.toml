@@ -1,0 +1,36 @@
+# =============================================================================
+# nexacore-installer — installer core: disk model, GPT partitioning, plan (WS11-03)
+# =============================================================================
+# The device-independent, host-testable core of the NexaCore installer:
+#   - a disk-geometry model and enumeration seam (WS11-03.1);
+#   - a spec-correct GPT builder — protective MBR, primary + backup headers with
+#     CRC32, and the 128-entry partition array — for the ESP + NCFS root layout
+#     (WS11-03.2);
+#   - an install partition plan that sizes and 1-MiB-aligns those partitions.
+#
+# Disk enumeration is a trait (the real NVMe/SATA probe is driver-backed); the
+# GPT/plan logic is pure bytes. `no_std + alloc`, dependency-free, so it builds
+# for the host and the `x86_64-unknown-none` target.
+# =============================================================================
+
+[package]
+name             = "nexacore-installer"
+description      = "NexaCore OS installer core — disk-geometry model, spec-correct GPT partitioning (protective MBR + CRC32 headers + entry array), and a 1-MiB-aligned ESP+NCFS partition plan (WS11-03)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# The read-only FAT reader is used to detect existing OS loaders in the ESP
+# (WS11-04.1). Dep-free + no_std, so it keeps the bare-metal target building.
+nexacore-fatfs = { workspace = true }

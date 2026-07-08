@@ -1,0 +1,44 @@
+# =============================================================================
+# nexacore-shell — System shell for NexaCore OS
+# =============================================================================
+# Initial CLI for NexaCore OS interaction. v1 ships a traditional command-line
+# shell; the long-term vision is an intent-based shell where natural
+# language is the primary interface (e.g., "show me files modified
+# yesterday by Marco" lowered into a plan that the user previews and
+# approves before execution).
+# =============================================================================
+
+[package]
+name             = "nexacore-shell"
+description      = "System shell for NexaCore OS — initial CLI; intent-based shell follows."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]
+thiserror             = { workspace = true, default-features = false }
+tracing               = { workspace = true, optional = true }
+# Explicit path+version (not `workspace = true`) because Cargo does not allow
+# a member to override `default-features` on an inherited workspace
+# dependency. `default-features = false` opts out of `nexacore-types`'s
+# `id-generation` feature (uuid + getrandom, unsupported on
+# `x86_64-unknown-none`) so this crate keeps compiling for bare-metal targets.
+nexacore-cmd-ifconfig = { path = "../nexacore-cmd-ifconfig", version = "0.2.0", default-features = false }
+nexacore-types        = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+
+[features]
+# `std` is the default: enables tracing and the `print!` output path in the
+# REPL. When disabled the crate compiles for `no_std + alloc` targets such as
+# `x86_64-unknown-none`, where output is handled by the kernel via syscalls.
+default = ["std"]
+std = ["tracing"]

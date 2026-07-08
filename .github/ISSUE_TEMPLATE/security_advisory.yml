@@ -1,0 +1,24 @@
+name: Security — STOP, read this
+description: Redirect — do not report vulnerabilities in public issues
+labels: ["kind:security"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Do not report security vulnerabilities here.
+
+        Public issues are visible to everyone. Reporting a vulnerability in the
+        open puts users at risk before a fix exists.
+
+        Please follow the coordinated disclosure process in
+        [`SECURITY.md`](https://github.com/CySalazar/nexacore-os/blob/main/SECURITY.md)
+        (private advisory / encrypted contact).
+
+        Close this form and use that channel instead.
+  - type: checkboxes
+    id: ack
+    attributes:
+      label: Acknowledgement
+      options:
+        - label: I understand this form is NOT for reporting vulnerabilities, and I will use SECURITY.md.
+          required: true

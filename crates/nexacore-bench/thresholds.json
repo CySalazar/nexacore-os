@@ -1,0 +1,13 @@
+{
+  "default_max_regression_permille": 50,
+  "per_metric": [
+    {
+      "metric": "boot_time_ms",
+      "max_regression_permille": 100
+    },
+    {
+      "metric": "inference_tok_s",
+      "max_regression_permille": 80
+    }
+  ]
+}

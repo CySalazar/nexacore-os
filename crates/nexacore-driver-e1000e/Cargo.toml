@@ -1,0 +1,69 @@
+# =============================================================================
+# nexacore-driver-e1000e — Intel e1000e first-party user-space driver scaffold
+# =============================================================================
+# First-party driver for the Intel e1000e family (PCI Express Ethernet
+# controllers: 82574L, I217-LM/V, I218-LM/V, I219-LM/V). Specified by
+# `NCIP-Driver-Net-015` § S5 and loaded via the `DriverLoad` syscall flow
+# specified by `NCIP-Driver-Framework-013` § S5.
+#
+# This is the **P6.7.8.6 scaffold** delivery: skeleton-only `no_std + alloc`
+# library that locks the public surface (PCI vendor/device IDs, CSR
+# register offsets, RX/TX ring depth bounds, interrupt mask bit positions,
+# 13-step bring-up FSM) without wiring any syscall path. The bootable image
+# sibling (`crates/nexacore-driver-e1000e-image`, excluded from the default
+# workspace matrix like `kernel-runner` / `nexacore-driver-nvme-image`) lands
+# in a follow-up sub-step (P6.7.8.7) together with the actual
+# `MmioMap`/`DmaMap`/`IrqAttach` invocations.
+#
+# Pattern mirrors `nexacore-driver-net-virtio` (P6.7.8.2) and `nexacore-driver-nvme`
+# (P6.7.8.4): the lib hosts the auditable logic compiled in the default
+# workspace matrix; the runtime ELF lives in the excluded sibling image
+# crate. Same split as `nexacore-kernel` ↔ `kernel-runner`.
+# =============================================================================
+
+[package]
+name             = "nexacore-driver-e1000e"
+description      = "NexaCore OS first-party Intel e1000e user-space driver (NCIP-Driver-Net-015 § S5 scaffold)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+# The scaffold is deliberately dependency-light: no `nexacore-types`, no
+# `nexacore-capability`, no `nexacore-crypto`. The driver's eventual capability
+# surface (MmioMap / DmaMap / IrqAttach / DriverLoad) is mediated by the
+# kernel; the user-space driver process only needs to issue raw syscalls
+# and shape its own data structures. Shared NET channel types
+# (`NetRequest`/`NetResponse`/`NetEvent`) live in a future
+# `nexacore-driver-net-common` crate (NCIP-015 § Reference Implementation);
+# they are not needed at the scaffold stage because the FSM operates only
+# on FSM-internal state.
+[dependencies]
+# `nexacore-driver-shared` provides the well-known deposit VA constant
+# (DRIVER_CAP_DEPOSIT_VA), the action-tag constants, and the
+# `caps::find_token` helper for locating capability tokens at bring-up
+# (NCIP-013 § S5.3 step 8, P6.7.8.10).  Dep-free, no_std-compatible.
+nexacore-driver-shared = { workspace = true }
+# `nexacore-types` provides the NET channel ABI types (NetRequest, NetResponse,
+# NetEvent) consumed by the driver's IPC dispatch in `driver.rs`.
+# First-party NexaCore crate; no_std + alloc compatible. Bare-metal driver →
+# opt out of the default `id-generation` feature (it pulls `getrandom`, which
+# has no `x86_64-unknown-none` backend); mirrors `nexacore-driver-net-virtio`.
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+# `serde` is required transitively through nexacore-types' derive usage and for
+# any future serialisation of driver-internal state (diagnostics, snapshot).
+serde = { workspace = true }
+
+[dev-dependencies]

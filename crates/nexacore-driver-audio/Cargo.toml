@@ -1,0 +1,29 @@
+# =============================================================================
+# nexacore-driver-audio — audio stack core (WS2-10)
+# =============================================================================
+# Host-testable core of the NexaCore OS audio stack: the Intel HDA register map
+# + CORB/RIRB verb codec, the HDA Buffer Descriptor List, the virtio-snd control
+# / PCM message structures, the user-space mixer (integer stream summing with
+# saturating clip), per-app volume, device routing, and the DE-H2 audio ABI
+# types. The MMIO/DMA bring-up + completion IRQ + live tone/loopback land on the
+# rig. `no_std + alloc`, integer-only, dependency-free.
+# =============================================================================
+
+[package]
+name             = "nexacore-driver-audio"
+description      = "NexaCore OS audio stack core — HDA CORB/RIRB + BDL, virtio-snd messages, mixer/volume/routing, DE-H2 ABI (WS2-10)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]

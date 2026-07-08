@@ -1,0 +1,46 @@
+# =============================================================================
+# nexacore-netcheck-image — bare-metal M0 networking self-test client
+# =============================================================================
+#
+# `no_std + no_main` ELF the kernel spawns as a Ring 3 userspace process to
+# validate the M0 socket-syscall path end to end: it issues NetSocket and
+# NetConnect syscalls and prints the results to the console (COM1 serial).
+#
+# This exercises the full kernel→nexacore-net IPC relay (the two-channel
+# rendezvous) on real hardware, independently of the NIC datapath: NetSocket
+# allocates a handle in nexacore-net and needs no NIC, so a printed handle proves
+# the relay round-trip works.
+#
+# No dependencies and no heap: the kernel builds the SocketRequest from the
+# syscall arguments, so the client only needs inline-asm syscall stubs.
+#
+# Built out-of-workspace via:
+#   cargo build --manifest-path crates/nexacore-netcheck-image/Cargo.toml \
+#               --target x86_64-unknown-none --release
+# =============================================================================
+
+[package]
+name         = "nexacore-netcheck-image"
+description  = "Bare-metal M0 networking self-test client for NexaCore OS"
+version      = "0.2.0"
+edition      = "2024"
+rust-version = "1.85"
+authors      = ["cySalazar <hello@nexacoreos.com>"]
+license      = "Apache-2.0"
+repository   = "https://github.com/CySalazar/nexacore-os"
+homepage     = "https://nexacoreos.com"
+publish      = false
+
+[[bin]]
+name = "nexacore-netcheck-image"
+path = "src/main.rs"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+lto           = true
+codegen-units = 1
+panic         = "abort"
+strip         = "debuginfo"
+opt-level     = "z"

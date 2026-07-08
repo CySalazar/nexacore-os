@@ -1,0 +1,29 @@
+# =============================================================================
+# nexacore-driver-gpu — virtio-gpu driver core (WS2-09)
+# =============================================================================
+# Host-testable core of the NexaCore OS GPU driver: the byte-exact virtio-gpu
+# control- and cursor-queue command serializers + response parsers (VIRTIO 1.x
+# § 5.7), the display-info/mode-selection logic, the FPS/throughput meter, and
+# the GPU-submit + KMS-class scaffold seams. The real virtqueue notify/IRQ
+# bring-up, scanout present, DMA-BUF sharing, and the live tensor-HAL/compositor
+# wiring land on the rig. `no_std + alloc`, integer-only, dependency-free.
+# =============================================================================
+
+[package]
+name             = "nexacore-driver-gpu"
+description      = "NexaCore OS virtio-gpu driver core — control/cursor command codecs, display info, KMS scaffold (WS2-09)."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+[dependencies]

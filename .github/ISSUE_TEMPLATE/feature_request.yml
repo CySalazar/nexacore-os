@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest an enhancement
+labels: ["kind:feature", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Substantial or protocol-level changes go through the OIP process, not a
+        feature request — see `oips/oip-process-001.md` and the OIP proposal form.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What are you trying to do, and why is it hard today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like to happen? Alternatives considered?
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This is an incremental change, not a protocol/Layer-1 change requiring an OIP.

@@ -1,0 +1,27 @@
+[package]
+name = "nexacore-net"
+description = "Userspace TCP/IP network stack service for NexaCore OS."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# `default-features = false` disables the `id-generation` feature (UUID +
+# getrandom) which is not available on `x86_64-unknown-none`. `nexacore-net`
+# only needs the wire types (`net`, `socket`, `net_channel`) and
+# serialization helpers — none of which require CSPRNG generation.
+nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+serde = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
