@@ -233,6 +233,15 @@ build_kernel_elf() {
     if [[ -n "${FEATURE}" ]]; then
         features_flag="--features ${FEATURE}"
     fi
+    # `.cargo/config.toml` sets the soft crypto-backend cfgs for this target,
+    # but a `RUSTFLAGS=-D warnings` exported by CI (qemu-boot-smoke.yml § env)
+    # OVERRIDES (does not merge with) the config's `target.*.rustflags`, dropping
+    # those cfgs and tripping the poly1305/chacha20 LLVM SIMD codegen bug
+    # ("Do not know how to split the result of this operator!"). Re-apply the
+    # soft cfgs alongside whatever RUSTFLAGS the environment set, so the warning
+    # gate and the bare-metal crypto workaround both hold. Keep in sync with
+    # `.cargo/config.toml [target.x86_64-unknown-none]`.
+    RUSTFLAGS="${RUSTFLAGS:-} --cfg poly1305_force_soft --cfg chacha20_force_soft --cfg sha2_backend=\"soft\" --cfg curve25519_dalek_backend=\"serial\"" \
     cargo build \
         --manifest-path "${KERNEL_RUNNER_DIR}/Cargo.toml" \
         --target x86_64-unknown-none \

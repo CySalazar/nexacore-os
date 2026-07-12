@@ -88,7 +88,11 @@ KERNEL_ELF="${KERNEL_RUNNER_DIR}/target/x86_64-unknown-none/${PROFILE_DIR}/kerne
 
 if [[ "${SKIP_BUILD}" -eq 0 ]]; then
     log "building kernel-runner ELF (${PROFILE})..."
-    ( cd "${KERNEL_RUNNER_DIR}" && cargo build \
+    # Re-apply the soft crypto-backend cfgs: a CI `RUSTFLAGS=-D warnings`
+    # overrides (does not merge with) `.cargo/config.toml`'s target rustflags,
+    # dropping them and tripping the poly1305/chacha20 LLVM SIMD bug. Keep in
+    # sync with `.cargo/config.toml [target.x86_64-unknown-none]`.
+    ( cd "${KERNEL_RUNNER_DIR}" && RUSTFLAGS="${RUSTFLAGS:-} --cfg poly1305_force_soft --cfg chacha20_force_soft --cfg sha2_backend=\"soft\" --cfg curve25519_dalek_backend=\"serial\"" cargo build \
         $([[ "${PROFILE}" == "release" ]] && echo "--release") \
         --target x86_64-unknown-none )
     [[ -f "${KERNEL_ELF}" ]] || fail "kernel-runner ELF not produced at ${KERNEL_ELF}"
