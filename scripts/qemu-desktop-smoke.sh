@@ -83,7 +83,7 @@ fi
 [[ -n "${OVMF_PATH:-}" && -r "${OVMF_PATH}" ]] || fail "OVMF firmware not found; set OVMF_PATH"
 
 # --- Build kernel-runner ELF + UEFI disk image --------------------------------
-UEFI_IMAGE="${KERNEL_RUNNER_DIR}/target/x86_64-unknown-none/${PROFILE_DIR}/boot-uefi-kernel-runner.img"
+UEFI_IMAGE="${KERNEL_RUNNER_DIR}/target/x86_64-unknown-none/${PROFILE_DIR}/boot-uefi.img"
 KERNEL_ELF="${KERNEL_RUNNER_DIR}/target/x86_64-unknown-none/${PROFILE_DIR}/kernel-runner"
 
 if [[ "${SKIP_BUILD}" -eq 0 ]]; then
