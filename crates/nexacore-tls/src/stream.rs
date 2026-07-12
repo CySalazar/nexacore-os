@@ -29,13 +29,13 @@ pub trait RecordTransport {
     /// Send one complete record.
     ///
     /// # Errors
-    /// [`TlsError::Closed`] if the underlying transport is gone.
+    /// [`crate::TlsError::Closed`] if the underlying transport is gone.
     fn send(&mut self, record: &[u8]) -> TlsResult<()>;
 
     /// Receive the next complete record.
     ///
     /// # Errors
-    /// [`TlsError::Closed`] at end of stream.
+    /// [`crate::TlsError::Closed`] at end of stream.
     fn recv_record(&mut self) -> TlsResult<Vec<u8>>;
 }
 
@@ -50,7 +50,7 @@ impl<T: RecordTransport, V: CertVerifier> TlsClientStream<T, V> {
     /// stream ready for application data.
     ///
     /// # Errors
-    /// Any [`TlsError`] from the handshake or transport.
+    /// Any [`crate::TlsError`] from the handshake or transport.
     pub fn connect(config: ClientConfig, verifier: V, mut transport: T) -> TlsResult<Self> {
         let (mut conn, client_hello) = ClientConnection::start(config, verifier)?;
         transport.send(&client_hello)?;
@@ -70,7 +70,7 @@ impl<T: RecordTransport, V: CertVerifier> TlsClientStream<T, V> {
     /// Encrypt and send application data.
     ///
     /// # Errors
-    /// Any [`TlsError`] from sealing or the transport.
+    /// Any [`crate::TlsError`] from sealing or the transport.
     pub fn write(&mut self, data: &[u8]) -> TlsResult<()> {
         let record = self.conn.seal_application(data)?;
         self.transport.send(&record)
@@ -79,7 +79,7 @@ impl<T: RecordTransport, V: CertVerifier> TlsClientStream<T, V> {
     /// Receive and decrypt one application-data record.
     ///
     /// # Errors
-    /// Any [`TlsError`] from the transport or opening.
+    /// Any [`crate::TlsError`] from the transport or opening.
     pub fn read(&mut self) -> TlsResult<Vec<u8>> {
         let record = self.transport.recv_record()?;
         self.conn.open_application(&record)
@@ -97,7 +97,7 @@ impl<T: RecordTransport> TlsServerStream<T> {
     /// stream.
     ///
     /// # Errors
-    /// Any [`TlsError`] from the handshake or transport.
+    /// Any [`crate::TlsError`] from the handshake or transport.
     pub fn accept(config: ServerConfig, mut transport: T) -> TlsResult<Self> {
         let mut conn = ServerConnection::new(config);
         let client_hello = transport.recv_record()?;
@@ -118,7 +118,7 @@ impl<T: RecordTransport> TlsServerStream<T> {
     /// Encrypt and send application data.
     ///
     /// # Errors
-    /// Any [`TlsError`] from sealing or the transport.
+    /// Any [`crate::TlsError`] from sealing or the transport.
     pub fn write(&mut self, data: &[u8]) -> TlsResult<()> {
         let record = self.conn.seal_application(data)?;
         self.transport.send(&record)
@@ -127,7 +127,7 @@ impl<T: RecordTransport> TlsServerStream<T> {
     /// Receive and decrypt one application-data record.
     ///
     /// # Errors
-    /// Any [`TlsError`] from the transport or opening.
+    /// Any [`crate::TlsError`] from the transport or opening.
     pub fn read(&mut self) -> TlsResult<Vec<u8>> {
         let record = self.transport.recv_record()?;
         self.conn.open_application(&record)

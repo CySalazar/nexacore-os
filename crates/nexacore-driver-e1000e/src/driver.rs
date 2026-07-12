@@ -619,7 +619,7 @@ impl E1000eDriver {
     }
 
     /// Update [`E1000eDriver::link_up`] from a device `STATUS` register read and
-    /// return the decoded [`LinkStatus`] (WS2-03.7). Called on every `LSC`
+    /// return the decoded [`crate::phy::LinkStatus`] (WS2-03.7). Called on every `LSC`
     /// interrupt and once at bring-up after the PHY reports a link.
     ///
     /// # Example

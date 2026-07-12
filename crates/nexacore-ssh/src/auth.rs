@@ -1,6 +1,6 @@
 //! The `ssh-userauth` service: SSH-2 user authentication (RFC 4252).
 //!
-//! This layers on top of an established transport [`Session`](crate::Session):
+//! This layers on top of an established transport [`Session`]:
 //! its [`send`](crate::Session::send) / [`recv`](crate::Session::recv) carry the
 //! authentication messages over the AEAD packet channel. Two methods are
 //! implemented:

@@ -114,7 +114,7 @@ fn parse_tokens(body: &str) -> Result<Vec<Capability>, CoreError> {
 /// Parse a symbolic capability spec into a list of [`TokenOp`]s.
 ///
 /// The spec is one operator character (`+`, `-`, or `=`) followed by a token
-/// list (see [`parse_tokens`]). `+` grants each token, `-` revokes each, and `=`
+/// list (see `parse_tokens`). `+` grants each token, `-` revokes each, and `=`
 /// sets the grant exactly - revoking all three tokens first, then granting the
 /// listed ones (so `=` with an empty list clears every capability).
 ///

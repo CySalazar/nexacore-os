@@ -1,7 +1,7 @@
 //! Lazy NER language-pack loader (WS5-12.3).
 //!
-//! [`NerPack`](crate::nerpack::NerPack)s are registered by language with their
-//! [`NerPackManifest`](crate::nerpack::NerPackManifest) known up-front — enough
+//! [`NerPack`]s are registered by language with their
+//! [`NerPackManifest`] known up-front — enough
 //! to route to (WS5-12.2) and gate (WS5-12.7) a pack without touching the
 //! model. The heavy encoder **bytes** are pulled only on first use, through the
 //! [`PackSource`] seam: the host double serves them from memory, but a real
@@ -35,7 +35,7 @@ use crate::nerpack::{NerPack, NerPackManifest, PackError};
 /// Byte source for language-pack models — the lazy-loading seam (WS5-12.3).
 ///
 /// Given a registered language tag, `fetch` returns the encoded
-/// [`NerPack`](crate::nerpack::NerPack) bytes for it (the same layout produced
+/// [`NerPack`] bytes for it (the same layout produced
 /// by [`NerPack::encode`](crate::nerpack::NerPack::encode)). Implementations do
 /// no validation of their own: the [`PackRegistry`] decodes and checks the
 /// result fail-closed. The host test double simply serves bytes it already
@@ -95,7 +95,7 @@ pub enum LoadError {
         source: SourceError,
     },
 
-    /// The fetched bytes did not parse as a [`NerPack`](crate::nerpack::NerPack).
+    /// The fetched bytes did not parse as a [`NerPack`].
     #[error("pack for language {language:?} failed to decode: {source}")]
     Decode {
         /// The requested (registered) language tag.
@@ -130,7 +130,7 @@ struct Entry {
 
 /// A lazy, caching registry of NER language packs over a [`PackSource`] seam.
 ///
-/// Register a language by its [`NerPackManifest`](crate::nerpack::NerPackManifest);
+/// Register a language by its [`NerPackManifest`];
 /// the model bytes stay unfetched until [`get`](PackRegistry::get) first needs
 /// them. See the [module docs](self) for the loading and fail-closed rules.
 pub struct PackRegistry<S: PackSource> {

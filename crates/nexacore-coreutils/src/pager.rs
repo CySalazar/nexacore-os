@@ -47,7 +47,7 @@ impl Pager {
     }
 
     /// Create a pager by splitting `input` into lines (see
-    /// [`split_lines`](crate::split_lines)).
+    /// [`split_lines`]).
     #[must_use]
     pub fn from_text(input: &str, page_size: usize) -> Self {
         let lines = split_lines(input).into_iter().map(String::from).collect();

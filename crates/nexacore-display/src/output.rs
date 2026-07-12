@@ -2,7 +2,7 @@
 //!
 //! The WS7-01 compositor renders one screen. This module lifts that to an
 //! **extended desktop** spanning several outputs, each with its own mode
-//! (resolution + refresh), [`ScaleFactor`](crate::scale::ScaleFactor) (WS7-04),
+//! (resolution + refresh), [`ScaleFactor`] (WS7-04),
 //! and [`Rotation`]. Outputs are placed in a shared **global logical
 //! coordinate space**; the union of their rectangles is the desktop, and every
 //! window/cursor position is expressed in that space.

@@ -1,12 +1,12 @@
 //! Bounded command-history ring buffer.
 //!
-//! [`History`] stores the most recent command lines in a fixed-capacity
+//! [`crate::history::History`] stores the most recent command lines in a fixed-capacity
 //! circular buffer. When full, the oldest entry is evicted (ring wraparound).
 //! It supports:
 //!
 //! - **Append** with optional deduplication of *consecutive* duplicates.
 //! - **Index lookup** by logical position (`0` = oldest live entry).
-//! - **Navigation** via [`History::prev`] / [`History::next`], the model that
+//! - **Navigation** via [`crate::history::History::prev`] / [`crate::history::History::next`], the model that
 //!   backs up-arrow / down-arrow recall: `prev` walks toward older entries and
 //!   clamps at the oldest; `next` walks back toward the newest and returns
 //!   `None` once it steps past it (back to the "current input" line).

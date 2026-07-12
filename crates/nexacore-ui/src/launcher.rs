@@ -207,9 +207,9 @@ const BOUNDARY_BONUS: i32 = 8;
 /// Greedy subsequence fuzzy score of `query` within `text` (case-insensitive).
 ///
 /// Returns `None` if `query` is not a subsequence of `text`. A higher score is a
-/// better match: each matched character scores [`BASE_BONUS`], consecutive
-/// matches add [`CONSECUTIVE_BONUS`], and a match at a word boundary adds
-/// [`BOUNDARY_BONUS`]; a small penalty grows with the candidate length so that,
+/// better match: each matched character scores `BASE_BONUS`, consecutive
+/// matches add `CONSECUTIVE_BONUS`, and a match at a word boundary adds
+/// `BOUNDARY_BONUS`; a small penalty grows with the candidate length so that,
 /// among equal matches, shorter titles rank higher.
 #[must_use]
 #[allow(

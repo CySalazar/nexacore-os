@@ -42,7 +42,7 @@
 //! | [`du`]      | `du` — recursive disk usage over the FS seam | WS8-10.3 |
 //! | [`df`]      | `df` — filesystem usage report over a statfs seam | WS8-10.3 |
 //! | [`mount`]   | `mount`/`umount` — in-memory mount-table model | WS8-10.3 |
-//! | [`env`]      | `env` / `export` — environment model + `NAME=val cmd` | WS8-10.9 |
+//! | [`env`](mod@env)      | `env` / `export` — environment model + `NAME=val cmd` | WS8-10.9 |
 //! | [`which`]    | `which` — locate an executable on a `PATH` | WS8-10.9 |
 //! | [`identity`] | `whoami` / `id` — the current principal + roles | WS8-10.9 |
 //! | [`uname`]    | `uname` — format injected `SystemInfo` | WS8-10.10 |

@@ -9,14 +9,14 @@
 //! The design is a small three-part model, host-testable without any live
 //! hardware:
 //!
-//! 1. **Callback** — the [`PowerCallback`] (a.k.a. [`SuspendResume`]) trait a
-//!    driver implements: [`suspend`](PowerCallback::suspend) quiesces the device,
-//!    [`resume`](PowerCallback::resume) restores it.
-//! 2. **Registry** — [`PowerManager`] keeps the registered devices in a
+//! 1. **Callback** — the [`PowerCallback`](crate::power::PowerCallback) (a.k.a. `SuspendResume`) trait a
+//!    driver implements: [`suspend`](crate::power::PowerCallback::suspend) quiesces the device,
+//!    [`resume`](crate::power::PowerCallback::resume) restores it.
+//! 2. **Registry** — [`PowerManager`](crate::power::PowerManager) keeps the registered devices in a
 //!    deterministic **registration order**, which fixes the suspend order (and
 //!    thus the reverse resume order).
-//! 3. **Orchestrator** — [`PowerManager::suspend_all`] calls `suspend()` on every
-//!    device in order; [`PowerManager::resume_all`] calls `resume()` in **reverse**
+//! 3. **Orchestrator** — [`PowerManager::suspend_all`](crate::power::PowerManager::suspend_all) calls `suspend()` on every
+//!    device in order; [`PowerManager::resume_all`](crate::power::PowerManager::resume_all) calls `resume()` in **reverse**
 //!    order (device-PM semantics: last suspended is first resumed). A `suspend()`
 //!    failure mid-way **rolls back** — the already-suspended prefix is resumed and
 //!    the system is left in the resumed state — and the failing device is

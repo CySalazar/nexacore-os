@@ -7,15 +7,15 @@
 //! without a real model or desktop:
 //!
 //! * **Dictation** ([`DictationSession`]) — a system-wide speech-to-text
-//!   session driven by a [`TranscribeSeam`] (the `ai_transcribe` bridge,
+//!   session driven by a [`TranscribeSeam`](crate::system_ai::TranscribeSeam) (the `ai_transcribe` bridge,
 //!   WS5-03), inserting the result at the caret of the focused field
-//!   ([`FocusedField`]), toggled by a global hotkey ([`DictationHotkey`]).
+//!   ([`FocusedField`](crate::system_ai::FocusedField)), toggled by a global hotkey ([`DictationHotkey`](crate::system_ai::DictationHotkey)).
 //! * **Screen description** ([`ScreenDescriber`]) — builds an accessibility
 //!   description request for the focused element from the a11y tree (WS7-16)
-//!   and renders it through a [`SceneDescribeSeam`].
+//!   and renders it through a [`SceneDescribeSeam`](crate::system_ai::SceneDescribeSeam).
 //! * **Smart suggestions** ([`SuggestionEngine`]) — proactive, **Inform-mode**
 //!   (never self-acting) contextual suggestions, surfaced under a
-//!   non-intrusive [`PresentationPolicy`] that never steals focus and is
+//!   non-intrusive [`PresentationPolicy`](crate::system_ai::PresentationPolicy) that never steals focus and is
 //!   rate-limited.
 //!
 //! The real `ai_transcribe`, the vision model, and the live desktop wiring are

@@ -598,8 +598,8 @@ pub(crate) fn draw_glyph(
 ///
 /// `hover` is an index into `model.tiles` (the same indexing the pointer
 /// router's `HoverState::dock_tile` uses). The hovered tile draws with the
-/// stepped-up [`TILE_BG_HOVER_PREBLEND`] fill and its whole content —
-/// background, glyph, and running indicator — nudged [`HOVER_NUDGE_X`]px
+/// stepped-up `TILE_BG_HOVER_PREBLEND` fill and its whole content —
+/// background, glyph, and running indicator — nudged `HOVER_NUDGE_X`px
 /// right, matching the mockup's `tileEnter` behaviour (see the constants'
 /// doc comments). An out-of-range index simply hovers nothing.
 #[allow(clippy::cast_possible_wrap, reason = "small positive pixel metrics")]

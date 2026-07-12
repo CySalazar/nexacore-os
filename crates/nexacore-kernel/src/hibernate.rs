@@ -36,19 +36,19 @@
 //!
 //! # Fail-closed decoding
 //!
-//! [`decode`] rejects, without ever writing a frame past the failure point:
+//! [`decode`](crate::hibernate::decode) rejects, without ever writing a frame past the failure point:
 //!
-//! - a bad magic ([`HibernateError::BadMagic`]);
-//! - a format-version mismatch ([`HibernateError::VersionMismatch`]);
-//! - an unsupported page size ([`HibernateError::UnsupportedPageSize`]);
-//! - a truncated header or payload ([`HibernateError::Truncated`]);
+//! - a bad magic ([`HibernateError::BadMagic`](crate::hibernate::HibernateError::BadMagic));
+//! - a format-version mismatch ([`HibernateError::VersionMismatch`](crate::hibernate::HibernateError::VersionMismatch));
+//! - an unsupported page size ([`HibernateError::UnsupportedPageSize`](crate::hibernate::HibernateError::UnsupportedPageSize));
+//! - a truncated header or payload ([`HibernateError::Truncated`](crate::hibernate::HibernateError::Truncated));
 //! - a payload that does not match the stored checksum
-//!   ([`HibernateError::ChecksumMismatch`]);
-//! - a malformed record or trailing garbage ([`HibernateError::Corrupt`]).
+//!   ([`HibernateError::ChecksumMismatch`](crate::hibernate::HibernateError::ChecksumMismatch));
+//! - a malformed record or trailing garbage ([`HibernateError::Corrupt`](crate::hibernate::HibernateError::Corrupt)).
 //!
-//! The bare-metal kernel supplies the production [`FrameSource`] / [`FrameSink`]
+//! The bare-metal kernel supplies the production [`FrameSource`](crate::hibernate::FrameSource) / [`FrameSink`](crate::hibernate::FrameSink)
 //! (wired to the frame allocator and the direct map); host tests use
-//! [`MemFrameStore`].
+//! [`MemFrameStore`](crate::hibernate::MemFrameStore).
 
 use alloc::{collections::BTreeMap, vec::Vec};
 

@@ -249,7 +249,7 @@ impl<'a> Font<'a> {
     /// Decodes a glyph's outline (contours + metrics) in design units.
     ///
     /// Handles both simple and composite glyphs; composites are assembled from
-    /// their components recursively (bounded by [`Self::MAX_COMPOSITE_DEPTH`]).
+    /// their components recursively (bounded by `Self::MAX_COMPOSITE_DEPTH`).
     ///
     /// # Errors
     ///

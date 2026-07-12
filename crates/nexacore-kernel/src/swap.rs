@@ -5,12 +5,12 @@
 //! pages under memory pressure. This module is the **device-independent,
 //! host-testable** core:
 //!
-//! - the on-disk swap format ([`SwapHeader`] + [`SwapSlotMap`], WS3-06.1) and
-//!   the swap-out/swap-in mechanism over a [`SwapDevice`] seam (WS3-06.2/.3);
-//! - a [`ZramStore`] compressed in-RAM backend (WS3-06.4) behind a
-//!   [`PageCompressor`] seam (LZ4/ZSTD is library-gated; the default stores
+//! - the on-disk swap format ([`SwapHeader`](crate::swap::SwapHeader) + [`SwapSlotMap`](crate::swap::SwapSlotMap), WS3-06.1) and
+//!   the swap-out/swap-in mechanism over a [`SwapDevice`](crate::swap::SwapDevice) seam (WS3-06.2/.3);
+//! - a [`ZramStore`](crate::swap::ZramStore) compressed in-RAM backend (WS3-06.4) behind a
+//!   [`PageCompressor`](crate::swap::PageCompressor) seam (LZ4/ZSTD is library-gated; the default stores
 //!   verbatim);
-//! - a clock / second-chance [`ClockSelector`] that picks the victim frame under
+//! - a clock / second-chance [`ClockSelector`](crate::swap::ClockSelector) that picks the victim frame under
 //!   pressure (WS3-06.6).
 //!
 //! Wiring swap into the frame allocator's eviction path (WS1-08) is WS3-06.5;

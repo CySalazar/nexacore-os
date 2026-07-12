@@ -1,16 +1,16 @@
 //! Wiring the launcher as the palette's app-source (WS16-02.2).
 //!
-//! The command palette parses "open <something>" into an
+//! The command palette parses `open <something>` into an
 //! [`Intent::OpenApp`](crate::palette::Intent::OpenApp) whose `app` field is the
 //! raw phrase the user typed ("text editor"), not an installed application. This
 //! module resolves that phrase against the set of installed apps the launcher
-//! knows about (WS7-14), turning it into a concrete [`ResolvedApp`] with a stable
+//! knows about (WS7-14), turning it into a concrete [`ResolvedApp`](crate::palette_app_source::ResolvedApp) with a stable
 //! id — or `None` when no app matches, so the palette never fabricates a launch
 //! target.
 //!
 //! The two crates stay decoupled: the launcher (`nexacore-ui`, `no_std`) exposes
 //! its apps as `(name, id)` pairs (from its `AppEntry`/`palette_candidates`
-//! surface), and the integration layer feeds those into a [`ListAppSource`]
+//! surface), and the integration layer feeds those into a [`ListAppSource`](crate::palette_app_source::ListAppSource)
 //! here. Neither crate depends on the other — the hand-off is plain data.
 
 use std::{string::String, vec::Vec};

@@ -24,11 +24,11 @@
 //! merely parsed) against the injected [`crate::glob::FsQuery`] filesystem seam:
 //!
 //! - `<` reads the target file and feeds it as the command's stdin
-//!   ([`ExecContext::stdin`]).
+//!   ([`crate::executor::ExecContext::stdin`]).
 //! - `>` / `>>` write / append the command's captured stdout
-//!   ([`ExecContext::output`]) to the target file, and the bytes do **not**
+//!   ([`crate::executor::ExecContext::output`]) to the target file, and the bytes do **not**
 //!   flow further down the pipeline.
-//! - `2>` writes the command's captured stderr ([`ExecContext::stderr`]) to the
+//! - `2>` writes the command's captured stderr ([`crate::executor::ExecContext::stderr`]) to the
 //!   target file.
 //!
 //! Redirections are applied in the order written; for a given stream the last
@@ -74,7 +74,7 @@ pub enum CommandTarget {
 
 /// Execution context threaded through all builtin handlers and executor stages.
 ///
-/// Builtins write their output into [`ExecContext::output`] instead of directly
+/// Builtins write their output into [`crate::executor::ExecContext::output`] instead of directly
 /// to stdout. This allows the REPL to control when and how output is flushed,
 /// and enables pipeline chaining (one stage's output becomes the next stage's
 /// implicit stdin in future work).
@@ -108,7 +108,7 @@ pub struct ExecContext<'a> {
     /// Captured standard-error bytes written by the most recently executed
     /// command.
     ///
-    /// Kept separate from [`ExecContext::output`] (stdout) so a `2>` redirect
+    /// Kept separate from [`crate::executor::ExecContext::output`] (stdout) so a `2>` redirect
     /// can route error text independently. The executor clears this before each
     /// command stage.
     pub stderr: Vec<u8>,
@@ -453,7 +453,7 @@ fn strip_trailing_newlines(s: &str) -> String {
 /// Execute a single [`Pipeline`], returning the exit code of the last stage.
 ///
 /// For Phase 1 the pipeline is executed sequentially: each stage's output is
-/// captured in [`ExecContext::output`] and made implicitly available to the
+/// captured in [`crate::executor::ExecContext::output`] and made implicitly available to the
 /// next stage. Full OS-level pipe(2) wiring arrives with the kernel process
 /// layer.
 ///

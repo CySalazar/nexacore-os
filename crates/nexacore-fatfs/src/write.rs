@@ -4,7 +4,7 @@
 //!
 //! This is the mutating counterpart to the read-only [`crate::FatFs`]: it
 //! borrows the same on-disk image **mutably** and grows it in place. The only
-//! entry point is [`FatWriter::write_file`], which
+//! entry point is [`FatWriter::write_file`](crate::write::FatWriter::write_file), which
 //!
 //! * splits a DOS-style path (`\EFI\BOOT\BOOTX64.EFI`) into 8.3 components,
 //! * auto-creates any missing parent directories (allocating a cluster and

@@ -1,20 +1,20 @@
 //! System-wide natural-language command palette (WS16-02).
 //!
-//! A global palette (opened by [`PALETTE_HOTKEY`]) takes a natural-language
-//! prompt and turns it into one or more executable [`PlannedAction`]s: launch an
+//! A global palette (opened by [`PALETTE_HOTKEY`](crate::palette::PALETTE_HOTKEY)) takes a natural-language
+//! prompt and turns it into one or more executable [`PlannedAction`](crate::palette::PlannedAction)s: launch an
 //! app, change a setting, search content semantically, run an automation, or
 //! query the system. It fuses launcher + search + agent into a single "describe
 //! anything" surface.
 //!
 //! ## Layering
 //!
-//! - **Parsing** ([`IntentParser`], WS16-02.3) is a seam: the production parser
-//!   is the AI runtime (WS5-03); [`RuleBasedParser`] is the deterministic,
+//! - **Parsing** ([`IntentParser`](crate::palette::IntentParser), WS16-02.3) is a seam: the production parser
+//!   is the AI runtime (WS5-03); [`RuleBasedParser`](crate::palette::RuleBasedParser) is the deterministic,
 //!   local-first fallback that classifies common English/Italian phrasings and
 //!   splits compound prompts (WS16-02.9).
-//! - **Planning** ([`CommandPalette::plan`]) maps each [`Intent`] to a
-//!   [`PlannedAction`] with a category and risk (WS16-02.4–.8).
-//! - **Gating** ([`CommandPalette::submit`]) runs risky actions past a
+//! - **Planning** ([`CommandPalette::plan`](crate::palette::CommandPalette::plan)) maps each [`Intent`](crate::palette::Intent) to a
+//!   [`PlannedAction`](crate::palette::PlannedAction) with a category and risk (WS16-02.4–.8).
+//! - **Gating** ([`CommandPalette::submit`](crate::palette::CommandPalette::submit)) runs risky actions past a
 //!   capability check and attaches the four mandatory Impact-Dashboard axes
 //!   (WS16-02.10), reusing [`crate::guidance::impact`].
 //!

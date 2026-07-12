@@ -8,7 +8,7 @@
 //!
 //! - **Window integration** ([`crate::appbridge`], WS9-03): the Wine guest runs
 //!   the same guest agent, so its toplevels flow through the identical
-//!   [`GuestImageManifest`](crate::appbridge::image::GuestImageManifest),
+//!   [`GuestImageManifest`],
 //!   `GuestWindowRegistry`, `WindowBridge`, and clipboard/drag/audio channels.
 //!   This module only adds the Wine-side adapters: the image builder, the
 //!   `app_id` derivation, and the Windows→MIME clipboard mapping.

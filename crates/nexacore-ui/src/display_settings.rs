@@ -1,7 +1,7 @@
 //! Display configuration panel for Settings (WS7-11.8).
 //!
 //! [`DisplaySettingsPanel`] is the Settings-app view over the compositor's
-//! [`OutputManager`](nexacore_display::output::OutputManager) (WS7-11 core). It
+//! [`OutputManager`] (WS7-11 core). It
 //! turns the live output set into a render-ready view model ([`OutputRow`] per
 //! monitor, with its selectable modes, scale, rotation, position, and
 //! primary/enabled flags) and applies the user's edits back through the

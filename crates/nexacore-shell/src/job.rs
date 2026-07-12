@@ -1,17 +1,17 @@
 //! Job control: background job table + process-effect seam.
 //!
-//! [`JobTable`] models the shell's set of background jobs. Each [`Job`] carries
-//! a session-unique id, a process-group id (`pgid`), a [`JobState`], and its
+//! [`crate::job::JobTable`] models the shell's set of background jobs. Each [`crate::job::Job`] carries
+//! a session-unique id, a process-group id (`pgid`), a [`crate::job::JobState`], and its
 //! originating command line. The table implements the three POSIX job-control
 //! operations:
 //!
-//! - `jobs` — list every job ([`JobTable::jobs`]).
-//! - `fg` — foreground a job ([`JobTable::fg`]): resume it if stopped, wait for
-//!   it, and mark it [`JobState::Done`].
-//! - `bg` — resume a *stopped* job in the background ([`JobTable::bg`]).
+//! - `jobs` — list every job ([`crate::job::JobTable::jobs`]).
+//! - `fg` — foreground a job ([`crate::job::JobTable::fg`]): resume it if stopped, wait for
+//!   it, and mark it [`crate::job::JobState::Done`].
+//! - `bg` — resume a *stopped* job in the background ([`crate::job::JobTable::bg`]).
 //!
 //! All real process effects (delivering `SIGCONT`, waiting for a group) are
-//! isolated behind the [`ProcessControl`] seam, mirroring the crate's existing
+//! isolated behind the [`crate::job::ProcessControl`] seam, mirroring the crate's existing
 //! [`crate::glob::FsQuery`] / [`crate::netquery::NetQuery`] pattern. The table
 //! itself is pure state, so its transitions are host-testable with a recording
 //! test-double and require no kernel.
@@ -33,7 +33,7 @@ pub enum JobState {
     Done,
 }
 
-/// A single background job in the [`JobTable`].
+/// A single background job in the [`crate::job::JobTable`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Job {
     /// Shell-assigned job id (`%1`, `%2`, …), unique within the session.
@@ -46,7 +46,7 @@ pub struct Job {
     pub command: String,
 }
 
-/// Errors returned by [`JobTable`] foreground/background operations.
+/// Errors returned by [`crate::job::JobTable`] foreground/background operations.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum JobError {
     /// No job with the requested id exists.
@@ -92,7 +92,7 @@ impl JobTable {
         }
     }
 
-    /// Register a new background job in [`JobState::Running`] and return its
+    /// Register a new background job in [`crate::job::JobState::Running`] and return its
     /// freshly assigned id.
     ///
     /// # Examples
@@ -134,10 +134,10 @@ impl JobTable {
         self.jobs.iter_mut().find(|j| j.id == id)
     }
 
-    /// Transition a job to [`JobState::Stopped`] (models `SIGTSTP` delivery).
+    /// Transition a job to [`crate::job::JobState::Stopped`] (models `SIGTSTP` delivery).
     ///
     /// # Errors
-    /// Returns [`JobError::NotFound`] if `id` is unknown.
+    /// Returns [`crate::job::JobError::NotFound`] if `id` is unknown.
     pub fn mark_stopped(&mut self, id: u32) -> Result<(), JobError> {
         let job = self.get_mut(id).ok_or(JobError::NotFound(id))?;
         job.state = JobState::Stopped;
@@ -146,13 +146,13 @@ impl JobTable {
 
     /// Foreground the job with the given id.
     ///
-    /// A stopped job is first resumed through the [`ProcessControl`] seam
+    /// A stopped job is first resumed through the [`crate::job::ProcessControl`] seam
     /// (`SIGCONT`); the group is then waited on, and the job transitions to
-    /// [`JobState::Done`]. The wait's exit status is returned.
+    /// [`crate::job::JobState::Done`]. The wait's exit status is returned.
     ///
     /// # Errors
-    /// - [`JobError::NotFound`] if `id` is unknown.
-    /// - [`JobError::Process`] if the seam reports a signal/wait failure.
+    /// - [`crate::job::JobError::NotFound`] if `id` is unknown.
+    /// - [`crate::job::JobError::Process`] if the seam reports a signal/wait failure.
     pub fn fg(&mut self, id: u32, proc: &dyn ProcessControl) -> Result<i32, JobError> {
         let (pgid, stopped) = {
             let job = self.get(id).ok_or(JobError::NotFound(id))?;
@@ -170,13 +170,13 @@ impl JobTable {
 
     /// Resume a *stopped* job in the background.
     ///
-    /// Sends `SIGCONT` through the [`ProcessControl`] seam and transitions the
-    /// job back to [`JobState::Running`].
+    /// Sends `SIGCONT` through the [`crate::job::ProcessControl`] seam and transitions the
+    /// job back to [`crate::job::JobState::Running`].
     ///
     /// # Errors
-    /// - [`JobError::NotFound`] if `id` is unknown.
-    /// - [`JobError::NotStopped`] if the job is not currently stopped.
-    /// - [`JobError::Process`] if the seam reports a signal failure.
+    /// - [`crate::job::JobError::NotFound`] if `id` is unknown.
+    /// - [`crate::job::JobError::NotStopped`] if the job is not currently stopped.
+    /// - [`crate::job::JobError::Process`] if the seam reports a signal failure.
     pub fn bg(&mut self, id: u32, proc: &dyn ProcessControl) -> Result<(), JobError> {
         let (pgid, stopped) = {
             let job = self.get(id).ok_or(JobError::NotFound(id))?;

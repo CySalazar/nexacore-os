@@ -2,12 +2,17 @@
 //! per-backend throughput (WS5-02.3, .9–.12, .14, .16).
 //!
 //! This module sits above [`crate::tensor_hal`]: it probes the host
-//! capabilities ([`probe_caps`], WS5-02.3), defines the runtime ABI for
-//! loading vendor compute wrappers ([`VendorBackendLoader`], WS5-02.9) with
-//! CUDA / ROCm stubs (WS5-02.10/.11), composes vendor loading with the
-//! always-available CPU fallback ([`dispatch_backend`], WS5-02.12), measures
-//! per-backend throughput ([`BackendThroughput`], WS5-02.14), and reports the
-//! backend/capability matrix ([`capability_matrix`], WS5-02.16).
+//! capabilities ([`probe_caps`](crate::tensor_dispatch::probe_caps),
+//! WS5-02.3), defines the runtime ABI for loading vendor compute wrappers
+//! ([`VendorBackendLoader`](crate::tensor_dispatch::VendorBackendLoader),
+//! WS5-02.9) with CUDA / ROCm stubs (WS5-02.10/.11), composes vendor loading
+//! with the always-available CPU fallback
+//! ([`dispatch_backend`](crate::tensor_dispatch::dispatch_backend),
+//! WS5-02.12), measures per-backend throughput
+//! ([`BackendThroughput`](crate::tensor_dispatch::BackendThroughput),
+//! WS5-02.14), and reports the backend/capability matrix
+//! ([`capability_matrix`](crate::tensor_dispatch::capability_matrix),
+//! WS5-02.16).
 //!
 //! The Vulkan-compute backend and the real vendor runtimes (CUDA/ROCm/Vulkan
 //! drivers) are loaded on the rig; here every effectful path is behind a trait

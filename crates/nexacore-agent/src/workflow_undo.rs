@@ -13,10 +13,10 @@
 //! `NetworkRequest` have no mechanical inverse, so a workflow containing an
 //! executed one of those is recorded as **not reversible** (`reversible: false`).
 //! `ClassifyFile` is read-only — a no-op to undo — so it never blocks
-//! reversibility. Only steps that actually ran ([`StepResult::Ok`]) are
+//! reversibility. Only steps that actually ran ([`StepResult::Ok`](nexacore_workflow::engine::StepResult::Ok)) are
 //! inverted; failed and skipped steps left no effect to reverse.
 //!
-//! The inverse is itself a [`Workflow`] whose canonical bytes become the opaque
+//! The inverse is itself a [`Workflow`](nexacore_workflow::model::Workflow) whose canonical bytes become the opaque
 //! pre-action snapshot the Helper's window carries; replaying it reverses the
 //! original run.
 

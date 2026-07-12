@@ -141,7 +141,7 @@ pub enum PackError {
     #[error("invalid BCP-47 language tag: {0:?}")]
     BadLanguageTag(String),
 
-    /// A per-mille measure exceeded [`MAX_PER_MILLE`].
+    /// A per-mille measure exceeded `MAX_PER_MILLE`.
     #[error("per-mille measure {0} exceeds 1000")]
     MeasureOutOfRange(u16),
 

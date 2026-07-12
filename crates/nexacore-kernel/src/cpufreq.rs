@@ -7,10 +7,10 @@
 //!
 //! Three layers:
 //!
-//! 1. **Frequency table** ([`FrequencyTable`]) — the available P-states as an
+//! 1. **Frequency table** ([`FrequencyTable`](crate::cpufreq::FrequencyTable)) — the available P-states as an
 //!    ascending list of frequencies (kHz), with `min`/`max` bounds derived
 //!    from the ends. This is the discrete set the governor may select from.
-//! 2. **Governor** ([`Governor`]) — computes the *target* P-state from a
+//! 2. **Governor** ([`Governor`](crate::cpufreq::Governor)) — computes the *target* P-state from a
 //!    per-sample load reading (utilization `0..=100`). The `ondemand` policy
 //!    steps the frequency **up** when load exceeds an up-threshold and **down**
 //!    when it falls below a down-threshold; the gap between the two thresholds
@@ -18,7 +18,7 @@
 //!    near a single threshold does not thrash the P-state. Selection is always
 //!    clamped to the table bounds. `performance` pins the maximum and
 //!    `powersave` pins the minimum.
-//! 3. **Controller seam** ([`FreqController`]) — the actual MSR/ACPI frequency
+//! 3. **Controller seam** ([`FreqController`](crate::cpufreq::FreqController)) — the actual MSR/ACPI frequency
 //!    *write*. The bare-metal kernel implements this over the platform P-state
 //!    interface; host tests use a recording double. The governor never writes
 //!    hardware directly — it computes a target and hands it to the seam.

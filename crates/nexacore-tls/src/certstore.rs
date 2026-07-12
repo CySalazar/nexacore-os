@@ -13,7 +13,7 @@
 //! isolated behind [`CertVerifier`] so a future X.509 backend can slot in
 //! without touching the path-building code.
 //!
-//! The bundled [`NexaCert`] format is a length-prefixed `TBS || signature`
+//! The bundled `NexaCert` format is a length-prefixed `TBS || signature`
 //! where the issuer signs the TBS with `ed25519`. It is deliberately minimal:
 //! subject/issuer distinguished names are opaque byte strings, validity is a
 //! `u64` epoch window, and `is_ca` + `path_len` model basic constraints.
@@ -206,7 +206,7 @@ pub fn verify_chain<V: CertVerifier>(
 
 // ---- NexaCert: the bundled ed25519 certificate format -----------------------
 
-/// The `TBS` (to-be-signed) portion of a [`NexaCert`], carrying the certified
+/// The `TBS` (to-be-signed) portion of a `NexaCert`, carrying the certified
 /// facts. Encodes deterministically so the signer and verifier agree byte for
 /// byte.
 #[derive(Debug, Clone)]
@@ -245,7 +245,7 @@ impl NexaCertTbs {
     }
 }
 
-/// Encode a full [`NexaCert`] wire certificate = `tbs_len(u16) || tbs ||
+/// Encode a full `NexaCert` wire certificate = `tbs_len(u16) || tbs ||
 /// signature(64)`.
 ///
 /// # Errors
@@ -257,7 +257,7 @@ pub fn encode_nexacert(tbs: &[u8], signature: &[u8; SIGNATURE_LEN]) -> TlsResult
     Ok(w.into_bytes())
 }
 
-/// The [`CertVerifier`] backend for the bundled `ed25519` [`NexaCert`] format.
+/// The [`CertVerifier`] backend for the bundled `ed25519` `NexaCert` format.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct NexaCertVerifier;
 

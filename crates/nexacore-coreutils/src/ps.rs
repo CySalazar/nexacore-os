@@ -19,7 +19,7 @@
 //! `%CPU` is rendered from [`cpu_permille`](crate::process::ProcessInfo::cpu_permille)
 //! by [`format_percent`] with integer `div_euclid`/`rem_euclid` (no floats).
 //! `RSS` is resident bytes rounded up to whole KiB via
-//! [`to_blocks`](crate::df::to_blocks), matching `ps`'s KiB RSS column.
+//! [`to_blocks`], matching `ps`'s KiB RSS column.
 
 use alloc::{
     format,
