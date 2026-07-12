@@ -69,8 +69,8 @@ bare-metal = ["nexacore-crypto/bare-metal"]
 # integration tests and downstream callers) opts into `id-generation`
 # via the dev-dependency override below.
 [dependencies]
-nexacore-types  = { path = "../nexacore-types",  version = "0.2.0", default-features = false, features = ["id-types"] }
-nexacore-crypto = { path = "../nexacore-crypto", version = "0.2.0", default-features = false }
+nexacore-types  = { path = "../nexacore-types",  version = "0.3.0-alpha.2", default-features = false, features = ["id-types"] }
+nexacore-crypto = { path = "../nexacore-crypto", version = "0.3.0-alpha.2", default-features = false }
 serde       = { workspace = true }
 # `postcard` access is delegated to `nexacore-types::wire::{encode_canonical,
 # decode_canonical}`; no direct postcard dependency. This is the
@@ -84,7 +84,7 @@ thiserror   = { workspace = true }
 # additively, so this keeps the bare-metal compile of the library free
 # of `getrandom` while still letting `cargo test -p nexacore-capability`
 # exercise the full mint→verify flow.
-nexacore-crypto = { path = "../nexacore-crypto", version = "0.2.0", default-features = false, features = ["rng"] }
-nexacore-types  = { path = "../nexacore-types",  version = "0.2.0", default-features = false, features = ["id-generation"] }
+nexacore-crypto = { path = "../nexacore-crypto", version = "0.3.0-alpha.2", default-features = false, features = ["rng"] }
+nexacore-types  = { path = "../nexacore-types",  version = "0.3.0-alpha.2", default-features = false, features = ["id-generation"] }
 proptest = { workspace = true }
 hex      = { workspace = true }

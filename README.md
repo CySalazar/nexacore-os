@@ -5,7 +5,7 @@
 [![CI](https://github.com/CySalazar/nexacore-os/actions/workflows/ci.yml/badge.svg)](https://github.com/CySalazar/nexacore-os/actions/workflows/ci.yml)
 [![QEMU boot smoke](https://github.com/CySalazar/nexacore-os/actions/workflows/qemu-boot-smoke.yml/badge.svg)](https://github.com/CySalazar/nexacore-os/actions/workflows/qemu-boot-smoke.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
-[![Release](https://img.shields.io/badge/release-v0.3.0--alpha.1-orange.svg)](https://github.com/CySalazar/nexacore-os/releases)
+[![Release](https://img.shields.io/badge/release-v0.3.0--alpha.2-orange.svg)](https://github.com/CySalazar/nexacore-os/releases)
 [![Discussions](https://img.shields.io/badge/community-Discussions-8A2BE2.svg)](https://github.com/CySalazar/nexacore-os/discussions)
 
 **Status:** Phase 1→2 — a bare-metal Rust microkernel with a working userspace OS on top. **Kernel:** MB1–MB14 cycle closed (per-process CR3, IPC, live INIT-SIPI SMP, TLB shootdown, x2APIC), plus per-device IOMMU (VT-d + AMD-Vi), PCI ECAM scan, and S4 hibernate + device suspend/resume. **Networking:** full userspace dual-stack TCP/IP, TLS 1.3, SSH-2. **Storage:** native NCFS (on-disk v3) + read-only FAT/ext4/NTFS. **AI:** real `no_std` CPU inference (GGUF + BPE + transformer) and a five-agent framework. **Desktop:** userspace compositor/WM with native apps (terminal shell, text editor, file manager, media/image/PDF viewers). **Drivers:** NVMe / virtio-net / e1000e host cores live on Proxmox. **86 crate packages, ~7,700 tests, a 96-entry kernel syscall surface (ABI v2 frozen at 70).**

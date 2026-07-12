@@ -61,7 +61,7 @@ nexacore-driver-shared = { workspace = true }
 # First-party NexaCore crate; no_std + alloc compatible. Bare-metal driver →
 # opt out of the default `id-generation` feature (it pulls `getrandom`, which
 # has no `x86_64-unknown-none` backend); mirrors `nexacore-driver-net-virtio`.
-nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 # `serde` is required transitively through nexacore-types' derive usage and for
 # any future serialisation of driver-internal state (diagnostics, snapshot).
 serde = { workspace = true }

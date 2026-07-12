@@ -27,7 +27,7 @@ description  = "TASK-22 (DE-D1/DE-D4) Ring 3 windowed terminal + text editor ima
 # real product version, not this image crate's historical 0.1.0. This crate is
 # built out-of-workspace (see the header), so it cannot inherit
 # `version.workspace = true` and must state the version literally.
-version      = "0.2.0"
+version      = "0.3.0-alpha.2"
 edition      = "2024"
 rust-version = "1.85"
 authors      = ["cySalazar <hello@nexacoreos.com>"]
@@ -55,7 +55,7 @@ nexacore-fonts = { path = "../nexacore-fonts" }
 # nexacore-types carries DisplayInputEvent, BackendStatusEvent, FsRequest/FsResponse
 # and the canonical wire encoder/decoder.
 # `default-features = false` strips uuid + getrandom for x86_64-unknown-none.
-nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 # nexacore-driver-shared provides capability deposit window parser + device-info reader.
 nexacore-driver-shared = { path = "../nexacore-driver-shared" }
 # nexacore-shell provides the no_std REPL (process_line + FsQuery trait).
@@ -64,10 +64,10 @@ nexacore-shell = { path = "../nexacore-shell", default-features = false }
 # nexacore-net carries the NetConfigRequest/NetConfigResponse/InterfaceInfo
 # wire types for the `ifconfig` IPC client (NCIP N6.1).
 # `default-features = false` strips uuid + getrandom for x86_64-unknown-none.
-nexacore-net = { path = "../nexacore-net", version = "0.2.0", default-features = false }
+nexacore-net = { path = "../nexacore-net", version = "0.3.0-alpha.2", default-features = false }
 # nexacore-cmd-ifconfig provides the InterfaceDisplay type the Terminal's
 # `ifconfig` command formats against.
-nexacore-cmd-ifconfig = { path = "../nexacore-cmd-ifconfig", version = "0.2.0", default-features = false }
+nexacore-cmd-ifconfig = { path = "../nexacore-cmd-ifconfig", version = "0.3.0-alpha.2", default-features = false }
 # serde with no_std + alloc: needed for postcard encode/decode helpers.
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 # postcard 1.x: the canonical NexaCore wire encoding (NCIP-Serde-004).

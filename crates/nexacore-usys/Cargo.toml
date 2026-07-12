@@ -81,7 +81,7 @@ bare-metal = []
 # workspace's `default-features`).  The `serde` and `postcard`-backed wire
 # types needed by `net` and `display` are always compiled in `nexacore-types`
 # regardless of the `id-generation` feature.
-nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 
 # Dev-only: test harnesses that validate Errno mapping, flag constants, and
 # the mock Syscall implementation.  All deps are already workspace-pinned.

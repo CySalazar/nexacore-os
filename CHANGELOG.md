@@ -8,6 +8,8 @@ not yet stable and may change between releases.
 
 ## [Unreleased]
 
+## [0.3.0-alpha.2] — 2026-07-12
+
 A broad Phase-2 build-out: on top of the microkernel there is now a working
 userspace operating system — networking, storage, an AI runtime, and a desktop
 with native applications. The workspace holds 86 crate packages and ~7,700
@@ -103,7 +105,8 @@ A large multi-crate workspace with an extensive automated test suite.
   lint and dependency policies.
 - Formal protocol specifications and Tamarin/ProVerif handshake proofs.
 
-[Unreleased]: https://github.com/CySalazar/nexacore-os/compare/v0.3.0-alpha.1...HEAD
+[Unreleased]: https://github.com/CySalazar/nexacore-os/compare/v0.3.0-alpha.2...HEAD
+[0.3.0-alpha.2]: https://github.com/CySalazar/nexacore-os/releases/tag/v0.3.0-alpha.2
 [0.3.0-alpha.1]: https://github.com/CySalazar/nexacore-os/releases/tag/v0.3.0-alpha.1
 [0.2.0]: https://github.com/CySalazar/nexacore-os/releases/tag/v0.2.0
 [0.1.0]: https://github.com/CySalazar/nexacore-os/releases/tag/v0.1.0

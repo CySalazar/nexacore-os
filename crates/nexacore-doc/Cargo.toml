@@ -27,5 +27,5 @@ readme.workspace       = true
 workspace = true
 
 [dependencies]
-nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
-nexacore-print = { path = "../nexacore-print", version = "0.2.0" }
+nexacore-types = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
+nexacore-print = { path = "../nexacore-print", version = "0.3.0-alpha.2" }

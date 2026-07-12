@@ -26,7 +26,7 @@ readme.workspace       = true
 # `nexacore_types::{blk, wire}`, both no_std-clean. Path-style because a member
 # cannot override the workspace dep's default-features (same pattern as
 # nexacore-hal/nexacore-runtime, ADR-0034). TASK-15.
-nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 # `serde` with `derive` and `alloc` features for `FileMetadata` wire serialization.
 # `default-features = false` keeps this crate `no_std + alloc` compatible,
 # consistent with the workspace `no_std` policy in /docs/09-tech-specifications.md.

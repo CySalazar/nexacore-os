@@ -55,7 +55,7 @@ all-backends = ["tdx", "sev-snp", "mock"]
 # identity types declare their own nexacore-types dependency (TASK-13-pre,
 # ADR-0034).  Cannot use `workspace = true`: a member cannot override the
 # workspace's `default-features` (same pattern as nexacore-kernel/nexacore-capability).
-nexacore-types  = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types  = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 # nexacore-tee is optional: only needed under the `std` feature (TEE backends are
 # not available in no_std contexts).
 nexacore-tee    = { workspace = true, optional = true }

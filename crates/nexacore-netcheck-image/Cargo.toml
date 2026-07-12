@@ -22,7 +22,7 @@
 [package]
 name         = "nexacore-netcheck-image"
 description  = "Bare-metal M0 networking self-test client for NexaCore OS"
-version      = "0.2.0"
+version      = "0.3.0-alpha.2"
 edition      = "2024"
 rust-version = "1.85"
 authors      = ["cySalazar <hello@nexacoreos.com>"]

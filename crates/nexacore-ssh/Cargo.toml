@@ -29,6 +29,6 @@ readme.workspace = true
 workspace = true
 
 [dependencies]
-nexacore-crypto = { path = "../nexacore-crypto", version = "0.2.0", features = ["rng"] }
+nexacore-crypto = { path = "../nexacore-crypto", version = "0.3.0-alpha.2", features = ["rng"] }
 
 [dev-dependencies]

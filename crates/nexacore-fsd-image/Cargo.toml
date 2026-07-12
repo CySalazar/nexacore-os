@@ -35,7 +35,7 @@ nexacore-fs = { path = "../nexacore-fs" }
 # nexacore-types carries BlkRequest / BlkResponse and the canonical wire encoder.
 # `default-features = false` strips uuid + getrandom so this builds for
 # x86_64-unknown-none.
-nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 # nexacore-driver-shared provides caps::find_token for the IpcSend deposit window.
 # Dep-free and no_std; safe to link into Ring 3 images.
 nexacore-driver-shared = { path = "../nexacore-driver-shared" }

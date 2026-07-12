@@ -37,4 +37,4 @@ workspace = true
 # (`Ipv4Addr`, `MacAddress`), so there's nothing here that needs it. Required
 # so this crate can be linked into bare-metal binaries (e.g. `nexacore-shell`'s
 # `ifconfig` command).
-nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }

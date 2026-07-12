@@ -18,7 +18,7 @@
 [package]
 name             = "nexacore-driver-pack"
 description      = "NexaCore OS driver-pack v1 producer — JSON manifest + ELF → signed .opack blob (NCIP-013 § S5.5)."
-version          = "0.2.0"
+version          = "0.3.0-alpha.2"
 edition          = "2024"
 rust-version     = "1.85"
 authors          = ["cySalazar <hello@nexacoreos.com>"]
@@ -49,10 +49,10 @@ path = "src/main.rs"
 # `PciMatcher`, and the `NEXACORE_PACK_*` format constants, guaranteeing
 # compile-time field-order identity with the kernel decoder. Field-order
 # drift = silently broken signatures — this dependency eliminates that risk.
-nexacore-types      = { path = "../../crates/nexacore-types",      version = "0.2.0" }
-nexacore-crypto     = { path = "../../crates/nexacore-crypto",     version = "0.2.0" }
-nexacore-capability = { path = "../../crates/nexacore-capability", version = "0.2.0" }
-nexacore-kernel     = { path = "../../crates/nexacore-kernel",     version = "0.2.0" }
+nexacore-types      = { path = "../../crates/nexacore-types",      version = "0.3.0-alpha.2" }
+nexacore-crypto     = { path = "../../crates/nexacore-crypto",     version = "0.3.0-alpha.2" }
+nexacore-capability = { path = "../../crates/nexacore-capability", version = "0.3.0-alpha.2" }
+nexacore-kernel     = { path = "../../crates/nexacore-kernel",     version = "0.3.0-alpha.2" }
 
 # serde + serde_json — JSON manifest parsing. Both already in workspace lock.
 # Using std-default features (not `default-features = false`) because this
@@ -78,8 +78,8 @@ thiserror = "2.0"
 # Cargo they are also available in the test namespace.
 # -----------------------------------------------------------------------------
 [dev-dependencies]
-nexacore-kernel = { path = "../../crates/nexacore-kernel", version = "0.2.0" }
-nexacore-crypto = { path = "../../crates/nexacore-crypto", version = "0.2.0" }
+nexacore-kernel = { path = "../../crates/nexacore-kernel", version = "0.3.0-alpha.2" }
+nexacore-crypto = { path = "../../crates/nexacore-crypto", version = "0.3.0-alpha.2" }
 
 # -----------------------------------------------------------------------------
 # Lints — mirror the workspace-level policy (tool is workspace-excluded so

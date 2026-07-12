@@ -64,8 +64,8 @@ fixture-model = []
 # Foundational deps of the no_std inference-engine subset.  Declared with
 # explicit paths because a member cannot override the workspace dependency's
 # `default-features` (same pattern as nexacore-kernel/nexacore-hal; ADR-0034).
-nexacore-types      = { path = "../nexacore-types", version = "0.2.0", default-features = false }
-nexacore-hal        = { path = "../nexacore-hal",   version = "0.2.0", default-features = false }
+nexacore-types      = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
+nexacore-hal        = { path = "../nexacore-hal",   version = "0.3.0-alpha.2", default-features = false }
 # `hashbrown` replaces `std::collections::HashMap` in the BPE tokenizer so it
 # builds without std — it IS the std HashMap implementation (ADR-0034 §3).
 hashbrown       = { workspace = true }

@@ -48,6 +48,6 @@ workspace = true
 # used by the Mass Storage gateway module.  `default-features = false` keeps
 # this crate `no_std + alloc`-clean (drops the `id-generation`/`getrandom`
 # features that are irrelevant to a hardware driver).
-nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 
 [dev-dependencies]

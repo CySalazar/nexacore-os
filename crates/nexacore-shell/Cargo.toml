@@ -33,8 +33,8 @@ tracing               = { workspace = true, optional = true }
 # dependency. `default-features = false` opts out of `nexacore-types`'s
 # `id-generation` feature (uuid + getrandom, unsupported on
 # `x86_64-unknown-none`) so this crate keeps compiling for bare-metal targets.
-nexacore-cmd-ifconfig = { path = "../nexacore-cmd-ifconfig", version = "0.2.0", default-features = false }
-nexacore-types        = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-cmd-ifconfig = { path = "../nexacore-cmd-ifconfig", version = "0.3.0-alpha.2", default-features = false }
+nexacore-types        = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 
 [features]
 # `std` is the default: enables tracing and the `print!` output path in the

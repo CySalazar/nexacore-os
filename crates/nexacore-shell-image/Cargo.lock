@@ -31,14 +31,14 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "nexacore-cmd-ifconfig"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 dependencies = [
  "nexacore-types",
 ]
 
 [[package]]
 name = "nexacore-shell"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 dependencies = [
  "nexacore-cmd-ifconfig",
  "nexacore-types",
@@ -47,14 +47,14 @@ dependencies = [
 
 [[package]]
 name = "nexacore-shell-image"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 dependencies = [
  "nexacore-shell",
 ]
 
 [[package]]
 name = "nexacore-types"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 dependencies = [
  "hex",
  "postcard",

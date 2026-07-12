@@ -29,7 +29,7 @@
 [package]
 name         = "nexacore-shell-image"
 description  = "Bare-metal shell binary for NexaCore OS — spawned as PID 1 by the kernel."
-version      = "0.2.0"
+version      = "0.3.0-alpha.2"
 edition      = "2024"
 rust-version = "1.85"
 authors      = ["cySalazar <hello@nexacoreos.com>"]

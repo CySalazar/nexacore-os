@@ -71,6 +71,6 @@ nexacore-driver-shared = { workspace = true }
 # This matches the `default-features = false` pattern used by `nexacore-kernel`.
 # Host-side cargo test works without `id-generation` because the test helpers
 # in this crate use only `encode_canonical` / `decode_canonical`.
-nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 
 [dev-dependencies]

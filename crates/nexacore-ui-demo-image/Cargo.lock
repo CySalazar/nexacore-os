@@ -43,11 +43,11 @@ checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 
 [[package]]
 name = "nexacore-config"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 
 [[package]]
 name = "nexacore-display"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 dependencies = [
  "libm",
  "nexacore-types",
@@ -56,11 +56,11 @@ dependencies = [
 
 [[package]]
 name = "nexacore-driver-shared"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 
 [[package]]
 name = "nexacore-types"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 dependencies = [
  "hex",
  "postcard",
@@ -71,7 +71,7 @@ dependencies = [
 
 [[package]]
 name = "nexacore-ui"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 dependencies = [
  "font8x8",
  "nexacore-config",

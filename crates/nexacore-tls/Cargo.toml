@@ -36,10 +36,10 @@ workspace = true
 [dependencies]
 # `default-features = false` keeps the `id-generation` (UUID + getrandom)
 # feature off so the crate stays `no_std`. Only the wire/error types are used.
-nexacore-types  = { path = "../nexacore-types",  version = "0.2.0", default-features = false }
+nexacore-types  = { path = "../nexacore-types",  version = "0.3.0-alpha.2", default-features = false }
 # Crypto primitives: AEAD, HKDF, X25519, Ed25519, SHA-256. The `rng` feature is
 # needed for ephemeral key generation during the handshake.
-nexacore-crypto = { path = "../nexacore-crypto", version = "0.2.0", features = ["rng"] }
+nexacore-crypto = { path = "../nexacore-crypto", version = "0.3.0-alpha.2", features = ["rng"] }
 
 [dev-dependencies]
 proptest = { workspace = true }

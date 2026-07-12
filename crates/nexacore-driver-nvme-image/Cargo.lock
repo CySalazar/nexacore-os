@@ -31,7 +31,7 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "nexacore-driver-nvme"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 dependencies = [
  "nexacore-driver-shared",
  "nexacore-types",
@@ -39,7 +39,7 @@ dependencies = [
 
 [[package]]
 name = "nexacore-driver-nvme-image"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 dependencies = [
  "nexacore-driver-nvme",
  "nexacore-driver-shared",
@@ -48,11 +48,11 @@ dependencies = [
 
 [[package]]
 name = "nexacore-driver-shared"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 
 [[package]]
 name = "nexacore-types"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 dependencies = [
  "hex",
  "postcard",

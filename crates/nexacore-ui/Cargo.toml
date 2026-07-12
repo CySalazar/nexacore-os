@@ -34,15 +34,15 @@ workspace = true
 # -----------------------------------------------------------------------------
 # `nexacore-display` provides `geometry::Rect` (ADR-0041, TASK-19).
 [dependencies]
-nexacore-display = { path = "../nexacore-display", version = "0.2.0" }
+nexacore-display = { path = "../nexacore-display", version = "0.3.0-alpha.2" }
 # `nexacore-config` backs the theme engine's settings persistence (WS17-03.11).
 # `no_std + alloc`, dep-free — keeps the x86_64-unknown-none build clean.
-nexacore-config  = { path = "../nexacore-config", version = "0.2.0" }
+nexacore-config  = { path = "../nexacore-config", version = "0.3.0-alpha.2" }
 # `nexacore-types` provides `display_channel::DisplayInputEvent` (ADR-0040, TASK-18).
 # `version` field required by cargo-deny's wildcard-ban policy (deny.toml
 # `wildcards = "deny"`).  `default-features = false` strips `id-generation`
 # (which pulls getrandom + uuid) for x86_64-unknown-none cleanliness.
-nexacore-types   = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types   = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 # `font8x8` is already a workspace dependency (the kernel banner uses it).
 # `default-features = false` keeps it no_std-clean.  MIT/Apache-2.0 licensed.
 font8x8      = { version = "0.3", default-features = false }

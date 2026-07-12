@@ -69,7 +69,7 @@ bare-metal = []
 # override it from a downstream `workspace = true` member. nexacore-crypto's
 # `rng` feature re-enables `nexacore-types/id-generation` for userspace
 # builds; bare-metal builds (`--no-default-features`) leave it off.
-nexacore-types       = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types       = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 ed25519-dalek    = { workspace = true }
 x25519-dalek     = { workspace = true }
 # ML-DSA / FIPS 204 post-quantum signatures. Base features (`alloc`,

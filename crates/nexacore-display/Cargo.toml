@@ -37,7 +37,7 @@ workspace = true
 # crate clean for `x86_64-unknown-none`.  The `version` field is required by
 # `cargo-deny`'s wildcard-ban policy (deny.toml `wildcards = "deny"`).
 [dependencies]
-nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 # `thiserror` v2 with `default-features = false` uses `core::error::Error`
 # (Rust 1.81+) and is fully `no_std`-compatible on our MSRV 1.85.
 # Already pinned at workspace level; no new dependency.

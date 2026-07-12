@@ -51,7 +51,7 @@ nexacore-display = { path = "../nexacore-display" }
 # nexacore-types carries DisplayInputEvent and the canonical wire encoder/decoder.
 # `default-features = false` strips uuid + getrandom so this builds for
 # x86_64-unknown-none.
-nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 # nexacore-driver-shared provides the capability deposit window parser
 # (`caps::find_token`) and the device-info reader (`device_info::read`).
 nexacore-driver-shared = { path = "../nexacore-driver-shared" }

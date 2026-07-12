@@ -41,4 +41,4 @@ workspace = true
 # verbatim as the audio-output PCM contract.  `default-features = false` strips
 # `id-generation` (getrandom + uuid) for `x86_64-unknown-none` cleanliness.
 [dependencies]
-nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }

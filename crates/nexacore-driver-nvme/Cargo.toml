@@ -62,6 +62,6 @@ nexacore-driver-shared = { workspace = true }
 # rationale as `nexacore-kernel`'s pin) — we only need the `nvme` module
 # which is dep-free at the gate level. Pin via path + version since
 # the workspace entry has `default-features = true`.
-nexacore-types = { path = "../nexacore-types", version = "0.2.0", default-features = false }
+nexacore-types = { path = "../nexacore-types", version = "0.3.0-alpha.2", default-features = false }
 
 [dev-dependencies]

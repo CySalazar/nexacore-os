@@ -18,8 +18,8 @@ workspace = true
 [dependencies]
 # `version` field required by cargo-deny's wildcard-ban policy (deny.toml
 # `wildcards = "deny"`).
-nexacore-display = { path = "../nexacore-display", version = "0.2.0" }
-nexacore-ui      = { path = "../nexacore-ui", version = "0.2.0" }
+nexacore-display = { path = "../nexacore-display", version = "0.3.0-alpha.2" }
+nexacore-ui      = { path = "../nexacore-ui", version = "0.3.0-alpha.2" }
 # `libm` provides `sqrtf` for the distance-field AA line stroking in
 # `stroke.rs`; the workspace already depends on it for `no_std` float math
 # (see `omni-display`), so we reuse the same portable solution here.

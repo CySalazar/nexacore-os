@@ -183,11 +183,11 @@ checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
 
 [[package]]
 name = "nexacore-driver-shared"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 
 [[package]]
 name = "nexacore-fs"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 dependencies = [
  "blake3",
  "chacha20poly1305",
@@ -208,7 +208,7 @@ dependencies = [
 
 [[package]]
 name = "nexacore-types"
-version = "0.2.0"
+version = "0.3.0-alpha.2"
 dependencies = [
  "hex",
  "postcard",
