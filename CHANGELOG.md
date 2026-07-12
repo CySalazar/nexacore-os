@@ -62,6 +62,11 @@ tests.
 - USB HID input no longer stalls after the interrupt-IN transfer ring wraps
   (corrected TRB cycle-bit handling on the ring boundary).
 
+### Security
+- Established the Ed25519 release-signing key for tagged releases; the public
+  half is committed at `keys/nexacore-release-ed25519.pub.pem` and verifies the
+  detached `.sig` published next to each release ISO (see `keys/README.md`).
+
 ### Known limitations
 - The container (micro-VM) engine and TEE backends are partial: confidential-VM
   paths (Intel TDX / AMD SEV-SNP) and per-container attestation are feature-gated
