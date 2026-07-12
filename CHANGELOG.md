@@ -8,10 +8,62 @@ not yet stable and may change between releases.
 
 ## [Unreleased]
 
+A broad Phase-2 build-out: on top of the microkernel there is now a working
+userspace operating system — networking, storage, an AI runtime, and a desktop
+with native applications. The workspace holds 86 crate packages and ~7,700
+tests.
+
 ### Added
-- Block-device request/response types and IRQ-attach wiring for the user-space
-  driver framework.
-- NVMe driver end-to-end IPC loop.
+- **Userspace networking stack.** Full dual-stack TCP/IP (ARP, IPv4/IPv6,
+  ICMP/ICMPv6, UDP, RFC-793 TCP + Reno, DNS, DHCPv4/v6, NDP/SLAAC, PMTU,
+  conntrack, firewall, socket API), TLS 1.3 client + server, and SSH-2
+  (curve25519 kex, Ed25519 host key, ChaCha20-Poly1305, publickey/password
+  userauth, RFC-4254 channels).
+- **Storage and filesystems.** Native NCFS user-space service with an on-disk
+  v3 format (superblock, inodes, extents, B-tree, Merkle integrity, block
+  crypto, snapshots, mkfs) over a `BlockDevice` seam, plus read-only FAT12/16/32,
+  ext2/3/4, and NTFS compatibility readers.
+- **AI runtime, agents, and privacy.** Real `no_std` CPU inference chain (GGUF
+  loader, tensor dequantization, byte-level BPE, transformer forward pass,
+  greedy decode) with local-CPU and Ollama providers behind a resilient
+  failover router; a five-agent framework (orchestrator, guidance, sysadmin,
+  security, task) with a differential-privacy accountant; a declarative
+  workflow engine; on-device PII tokenization with a TEE-sealed vault; and a
+  local-first personal-context store.
+- **Desktop and native applications.** A userspace compositor / window manager
+  (damage tracking, focus and input routing, glyf font rasterization and
+  shaping, IME), a retained-mode brand UI toolkit, and native apps: a
+  POSIX-style terminal shell, a text editor (PieceTable buffer + syntax
+  highlighting), a file manager, and media / image / PDF viewers.
+- **Userland and services.** A PID-1 supervisor (service manifests, dependency
+  graph, health checks, socket activation), a GPT installer with A/B slots, an
+  IPP printing stack, a content-addressed federated package manager, and a
+  family of `no_std` CLI network tools (ping, traceroute, nslookup, netstat,
+  route, ifconfig, curl, wget).
+- **Kernel subsystems.** Per-device IOMMU (Intel VT-d + AMD-Vi), PCI ECAM
+  scanning, MSI-X, S4 hibernate with a device suspend/resume power-management
+  framework, and USB xHCI HID input on the desktop.
+- **Post-quantum cryptography.** ML-DSA-65 (FIPS 204) and ML-KEM-768 (FIPS 203)
+  with known-answer-test vectors, alongside the existing RustCrypto primitives.
+
+### Changed
+- User-space drivers grew from scaffolds into substantial host-tested cores —
+  NVMe, virtio-net, e1000e, Wi-Fi (WPA2/WPA3 supplicant + 802.11), TPM 2.0,
+  HD-audio, and virtio-gpu — with privileged hardware execution delegated to
+  their Ring-3 image siblings. NVMe, virtio-net, and e1000e run on Proxmox.
+
+### Fixed
+- The desktop no longer freezes during long interactive sessions: the
+  never-freeing bump allocator was replaced with a reclaiming size-class
+  free-list allocator, so input, rendering, and terminal commands no longer
+  exhaust the heap.
+- USB HID input no longer stalls after the interrupt-IN transfer ring wraps
+  (corrected TRB cycle-bit handling on the ring boundary).
+
+### Known limitations
+- The container (micro-VM) engine and TEE backends are partial: confidential-VM
+  paths (Intel TDX / AMD SEV-SNP) and per-container attestation are feature-gated
+  scaffolds. The mesh transport and routing layers are Phase-4 stubs.
 
 ## [0.3.0-alpha.1] — 2026-05-20
 

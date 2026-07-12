@@ -250,6 +250,121 @@ pub fn fuzzy_score(query: &str, text: &str) -> Option<i32> {
     }
 }
 
+/// A request to launch an application, produced by the launcher UI (WS7-14.4).
+///
+/// The launcher yields the selected app's id; resolving it to an executable and
+/// actually starting it is downstream (the app-source / session), and is the
+/// hand-off the AI command palette consumes as `OpenApp` (WS16-02.2).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LaunchRequest {
+    /// The application id to launch.
+    pub app_id: String,
+}
+
+/// The interactive launcher view (WS7-14.4): a query box, the ranked results for
+/// that query, and a selection cursor over them.
+///
+/// This is interaction *state*, not drawing — the compositor renders it. Typing
+/// (or [`set_query`](Self::set_query)) re-runs the search over a
+/// [`SearchIndex`] and resets the cursor to the top hit; the arrow keys move the
+/// cursor; [`launch`](Self::launch) turns the selected hit into a
+/// [`LaunchRequest`] when it is an app.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LauncherView {
+    query: String,
+    results: Vec<SearchResult>,
+    selected: usize,
+    limit: usize,
+}
+
+impl LauncherView {
+    /// A new, empty launcher that shows at most `limit` results.
+    #[must_use]
+    pub fn new(limit: usize) -> Self {
+        Self {
+            query: String::new(),
+            results: Vec::new(),
+            selected: 0,
+            limit,
+        }
+    }
+
+    /// The current query text.
+    #[must_use]
+    pub fn query(&self) -> &str {
+        &self.query
+    }
+
+    /// The ranked results for the current query.
+    #[must_use]
+    pub fn results(&self) -> &[SearchResult] {
+        &self.results
+    }
+
+    /// The index of the currently selected result.
+    #[must_use]
+    pub fn selected_index(&self) -> usize {
+        self.selected
+    }
+
+    /// The currently selected result, if any.
+    #[must_use]
+    pub fn selected(&self) -> Option<&SearchResult> {
+        self.results.get(self.selected)
+    }
+
+    fn refresh(&mut self, index: &SearchIndex) {
+        self.results = index.search(&self.query, self.limit);
+        self.selected = 0;
+    }
+
+    /// Replace the query and re-run the search, selecting the top hit.
+    pub fn set_query(&mut self, index: &SearchIndex, query: impl Into<String>) {
+        self.query = query.into();
+        self.refresh(index);
+    }
+
+    /// Append a typed character to the query and re-run the search.
+    pub fn push_char(&mut self, index: &SearchIndex, ch: char) {
+        self.query.push(ch);
+        self.refresh(index);
+    }
+
+    /// Delete the last character of the query and re-run the search. Returns
+    /// whether a character was removed.
+    pub fn backspace(&mut self, index: &SearchIndex) -> bool {
+        if self.query.pop().is_some() {
+            self.refresh(index);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Move the selection cursor down one result (clamped to the last result).
+    pub fn move_down(&mut self) {
+        let last = self.results.len().saturating_sub(1);
+        if self.selected < last {
+            self.selected += 1;
+        }
+    }
+
+    /// Move the selection cursor up one result (clamped to the first result).
+    pub fn move_up(&mut self) {
+        self.selected = self.selected.saturating_sub(1);
+    }
+
+    /// The launch request for the selected result, or `None` if nothing is
+    /// selected or the selection is not a launchable app (WS7-14.4).
+    #[must_use]
+    pub fn launch(&self) -> Option<LaunchRequest> {
+        let result = self.selected()?;
+        (result.kind == EntryKind::App).then(|| LaunchRequest {
+            app_id: result.id.clone(),
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -329,5 +444,80 @@ Keywords=text;edit;code;write
         let idx = index();
         let cands = idx.palette_candidates("editor", 5);
         assert_eq!(cands.first().unwrap().1, "org.nexacore.editor");
+    }
+
+    #[test]
+    fn typing_narrows_results_and_selects_the_top_hit() {
+        let idx = index();
+        let mut view = LauncherView::new(10);
+        for ch in "term".chars() {
+            view.push_char(&idx, ch);
+        }
+        assert_eq!(view.query(), "term");
+        assert_eq!(
+            view.selected().map(|r| r.id.as_str()),
+            Some("org.nexacore.terminal")
+        );
+    }
+
+    #[test]
+    fn backspace_widens_the_result_set() {
+        let idx = index();
+        let mut view = LauncherView::new(10);
+        view.set_query(&idx, "terminal");
+        let narrow = view.results().len();
+        // Delete down to "t" — more entries match the shorter query.
+        for _ in 0..7 {
+            assert!(view.backspace(&idx));
+        }
+        assert_eq!(view.query(), "t");
+        assert!(view.results().len() >= narrow);
+        // Backspacing an empty query returns false.
+        view.set_query(&idx, "");
+        assert!(!view.backspace(&idx));
+    }
+
+    #[test]
+    fn arrow_navigation_is_clamped() {
+        let idx = index();
+        let mut view = LauncherView::new(10);
+        view.set_query(&idx, ""); // all entries, selection at 0
+        assert_eq!(view.selected_index(), 0);
+        view.move_up(); // already at top → stays
+        assert_eq!(view.selected_index(), 0);
+        view.move_down();
+        assert_eq!(view.selected_index(), 1);
+        // Drive past the end → clamps to the last result.
+        for _ in 0..10 {
+            view.move_down();
+        }
+        assert_eq!(view.selected_index(), view.results().len() - 1);
+    }
+
+    #[test]
+    fn launch_yields_an_app_id_only_for_apps() {
+        let idx = index();
+        let mut view = LauncherView::new(10);
+        view.set_query(&idx, "terminal");
+        assert_eq!(
+            view.launch(),
+            Some(LaunchRequest {
+                app_id: "org.nexacore.terminal".to_string()
+            })
+        );
+        // A settings result is not launchable as an app.
+        view.set_query(&idx, "volume");
+        assert_eq!(view.selected().map(|r| r.kind), Some(EntryKind::Setting));
+        assert_eq!(view.launch(), None);
+    }
+
+    #[test]
+    fn launch_is_none_when_there_are_no_results() {
+        let idx = index();
+        let mut view = LauncherView::new(10);
+        view.set_query(&idx, "qqqq");
+        assert!(view.results().is_empty());
+        assert_eq!(view.selected(), None);
+        assert_eq!(view.launch(), None);
     }
 }

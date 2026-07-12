@@ -162,8 +162,19 @@ if [[ "$SKIP_BUILD" -eq 0 ]]; then
         log "--skip-initramfs: reusing existing embedded_initramfs.bin"
     fi
 
+    # Optional kernel-runner Cargo features (space/comma-separated) forwarded via
+    # the KERNEL_FEATURES env var. Default: none (the standard desktop ISO).
+    # Example: `KERNEL_FEATURES=m0-netcheck` builds the M0 networking smoke ISO
+    # whose kernel spawns /bin/nexacore-netcheck at boot (HTTP GET to the Ollama
+    # bridge → `[netcheck] HTTP status=200`).
+    KERNEL_FEATURE_ARGS=()
+    if [[ -n "${KERNEL_FEATURES:-}" ]]; then
+        KERNEL_FEATURE_ARGS=(--features "${KERNEL_FEATURES}")
+        log "kernel-runner features: ${KERNEL_FEATURES}"
+    fi
     log "Building kernel-runner ELF (release)..."
-    (cd "$KERNEL_RUNNER_DIR" && cargo build --target x86_64-unknown-none --release --quiet)
+    (cd "$KERNEL_RUNNER_DIR" && cargo build --target x86_64-unknown-none --release --quiet \
+        ${KERNEL_FEATURE_ARGS[@]+"${KERNEL_FEATURE_ARGS[@]}"})
     [[ -f "$KERNEL_ELF" ]] || fail "kernel-runner ELF non trovato: $KERNEL_ELF"
     ok "kernel-runner ELF: $(du -h "$KERNEL_ELF" | cut -f1)"
 

@@ -1055,7 +1055,29 @@ impl HidRuntime {
 }
 
 /// Arm one interrupt-IN Normal TRB on `dev`'s ring and ring its doorbell.
+///
+/// Cycle-bit correctness across a ring wrap (the WS7-06 "input works for a
+/// second then freezes" bug): the interrupt-IN ring re-arms one TRB per report,
+/// so after `HID_RING_CAPACITY - 1` reports it wraps through the Link TRB and
+/// `enqueue` flips the producer cycle. Two invariants must hold on that wrap:
+///
+/// 1. The Normal TRB must carry the cycle of the lap its slot now belongs to.
+///    `enqueue` flips the PCS *in place* when it wraps to slot 0, so the value
+///    read **after** `enqueue` is the correct one for `idx` (reading it before
+///    would stamp the fresh slot 0 with the previous lap's cycle → the
+///    controller treats it as stale and stalls).
+/// 2. The Link TRB (last slot) must keep the cycle of the lap it *terminates*
+///    so the consumer still draining that lap follows it (its `TC=1` then flips
+///    the consumer cycle for the next lap). It is therefore refreshed **only on
+///    a wrap**, with the pre-wrap cycle. Rewriting it every arm with the
+///    post-flip cycle — as an earlier revision did — corrupts the Link the
+///    consumer is about to cross, freezing input after the first wrap.
 fn hid_arm(dev: &mut HidDevice, mmio: &mut LiveMmioBackend, db_base: usize) {
+    // Capture the Link TRB for the current lap before `enqueue` can flip the PCS.
+    let link_before = dev.ring.build_link_trb(dev.ring_phys);
+    let cycle_before = dev.ring.producer_cycle();
+
+    let idx = dev.ring.enqueue();
     let trb = normal_trb(
         dev.report_phys,
         dev.report_len,
@@ -1063,13 +1085,16 @@ fn hid_arm(dev: &mut HidDevice, mmio: &mut LiveMmioBackend, db_base: usize) {
         true,
         dev.ring.producer_cycle(),
     );
-    let idx = dev.ring.enqueue();
     // SAFETY: idx < capacity; the ring page is DMA-mapped.
     unsafe { write_trb_at(dev.ring_iova, idx, trb) };
-    let link_slot = dev.ring.capacity() - 1;
-    let link = dev.ring.build_link_trb(dev.ring_phys);
-    // SAFETY: link_slot < capacity; the ring page is DMA-mapped.
-    unsafe { write_trb_at(dev.ring_iova, link_slot, link) };
+
+    if dev.ring.producer_cycle() != cycle_before {
+        // Wrapped: refresh the Link TRB with the terminating lap's cycle.
+        let link_slot = dev.ring.capacity() - 1;
+        // SAFETY: link_slot < capacity; the ring page is DMA-mapped.
+        unsafe { write_trb_at(dev.ring_iova, link_slot, link_before) };
+    }
+
     if let Some(db_off) = doorbell_offset(dev.slot_id) {
         mmio.write_u32(db_base + db_off, dev.dci);
     }

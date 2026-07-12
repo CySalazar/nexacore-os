@@ -83,6 +83,8 @@ pub fn register(map: &mut BTreeMap<String, BuiltinFn>) {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code = nexacore_shell::commands::sys_cmds::cmd_uname_pub(&["uname".into()], &mut ctx);
 /// assert_eq!(code, 0);
@@ -172,6 +174,8 @@ fn cmd_uname(args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code = nexacore_shell::commands::sys_cmds::cmd_whoami_pub(&["whoami".into()], &mut ctx);
 /// assert_eq!(code, 0);
@@ -219,6 +223,8 @@ fn cmd_whoami(_args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code = nexacore_shell::commands::sys_cmds::cmd_hostname_pub(&["hostname".into()], &mut ctx);
 /// assert_eq!(code, 0);
@@ -266,6 +272,8 @@ fn cmd_hostname(_args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code = nexacore_shell::commands::sys_cmds::cmd_ps_pub(&["ps".into()], &mut ctx);
 /// assert_eq!(code, 0);
@@ -313,6 +321,8 @@ fn cmd_ps(_args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code =
 ///     nexacore_shell::commands::sys_cmds::cmd_kill_pub(&["kill".into(), "1234".into()], &mut ctx);
@@ -359,6 +369,8 @@ mod tests {
             net: &NoNet,
             output: Vec::new(),
             audit_log: crate::audit::AuditLog::new(),
+            stdin: Vec::new(),
+            stderr: Vec::new(),
         }
     }
 

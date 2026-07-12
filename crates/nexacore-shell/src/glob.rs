@@ -69,6 +69,56 @@ pub trait FsQuery {
     /// permission denied, etc.). The error string is for diagnostics only; the
     /// glob expander treats any error as an empty directory.
     fn list_dir(&self, path: &str) -> Result<Vec<String>, String>;
+
+    /// Report whether this backend supports byte-level file I/O — the
+    /// [`read_file`](FsQuery::read_file), [`write_file`](FsQuery::write_file),
+    /// and [`append_file`](FsQuery::append_file) methods used by the executor
+    /// to apply I/O redirections.
+    ///
+    /// The default is `false`: a directory-listing-only backend (the historical
+    /// Phase 1 behaviour) reports no I/O support, so callers keep their
+    /// pre-redirect fallbacks. Backends that wire real VFS access — and
+    /// in-memory test doubles — override this to `true`.
+    fn supports_io(&self) -> bool {
+        false
+    }
+
+    /// Read the entire contents of the file at `path`.
+    ///
+    /// Used to service the `<` (stdin) redirect.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(String)` if the file cannot be read (does not exist,
+    /// permission denied, or the backend does not support file I/O). The
+    /// default implementation always errors.
+    fn read_file(&self, path: &str) -> Result<Vec<u8>, String> {
+        Err(format!("read_file: unsupported for `{path}`"))
+    }
+
+    /// Write `contents` to the file at `path`, creating it when absent and
+    /// truncating it when present — the semantics of the `>` redirect.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(String)` if the file cannot be written. The default
+    /// implementation always errors.
+    fn write_file(&self, path: &str, contents: &[u8]) -> Result<(), String> {
+        let _ = contents;
+        Err(format!("write_file: unsupported for `{path}`"))
+    }
+
+    /// Append `contents` to the file at `path`, creating it when absent — the
+    /// semantics of the `>>` redirect.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(String)` if the file cannot be written. The default
+    /// implementation always errors.
+    fn append_file(&self, path: &str, contents: &[u8]) -> Result<(), String> {
+        let _ = contents;
+        Err(format!("append_file: unsupported for `{path}`"))
+    }
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

@@ -265,6 +265,13 @@ members = [
     # capability-bound with deterministic resource limits. `no_std + alloc`,
     # dep-free, embeddable.
     "crates/nexacore-script",
+    # `nexacore-coreutils` is the POSIX-like text-stream coreutils crate
+    # (WS8-10): pure in-memory implementations of sort, uniq, cut, tr, diff,
+    # xargs, sed-lite, awk-lite, and a less/more pager state machine. Each
+    # utility is a function/struct over `&str`/lines driven by an options
+    # struct parsed from Linux-style flags; there is no filesystem access (that
+    # seam lands in a later subtask). `no_std + alloc`, dependency-free.
+    "crates/nexacore-coreutils",
 ]
 
 # Fuzz harnesses live in their own ephemeral packages outside the
@@ -477,6 +484,7 @@ nexacore-mesh           = { path = "crates/nexacore-mesh",           version = "
 nexacore-tokenization   = { path = "crates/nexacore-tokenization",   version = "0.2.0" }
 nexacore-sdk            = { path = "crates/nexacore-sdk",            version = "0.2.0" }
 nexacore-agent          = { path = "crates/nexacore-agent",          version = "0.2.0" }
+nexacore-workflow       = { path = "crates/nexacore-workflow",       version = "0.2.0" }
 # Filesystem service (TASK-011, NCIP-FS-018): Phase-1 skeleton.
 nexacore-fs             = { path = "crates/nexacore-fs",             version = "0.2.0" }
 # Read-only FAT12/16/32 reader (WS3-05): dep-free, no_std.
@@ -579,6 +587,19 @@ sha3               = { version = "0.12", default-features = false }
 blake3             = { version = "1.5", default-features = false }
 hkdf               = { version = "0.13", default-features = false }
 argon2             = { version = "0.5", default-features = false, features = ["alloc"] }
+# Post-quantum KEM — ML-KEM (FIPS 203) from the RustCrypto family. Pinned to an
+# exact version for audit coherence. `default-features = false` drops the
+# `getrandom` bridge so bare-metal (`x86_64-unknown-none`) builds stay
+# entropy-source-free; `alloc` heap-allocates the large key objects (off the
+# stack) and `zeroize` wipes decapsulation-key material on drop. License:
+# Apache-2.0 OR MIT. MSRV 1.85 / edition 2024 — matches the workspace.
+ml-kem             = { version = "=0.3.2", default-features = false, features = ["alloc", "zeroize"] }
+# Post-quantum digital signatures — ML-DSA / FIPS 204 (RustCrypto family).
+# License: Apache-2.0 OR MIT. MSRV 1.85, edition 2024. `no_std` via `alloc`;
+# `zeroize` wipes secret key material on drop. The platform-CSPRNG `getrandom`
+# path is NOT enabled here — nexacore-crypto turns it on only under its own
+# `rng` feature (`ml-dsa/getrandom`), so bare-metal builds stay verify/seed-only.
+ml-dsa             = { version = "0.1.1", default-features = false, features = ["alloc", "zeroize"] }
 
 # --- Random number generation ---
 # CSPRNG abstraction used by signing/kex/AEAD nonce generation.

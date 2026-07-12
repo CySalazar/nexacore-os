@@ -147,7 +147,7 @@ fn fmt_truncated(name: &str, bytes: &[u8], f: &mut fmt::Formatter<'_>) -> fmt::R
 ///
 /// In production, `NodeId` is constructed via [`NodeId::from_attestation_hash`]
 /// after the caller has verified a TEE quote (Phase 1 = `nexacore-tee` — see
-/// `/todo.md` P5). The [`NodeId::from_bytes`] constructor exists for
+/// the backlog P5). The [`NodeId::from_bytes`] constructor exists for
 /// deserialization paths only and should not be used to manufacture node
 /// identities at runtime.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Zeroize)]

@@ -1,0 +1,15 @@
+# NexaCore OS — funding sources (renders the "Sponsor" button on the repo).
+#
+# Per docs/08-funding-policy.md (Tier 3 — Community), the project accepts
+# one-time and recurring donations via GitHub Sponsors and Open Collective.
+# KYC applies above a small threshold (no anonymous streams); donations do NOT
+# grant any influence over protocol or governance.
+#
+# ACTIVATION (uncomment each line once the corresponding account is live):
+#   1. Enable GitHub Sponsors on the account (Stripe onboarding), then uncomment `github`.
+#   2. Create the Open Collective (via Open Source Collective as fiscal host),
+#      then uncomment `open_collective` and confirm the slug matches the collective URL.
+# Until uncommented, GitHub shows no Sponsor button (avoids a broken link pre-launch).
+
+# github: [cySalazar]
+# open_collective: nexacore-os

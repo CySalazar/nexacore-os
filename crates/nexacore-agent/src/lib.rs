@@ -98,8 +98,14 @@ pub mod helper;
 /// System-wide natural-language command palette (WS16-02).
 pub mod palette;
 
+/// Launcher app-source adapter for the palette (WS16-02.2).
+pub mod palette_app_source;
+
 /// System-wide AI surface — dictation, screen description, smart suggestions (WS16-06).
 pub mod system_ai;
+
+/// Integrating the Helper's 30s undo with executed workflows (WS16-04.11).
+pub mod workflow_undo;
 
 // ── Re-exports ─────────────────────────────────────────────────────
 

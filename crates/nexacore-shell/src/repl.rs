@@ -30,18 +30,27 @@
 //! no-ops and return exit code `0` immediately.
 
 #[cfg(not(feature = "std"))]
-use alloc::{format, string::String, vec::Vec};
+use alloc::{
+    format,
+    string::{String, ToString},
+    vec::Vec,
+};
 
 use crate::{
     command,
     env::ShellEnv,
     executor::{self, ExecContext},
     glob::FsQuery,
+    history::History,
+    job::JobTable,
     lexer,
     line_editor::LineEditor,
     netquery::NetQuery,
     parser,
 };
+
+/// Default command-history capacity for a [`Shell`] session.
+const DEFAULT_HISTORY_CAPACITY: usize = 1000;
 
 // ── format_prompt ─────────────────────────────────────────────────────────────
 
@@ -150,8 +159,15 @@ pub fn process_line(
         return (0, Vec::new());
     }
 
+    // Expand a leading alias (first word only; quoted/non-first tokens are left
+    // untouched, recursive chains are loop-guarded). The alias table lives in
+    // `env`; expansion runs before tokenisation so the rest of the pipeline sees
+    // the resolved command line. Intent classification and the audit record keep
+    // using the original `trimmed` input the user actually typed.
+    let expanded = crate::alias::expand_line(trimmed, env);
+
     // Tokenise.
-    let tokens = match lexer::tokenize(trimmed) {
+    let tokens = match lexer::tokenize(&expanded) {
         Ok(t) => t,
         Err(e) => {
             // Tracing is only available when the `std` feature is enabled.
@@ -165,6 +181,30 @@ pub fn process_line(
     if tokens.is_empty() {
         return (0, Vec::new());
     }
+
+    // Classify intent before execution so the label can be prepended to output
+    // and the class is available for the audit record.
+    let intent = crate::intent::classify_intent(trimmed);
+
+    // Build the execution context up-front: command substitution needs executor
+    // access (to run `$(...)` inner commands and capture their output) before
+    // the outer command is parsed.
+    let builtins = command::register_builtins();
+    let mut ctx = ExecContext {
+        env,
+        last_exit_code: 0,
+        cwd: cwd.clone(),
+        fs,
+        net,
+        output: Vec::new(),
+        audit_log: crate::audit::AuditLog::new(),
+        stdin: Vec::new(),
+        stderr: Vec::new(),
+    };
+
+    // Resolve command substitutions `$(...)`, replacing each with the captured
+    // output of its inner command before parsing the outer command line.
+    let tokens = executor::substitute_tokens(tokens, &mut ctx, &builtins);
 
     // Parse.
     let ast = match parser::parse(&tokens) {
@@ -180,21 +220,7 @@ pub fn process_line(
         return (0, Vec::new());
     }
 
-    // Classify intent before execution so the label can be prepended to output
-    // and the class is available for the audit record.
-    let intent = crate::intent::classify_intent(trimmed);
-
-    // Execute.
-    let builtins = command::register_builtins();
-    let mut ctx = ExecContext {
-        env,
-        last_exit_code: 0,
-        cwd: cwd.clone(),
-        fs,
-        net,
-        output: Vec::new(),
-        audit_log: crate::audit::AuditLog::new(),
-    };
+    // Execute (reuses the context built up-front for command substitution).
     let code = executor::execute_command_list(&ast, &mut ctx, &builtins);
 
     // Propagate cwd changes (the `cd` builtin updates ctx.cwd).
@@ -240,6 +266,194 @@ pub fn process_line(
     (code, ctx.output)
 }
 
+// ── Startup script (~/.ossrc) ───────────────────────────────────────────────
+
+/// File name of the per-user shell startup script, resolved under `$HOME`.
+const OSSRC_FILENAME: &str = ".ossrc";
+
+/// Outcome of running the `~/.ossrc` startup script.
+///
+/// Returned by [`run_startup_script`] so the session owner can log or surface a
+/// summary of what happened during initialisation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum StartupOutcome {
+    /// No `~/.ossrc` file was present under the resolved `HOME`. Nothing ran —
+    /// this is the normal, silent case for users without a startup script.
+    Absent,
+    /// The startup script was found and every non-blank, non-comment line was
+    /// executed in order against the shared session environment.
+    Executed {
+        /// Number of command lines that were actually executed (blank lines and
+        /// `#` comments are skipped and not counted).
+        commands_run: usize,
+        /// How many of the executed lines returned a non-zero exit code. Under
+        /// the fail-soft policy these do not abort startup.
+        failures: usize,
+        /// Exit code of the last executed command line (`0` if none ran).
+        last_exit_code: i32,
+    },
+    /// The file was reported present by the directory listing but could not be
+    /// read through the [`FsQuery::read_file`] seam. The wrapped string is the
+    /// backend diagnostic. Startup fails closed: no lines are executed.
+    Unreadable(String),
+}
+
+/// Execute the shell startup script `~/.ossrc` against the shared session state.
+///
+/// This is the host implementation of WS8-10.18. On session init the REPL owner
+/// calls this once so that aliases, variables, and exports defined in the user's
+/// `~/.ossrc` persist into the interactive session (the same `env` and `cwd` are
+/// threaded through, so every side effect is visible afterwards).
+///
+/// # Resolution
+///
+/// The script path is `<home>/.ossrc`, where `home` is supplied by the caller
+/// (typically `env.get("HOME")`). Presence is probed through the mandatory
+/// [`FsQuery::list_dir`] seam; the contents are read through the optional
+/// [`FsQuery::read_file`] seam. Both keep this crate kernel-agnostic and fully
+/// testable with an in-memory mock.
+///
+/// # What executes today
+///
+/// Each line is run as **shell input** through the existing
+/// lexer → parser → executor pipeline via [`process_line`], reusing the same
+/// grammar and builtins as the interactive prompt. The plan classifies `.ossrc`
+/// as an ncScript (WS18) script; full ncScript semantics are **deferred** and
+/// intentionally not wired here — this brick does not depend on
+/// `nexacore-script`. When ncScript execution lands it can be introduced behind
+/// an injectable seam without changing this function's contract.
+///
+/// # Error policy (POSIX rc-like, fail-soft)
+///
+/// - **File absent** → clean no-op ([`StartupOutcome::Absent`]).
+/// - **File present but unreadable** → fail closed: no lines run, a diagnostic
+///   is emitted, and [`StartupOutcome::Unreadable`] is returned (never panics).
+/// - **A line fails** (non-zero exit, syntax, or parse error) → a diagnostic is
+///   emitted and startup **continues** with the next line, mirroring how POSIX
+///   shells treat their rc files. The failure is counted in
+///   [`StartupOutcome::Executed::failures`] but does not abort the run.
+///
+/// Blank lines and `#`-comment lines are skipped (they are also no-ops inside
+/// [`process_line`], but skipping them here keeps the executed-line count exact).
+///
+/// # Examples
+///
+/// ```rust
+/// use nexacore_shell::{
+///     env::ShellEnv,
+///     glob::FsQuery,
+///     netquery::NoNet,
+///     repl::{StartupOutcome, run_startup_script},
+/// };
+///
+/// struct RcFs;
+/// impl FsQuery for RcFs {
+///     fn list_dir(&self, path: &str) -> Result<Vec<String>, String> {
+///         if path == "/home/root" {
+///             Ok(vec![".ossrc".into()])
+///         } else {
+///             Ok(vec![])
+///         }
+///     }
+///     fn read_file(&self, path: &str) -> Result<Vec<u8>, String> {
+///         if path == "/home/root/.ossrc" {
+///             Ok(b"alias ll=ls\nexport EDITOR=nano\n".to_vec())
+///         } else {
+///             Err("not found".into())
+///         }
+///     }
+/// }
+///
+/// let mut env = ShellEnv::new();
+/// let mut cwd = "/home/root".to_string();
+/// let outcome = run_startup_script(&mut env, &mut cwd, &RcFs, &NoNet, "/home/root");
+/// assert_eq!(
+///     outcome,
+///     StartupOutcome::Executed {
+///         commands_run: 2,
+///         failures: 0,
+///         last_exit_code: 0
+///     }
+/// );
+/// // Side effects persist into the shared session environment.
+/// assert_eq!(env.get_alias("ll"), Some("ls"));
+/// assert_eq!(env.get("EDITOR"), Some("nano"));
+/// ```
+#[must_use]
+pub fn run_startup_script(
+    env: &mut ShellEnv,
+    cwd: &mut String,
+    fs: &dyn FsQuery,
+    net: &dyn NetQuery,
+    home: &str,
+) -> StartupOutcome {
+    let path = ossrc_path(home);
+
+    // Probe presence via the directory-listing seam so an absent rc file is a
+    // silent no-op (and is distinguishable from a present-but-unreadable file).
+    let present = fs
+        .list_dir(home)
+        .map(|entries| entries.iter().any(|e| e == OSSRC_FILENAME))
+        .unwrap_or(false);
+    if !present {
+        return StartupOutcome::Absent;
+    }
+
+    // Read the file through the I/O seam. Fail closed on any read error.
+    let bytes = match fs.read_file(&path) {
+        Ok(b) => b,
+        Err(e) => {
+            #[cfg(feature = "std")]
+            tracing::warn!(path = %path, error = %e, "nexacore-shell: cannot read ~/.ossrc");
+            return StartupOutcome::Unreadable(e);
+        }
+    };
+
+    let content = String::from_utf8_lossy(&bytes);
+    let mut commands_run = 0usize;
+    let mut failures = 0usize;
+    let mut last_exit_code = 0i32;
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        // Skip blanks and comments without counting them as executed commands.
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+
+        let (code, _output) = process_line(line, env, cwd, fs, net);
+        commands_run += 1;
+        last_exit_code = code;
+
+        if code != 0 {
+            failures += 1;
+            // Fail-soft: report the offending line but continue with the rest,
+            // matching POSIX shell rc-file semantics.
+            #[cfg(feature = "std")]
+            tracing::warn!(
+                line = %trimmed,
+                exit_code = code,
+                "nexacore-shell: ~/.ossrc line failed; continuing"
+            );
+        }
+    }
+
+    StartupOutcome::Executed {
+        commands_run,
+        failures,
+        last_exit_code,
+    }
+}
+
+/// Join `home` and [`OSSRC_FILENAME`] into an absolute `~/.ossrc` path.
+///
+/// A trailing `/` on `home` is normalised away so that a root `HOME` of `"/"`
+/// yields `"/.ossrc"` rather than `"//.ossrc"`.
+fn ossrc_path(home: &str) -> String {
+    let base = home.trim_end_matches('/');
+    format!("{base}/{OSSRC_FILENAME}")
+}
+
 // ── Shell ─────────────────────────────────────────────────────────────────────
 
 /// The interactive shell instance.
@@ -264,6 +478,10 @@ pub struct Shell {
     pub editor: LineEditor,
     /// Current working directory; kept in sync with `$PWD`.
     pub cwd: String,
+    /// Session command history (bounded ring buffer).
+    pub history: History,
+    /// Background job table.
+    pub jobs: JobTable,
 }
 
 impl Shell {
@@ -284,7 +502,87 @@ impl Shell {
             env: ShellEnv::new(),
             editor: LineEditor::new(),
             cwd: String::from("/"),
+            history: History::new(DEFAULT_HISTORY_CAPACITY),
+            jobs: JobTable::new(),
         }
+    }
+
+    /// Run one input line through the shell, recording it in the session
+    /// history first.
+    ///
+    /// This is the session-level entry point that wires the [`History`] ring
+    /// buffer into the pipeline: non-blank, non-comment lines are pushed into
+    /// [`Shell::history`] (with consecutive-duplicate dedup) before being
+    /// dispatched through [`process_line`] against the shell's own `env`/`cwd`.
+    /// Blank lines and `#`-comments are neither stored nor executed.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use nexacore_shell::{glob::FsQuery, netquery::NoNet, repl::Shell};
+    ///
+    /// struct EmptyFs;
+    /// impl FsQuery for EmptyFs {
+    ///     fn list_dir(&self, _: &str) -> Result<Vec<String>, String> {
+    ///         Ok(vec![])
+    ///     }
+    /// }
+    ///
+    /// let mut shell = Shell::new();
+    /// let (code, _out) = shell.run_line("echo hi", &EmptyFs, &NoNet);
+    /// assert_eq!(code, 0);
+    /// assert_eq!(shell.history.get(0), Some("echo hi"));
+    /// ```
+    pub fn run_line(
+        &mut self,
+        input: &str,
+        fs: &dyn FsQuery,
+        net: &dyn NetQuery,
+    ) -> (i32, Vec<u8>) {
+        let trimmed = input.trim();
+        if !trimmed.is_empty() && !trimmed.starts_with('#') {
+            self.history.push(trimmed);
+        }
+        process_line(input, &mut self.env, &mut self.cwd, fs, net)
+    }
+
+    /// Run the `~/.ossrc` startup script once, at the start of a live session.
+    ///
+    /// This is the opt-in init hook for WS8-10.18. A real interactive session
+    /// calls it exactly once after constructing the [`Shell`] and before reading
+    /// the first prompt line, so that startup aliases/variables/exports are in
+    /// effect for the session. Non-interactive callers and tests that do not
+    /// want startup side effects simply do not call it (the constructor stays
+    /// side-effect free).
+    ///
+    /// `HOME` is read from the shell environment (falling back to `/`), and the
+    /// script is executed against `self.env`/`self.cwd` via
+    /// [`run_startup_script`]. See that function for the full error policy.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use nexacore_shell::{
+    ///     glob::FsQuery,
+    ///     netquery::NoNet,
+    ///     repl::{Shell, StartupOutcome},
+    /// };
+    ///
+    /// struct EmptyFs;
+    /// impl FsQuery for EmptyFs {
+    ///     fn list_dir(&self, _: &str) -> Result<Vec<String>, String> {
+    ///         Ok(vec![])
+    ///     }
+    /// }
+    ///
+    /// let mut shell = Shell::new();
+    /// // No ~/.ossrc under the default HOME ("/") → clean no-op.
+    /// assert_eq!(shell.run_startup(&EmptyFs, &NoNet), StartupOutcome::Absent);
+    /// ```
+    #[must_use]
+    pub fn run_startup(&mut self, fs: &dyn FsQuery, net: &dyn NetQuery) -> StartupOutcome {
+        let home = self.env.get("HOME").unwrap_or("/").to_string();
+        run_startup_script(&mut self.env, &mut self.cwd, fs, net, &home)
     }
 }
 
@@ -308,6 +606,41 @@ mod tests {
     impl FsQuery for EmptyFs {
         fn list_dir(&self, _path: &str) -> Result<Vec<String>, String> {
             Ok(vec![])
+        }
+    }
+
+    /// A mock filesystem holding a single `~/.ossrc` under a known home dir.
+    ///
+    /// `home` is the directory that lists `.ossrc`; `contents` is what
+    /// `read_file` returns for `<home>/.ossrc`. When `contents` is `None` the
+    /// file is listed as present but reading it fails (unreadable case).
+    struct RcFs {
+        home: &'static str,
+        contents: Option<&'static str>,
+    }
+
+    impl FsQuery for RcFs {
+        fn list_dir(&self, path: &str) -> Result<Vec<String>, String> {
+            if path == self.home {
+                Ok(vec![".ossrc".into(), "notes.txt".into()])
+            } else {
+                Ok(vec![])
+            }
+        }
+
+        fn read_file(&self, path: &str) -> Result<Vec<u8>, String> {
+            let expected = if self.home == "/" {
+                "/.ossrc".to_string()
+            } else {
+                format!("{}/.ossrc", self.home)
+            };
+            if path == expected {
+                self.contents
+                    .map(|c| c.as_bytes().to_vec())
+                    .ok_or_else(|| "permission denied".to_string())
+            } else {
+                Err(format!("no such file: {path}"))
+            }
         }
     }
 
@@ -448,12 +781,77 @@ mod tests {
         assert_eq!(code, 0);
     }
 
+    #[test]
+    fn process_line_expands_leading_alias() {
+        let mut env = ShellEnv::new();
+        env.set_alias("say", "echo");
+        let mut cwd = "/".to_string();
+        let (code, output) = process_line("say hello", &mut env, &mut cwd, &EmptyFs, &NoNet);
+        assert_eq!(code, 0);
+        assert!(String::from_utf8_lossy(&output).contains("hello"));
+    }
+
+    #[test]
+    fn process_line_does_not_expand_quoted_alias() {
+        let mut env = ShellEnv::new();
+        env.set_alias("say", "echo");
+        let mut cwd = "/".to_string();
+        // A quoted first word is not an alias reference, so `say` runs as a
+        // (missing) command → 127, proving no expansion happened.
+        let (code, _output) = process_line("'say' hello", &mut env, &mut cwd, &EmptyFs, &NoNet);
+        assert_eq!(code, 127);
+    }
+
+    #[test]
+    fn process_line_command_substitution() {
+        let mut env = ShellEnv::new();
+        let mut cwd = "/".to_string();
+        let (code, output) = process_line("echo $(echo hi)", &mut env, &mut cwd, &EmptyFs, &NoNet);
+        assert_eq!(code, 0);
+        assert_eq!(String::from_utf8_lossy(&output).trim(), "hi");
+    }
+
+    #[test]
+    fn process_line_command_substitution_single_quoted_literal() {
+        let mut env = ShellEnv::new();
+        let mut cwd = "/".to_string();
+        // Single quotes keep `$(...)` literal.
+        let (code, output) =
+            process_line("echo '$(echo hi)'", &mut env, &mut cwd, &EmptyFs, &NoNet);
+        assert_eq!(code, 0);
+        assert_eq!(String::from_utf8_lossy(&output).trim(), "$(echo hi)");
+    }
+
     // ── Shell struct ──────────────────────────────────────────────────────
 
     #[test]
     fn shell_new_has_root_cwd() {
         let shell = Shell::new();
         assert_eq!(shell.cwd, "/");
+    }
+
+    #[test]
+    fn shell_new_has_empty_history_and_jobs() {
+        let shell = Shell::new();
+        assert!(shell.history.is_empty());
+        assert!(shell.jobs.jobs().is_empty());
+    }
+
+    #[test]
+    fn shell_run_line_records_history() {
+        let mut shell = Shell::new();
+        let (code, _output) = shell.run_line("echo hi", &EmptyFs, &NoNet);
+        assert_eq!(code, 0);
+        assert_eq!(shell.history.len(), 1);
+        assert_eq!(shell.history.get(0), Some("echo hi"));
+    }
+
+    #[test]
+    fn shell_run_line_skips_blank_and_comment_from_history() {
+        let mut shell = Shell::new();
+        shell.run_line("   ", &EmptyFs, &NoNet);
+        shell.run_line("# a comment", &EmptyFs, &NoNet);
+        assert!(shell.history.is_empty());
     }
 
     #[test]
@@ -468,5 +866,174 @@ mod tests {
         let b = Shell::default();
         assert_eq!(a.cwd, b.cwd);
         assert_eq!(a.env.get("USER"), b.env.get("USER"));
+    }
+
+    // ── run_startup_script (~/.ossrc) ─────────────────────────────────────
+
+    #[test]
+    fn ossrc_absent_is_clean_noop() {
+        let mut env = ShellEnv::new();
+        let mut cwd = "/home/root".to_string();
+        // EmptyFs never lists ".ossrc", so the file is absent.
+        let outcome = run_startup_script(&mut env, &mut cwd, &EmptyFs, &NoNet, "/home/root");
+        assert_eq!(outcome, StartupOutcome::Absent);
+    }
+
+    #[test]
+    fn ossrc_present_sets_alias_and_var_that_persist() {
+        let fs = RcFs {
+            home: "/home/root",
+            contents: Some("alias ll=ls\nexport EDITOR=nano\nexport MYVAR=42\n"),
+        };
+        let mut env = ShellEnv::new();
+        let mut cwd = "/home/root".to_string();
+        let outcome = run_startup_script(&mut env, &mut cwd, &fs, &NoNet, "/home/root");
+        assert_eq!(
+            outcome,
+            StartupOutcome::Executed {
+                commands_run: 3,
+                failures: 0,
+                last_exit_code: 0,
+            }
+        );
+        // Side effects persist into the shared session environment.
+        assert_eq!(env.get_alias("ll"), Some("ls"));
+        assert_eq!(env.get("EDITOR"), Some("nano"));
+        assert!(env.is_exported("EDITOR"));
+        assert_eq!(env.get("MYVAR"), Some("42"));
+    }
+
+    #[test]
+    fn ossrc_skips_blank_and_comment_lines() {
+        let fs = RcFs {
+            home: "/home/root",
+            contents: Some("# a comment\n\n   \nexport TZ=UTC\n# trailing comment\n"),
+        };
+        let mut env = ShellEnv::new();
+        let mut cwd = "/home/root".to_string();
+        let outcome = run_startup_script(&mut env, &mut cwd, &fs, &NoNet, "/home/root");
+        // Only the single `export` line counts as an executed command.
+        assert_eq!(
+            outcome,
+            StartupOutcome::Executed {
+                commands_run: 1,
+                failures: 0,
+                last_exit_code: 0,
+            }
+        );
+        assert_eq!(env.get("TZ"), Some("UTC"));
+    }
+
+    #[test]
+    fn ossrc_bad_line_reports_but_continues() {
+        // First line fails (unknown command → 127); the second must still run.
+        let fs = RcFs {
+            home: "/home/root",
+            contents: Some("totally_unknown_cmd_xyz\nexport SURVIVED=yes\n"),
+        };
+        let mut env = ShellEnv::new();
+        let mut cwd = "/home/root".to_string();
+        let outcome = run_startup_script(&mut env, &mut cwd, &fs, &NoNet, "/home/root");
+        assert_eq!(
+            outcome,
+            StartupOutcome::Executed {
+                commands_run: 2,
+                failures: 1,
+                last_exit_code: 0,
+            }
+        );
+        // Fail-soft: the line after the failing one still took effect.
+        assert_eq!(env.get("SURVIVED"), Some("yes"));
+    }
+
+    #[test]
+    fn ossrc_unreadable_file_fails_closed() {
+        let fs = RcFs {
+            home: "/home/root",
+            contents: None, // listed as present, but read_file errors.
+        };
+        let mut env = ShellEnv::new();
+        let mut cwd = "/home/root".to_string();
+        let outcome = run_startup_script(&mut env, &mut cwd, &fs, &NoNet, "/home/root");
+        assert_eq!(
+            outcome,
+            StartupOutcome::Unreadable("permission denied".to_string())
+        );
+    }
+
+    #[test]
+    fn ossrc_respects_provided_home() {
+        // The file lives under /custom/home; a different HOME must not find it.
+        let fs = RcFs {
+            home: "/custom/home",
+            contents: Some("alias g=grep\n"),
+        };
+        let mut env = ShellEnv::new();
+        let mut cwd = "/".to_string();
+
+        // Wrong home → absent.
+        let wrong = run_startup_script(&mut env, &mut cwd, &fs, &NoNet, "/home/root");
+        assert_eq!(wrong, StartupOutcome::Absent);
+        assert_eq!(env.get_alias("g"), None);
+
+        // Correct home → executes and the alias persists.
+        let right = run_startup_script(&mut env, &mut cwd, &fs, &NoNet, "/custom/home");
+        assert_eq!(
+            right,
+            StartupOutcome::Executed {
+                commands_run: 1,
+                failures: 0,
+                last_exit_code: 0,
+            }
+        );
+        assert_eq!(env.get_alias("g"), Some("grep"));
+    }
+
+    #[test]
+    fn ossrc_root_home_resolves_without_double_slash() {
+        // HOME="/" must resolve the script to "/.ossrc", not "//.ossrc".
+        let fs = RcFs {
+            home: "/",
+            contents: Some("export ROOTRC=1\n"),
+        };
+        let mut env = ShellEnv::new();
+        let mut cwd = "/".to_string();
+        let outcome = run_startup_script(&mut env, &mut cwd, &fs, &NoNet, "/");
+        assert_eq!(
+            outcome,
+            StartupOutcome::Executed {
+                commands_run: 1,
+                failures: 0,
+                last_exit_code: 0,
+            }
+        );
+        assert_eq!(env.get("ROOTRC"), Some("1"));
+    }
+
+    #[test]
+    fn shell_run_startup_reads_home_from_env() {
+        let fs = RcFs {
+            home: "/home/alice",
+            contents: Some("alias la=ls\n"),
+        };
+        let mut shell = Shell::new();
+        shell.env.set("HOME", "/home/alice");
+        let outcome = shell.run_startup(&fs, &NoNet);
+        assert_eq!(
+            outcome,
+            StartupOutcome::Executed {
+                commands_run: 1,
+                failures: 0,
+                last_exit_code: 0,
+            }
+        );
+        assert_eq!(shell.env.get_alias("la"), Some("ls"));
+    }
+
+    #[test]
+    fn default_fsquery_read_file_fails_closed() {
+        // EmptyFs does not override read_file → default returns Err.
+        let result = EmptyFs.read_file("/anything");
+        assert!(result.is_err());
     }
 }

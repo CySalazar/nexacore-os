@@ -93,6 +93,17 @@ pub enum Token {
     /// The inner `String` is the raw specifier *without* the leading `$` or
     /// surrounding `{}`. For `${VAR:-default}` it is `"VAR:-default"`.
     EnvVar(String),
+
+    /// A command substitution `$(...)`.
+    ///
+    /// The inner `String` is the raw command text between the `$(` and the
+    /// matching `)`, with the delimiters removed. Nesting is preserved
+    /// verbatim, so `$(echo $(echo x))` yields `CommandSubst("echo $(echo x)")`
+    /// and the executor resolves the inner substitution recursively.
+    ///
+    /// Command substitution is recognised in unquoted (bare) context and inside
+    /// double quotes. Inside single quotes it is left literal, matching POSIX.
+    CommandSubst(String),
 }
 
 // ── LexError ─────────────────────────────────────────────────────────────────
@@ -110,6 +121,11 @@ pub enum LexError {
     /// A double-quoted string was opened but the closing `"` was never found.
     #[error("unterminated double quote")]
     UnterminatedDoubleQuote,
+
+    /// A command substitution `$(` was opened but the matching `)` was never
+    /// found before end-of-input.
+    #[error("unterminated command substitution")]
+    UnterminatedCommandSubst,
 
     /// The lexer encountered a character it cannot classify in the current
     /// context. Currently unused; reserved for future restricted-character
@@ -284,6 +300,8 @@ fn lex_one(st: &mut LexState<'_>, ch: char) -> Result<(), LexError> {
             st.advance(1);
         }
         '&' => lex_ampersand(st),
+        // `$(` command substitution takes precedence over a bare `$VAR`.
+        '$' if st.peek_next() == Some('(') => lex_command_subst(st)?,
         '$' => lex_env_var(st),
         // `2>` stderr redirect: only when the *next* character is `>`.
         '2' if st.peek_next() == Some('>') => {
@@ -338,13 +356,60 @@ fn lex_single_quote(st: &mut LexState<'_>) -> Result<(), LexError> {
 /// Lex a double-quoted string `"..."`.
 ///
 /// Content is preserved verbatim (including `$VAR` references) for later
-/// expansion by [`crate::env`].
+/// expansion by [`crate::env`], with one exception: an embedded command
+/// substitution `$(...)` is split out into its own [`Token::CommandSubst`]
+/// token so it can be executed. A double-quoted string containing no `$(`
+/// therefore still produces exactly one [`Token::DoubleQuoted`] token (matching
+/// the historical behaviour), while `"a$(cmd)b"` produces the token sequence
+/// `[DoubleQuoted("a"), CommandSubst("cmd"), DoubleQuoted("b")]`.
 fn lex_double_quote(st: &mut LexState<'_>) -> Result<(), LexError> {
     st.flush_word();
     st.advance(1); // consume opening `"`
-    let content = collect_until_double_quote(st)?;
-    st.tokens.push(Token::DoubleQuoted(content));
-    st.advance(1); // consume closing `"`
+    let mut frag = String::new();
+    let mut emitted = false;
+    loop {
+        match st.current() {
+            None => return Err(LexError::UnterminatedDoubleQuote),
+            Some('"') => {
+                st.advance(1); // consume closing `"`
+                break;
+            }
+            // `$(` inside double quotes is a command substitution.
+            Some('$') if st.peek_next() == Some('(') => {
+                if !frag.is_empty() {
+                    st.tokens
+                        .push(Token::DoubleQuoted(core::mem::take(&mut frag)));
+                }
+                st.advance(1); // consume '$'
+                let inner = collect_command_subst(st)?;
+                st.tokens.push(Token::CommandSubst(inner));
+                emitted = true;
+            }
+            Some(c) => {
+                frag.push(c);
+                st.advance(1);
+            }
+        }
+    }
+    // Emit the trailing fragment. Always produce exactly one `DoubleQuoted`
+    // token when nothing else was emitted (preserves the empty-string case
+    // `""` and every substitution-free double-quoted string).
+    if !frag.is_empty() || !emitted {
+        st.tokens.push(Token::DoubleQuoted(frag));
+    }
+    Ok(())
+}
+
+/// Lex a bare (unquoted) command substitution `$(...)`.
+///
+/// Precondition: the cursor is on the `$` of a `$(` sequence. Flushes any
+/// pending word, then captures the balanced-paren body via
+/// [`collect_command_subst`] and emits a [`Token::CommandSubst`].
+fn lex_command_subst(st: &mut LexState<'_>) -> Result<(), LexError> {
+    st.flush_word();
+    st.advance(1); // consume '$'
+    let inner = collect_command_subst(st)?;
+    st.tokens.push(Token::CommandSubst(inner));
     Ok(())
 }
 
@@ -447,22 +512,56 @@ fn collect_until(st: &mut LexState<'_>, terminator: char) -> Result<String, LexE
     Ok(buf)
 }
 
-/// Collect characters until `"` is reached.
+/// Collect the body of a command substitution `$(...)`.
 ///
-/// Identical logic to [`collect_until`] but returns
-/// [`LexError::UnterminatedDoubleQuote`] on EOF.
-fn collect_until_double_quote(st: &mut LexState<'_>) -> Result<String, LexError> {
-    let mut buf = String::new();
-    while st.pos < st.chars.len() && st.current() != Some('"') {
-        if let Some(c) = st.current() {
-            buf.push(c);
+/// Precondition: the cursor is on the opening `(`. Consumes that `(`, then
+/// scans forward tracking paren depth until the matching `)` is found, and
+/// consumes that closing `)` as well. The returned string is the text between
+/// the delimiters (exclusive), preserving any nested `$(...)` verbatim so the
+/// executor can resolve it recursively.
+///
+/// Paren matching is quote-aware: parentheses inside single or double quotes do
+/// not affect the depth counter, so `$(echo ')')` is captured correctly.
+///
+/// # Errors
+///
+/// Returns [`LexError::UnterminatedCommandSubst`] if end-of-input is reached
+/// before the matching `)`.
+fn collect_command_subst(st: &mut LexState<'_>) -> Result<String, LexError> {
+    st.advance(1); // consume opening '('
+    let mut inner = String::new();
+    let mut depth = 1usize;
+    let mut in_single = false;
+    let mut in_double = false;
+
+    while let Some(c) = st.current() {
+        match c {
+            '\'' if !in_double => {
+                in_single = !in_single;
+                inner.push(c);
+            }
+            '"' if !in_single => {
+                in_double = !in_double;
+                inner.push(c);
+            }
+            '(' if !in_single && !in_double => {
+                depth += 1;
+                inner.push(c);
+            }
+            ')' if !in_single && !in_double => {
+                depth -= 1;
+                if depth == 0 {
+                    st.advance(1); // consume matching ')'
+                    return Ok(inner);
+                }
+                inner.push(c);
+            }
+            other => inner.push(other),
         }
         st.advance(1);
     }
-    if st.current() != Some('"') {
-        return Err(LexError::UnterminatedDoubleQuote);
-    }
-    Ok(buf)
+
+    Err(LexError::UnterminatedCommandSubst)
 }
 
 /// Returns `true` if `c` is a valid environment-variable identifier character.
@@ -491,6 +590,9 @@ mod tests {
     }
     fn ev(s: &str) -> Token {
         Token::EnvVar(s.to_owned())
+    }
+    fn cs(s: &str) -> Token {
+        Token::CommandSubst(s.to_owned())
     }
 
     // ── Basic ─────────────────────────────────────────────────────────────
@@ -710,6 +812,70 @@ mod tests {
         );
     }
 
+    // ── Command substitution ──────────────────────────────────────────────
+
+    #[test]
+    fn bare_command_subst() {
+        assert_eq!(
+            tokenize("echo $(echo hi)").unwrap(),
+            vec![w("echo"), cs("echo hi")]
+        );
+    }
+
+    #[test]
+    fn command_subst_flushes_leading_word() {
+        // `pre$(cmd)` flushes the pending word before the substitution token,
+        // mirroring the existing `foo$BAR` behaviour.
+        assert_eq!(tokenize("pre$(cmd)").unwrap(), vec![w("pre"), cs("cmd")]);
+    }
+
+    #[test]
+    fn nested_command_subst_is_captured_verbatim() {
+        assert_eq!(
+            tokenize("$(echo $(echo x))").unwrap(),
+            vec![cs("echo $(echo x)")]
+        );
+    }
+
+    #[test]
+    fn command_subst_inside_double_quotes() {
+        assert_eq!(tokenize("\"$(echo hi)\"").unwrap(), vec![cs("echo hi")]);
+    }
+
+    #[test]
+    fn command_subst_split_within_double_quotes() {
+        assert_eq!(
+            tokenize("\"a$(cmd)b\"").unwrap(),
+            vec![dq("a"), cs("cmd"), dq("b")]
+        );
+    }
+
+    #[test]
+    fn command_subst_in_single_quotes_is_literal() {
+        // Inside single quotes `$(...)` is literal text, never a CommandSubst.
+        assert_eq!(tokenize("'$(echo hi)'").unwrap(), vec![sq("$(echo hi)")]);
+    }
+
+    #[test]
+    fn command_subst_paren_matching_is_quote_aware() {
+        // The `)` inside single quotes must not close the substitution.
+        assert_eq!(tokenize("$(echo ')')").unwrap(), vec![cs("echo ')'")]);
+    }
+
+    #[test]
+    fn unterminated_command_subst_is_error() {
+        assert_eq!(
+            tokenize("echo $(echo hi").unwrap_err(),
+            LexError::UnterminatedCommandSubst
+        );
+    }
+
+    #[test]
+    fn empty_double_quotes_still_emit_one_token() {
+        // Regression guard: `""` must still produce a single empty DoubleQuoted.
+        assert_eq!(tokenize("\"\"").unwrap(), vec![dq("")]);
+    }
+
     // ── Glob characters ───────────────────────────────────────────────────
 
     #[test]
@@ -797,6 +963,12 @@ mod tests {
     fn display_unterminated_double_quote() {
         let msg = LexError::UnterminatedDoubleQuote.to_string();
         assert_eq!(msg, "unterminated double quote");
+    }
+
+    #[test]
+    fn display_unterminated_command_subst() {
+        let msg = LexError::UnterminatedCommandSubst.to_string();
+        assert_eq!(msg, "unterminated command substitution");
     }
 
     #[test]

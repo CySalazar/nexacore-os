@@ -12,14 +12,16 @@
 //! **local-first execution engine** with per-step action logging
 //! (WS16-04.2/.10), **trigger evaluation** (WS16-04.3), the **concrete action
 //! executors** behind effect seams (WS16-04.4/.5/.6), **config-as-code**
-//! persistence (WS16-04.8), and **per-step capability + Impact gating**
-//! (WS16-04.9). Natural-language generation (WS16-04.7) is gated on the WS5-03
-//! runtime; Helper undo integration (WS16-04.11) and the VM-103 scenario
-//! (WS16-04.12) build on top.
+//! persistence (WS16-04.8), **per-step capability + Impact gating**
+//! (WS16-04.9), and **natural-language generation** behind the WS5-03 runtime
+//! seam with fail-closed validation (WS16-04.7). Helper undo integration
+//! (WS16-04.11) and the VM-103 scenario (WS16-04.12) build on top.
 //!
 //! ## Modules
 //!
 //! - [`model`] — the declarative workflow schema (trigger → steps → actions).
+//! - [`generate`] — natural-language workflow generation behind the AI-runtime
+//!   seam, with fail-closed validation (WS16-04.7).
 //! - [`engine`] — the execution engine and per-step action log.
 //! - [`triggers`] — trigger evaluation against observed events (WS16-04.3).
 //! - [`executors`] — concrete app/file/network action executors behind effect
@@ -33,6 +35,7 @@
 pub mod engine;
 pub mod executors;
 pub mod gate;
+pub mod generate;
 pub mod model;
 pub mod store;
 pub mod triggers;

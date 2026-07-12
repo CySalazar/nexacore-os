@@ -14,6 +14,9 @@
 //!   partition array, carrying the EFI-System and NexaCore-root type GUIDs.
 //! - [`plan`] — an install [`plan::plan_partitions`]/[`plan::build_layout`] that
 //!   sizes and 1-MiB-aligns the ESP + root.
+//! - [`live`] (WS11-01.1) — a [`live::LiveImageLayout`] descriptor + builder for a
+//!   live USB image: a 1-MiB-aligned FAT ESP region and a read-only squashfs root
+//!   region, with computed LBA offsets/lengths and total image size.
 //! - [`config`] (WS11-03.8) — the [`config::InitialConfig`] first-boot seed
 //!   (hostname/timezone/locale/keymap/user/networking) with validation and a
 //!   round-tripping `key = value` serialisation for the config store (WS17-01).
@@ -26,6 +29,9 @@
 //!   replace: boot-order preservation and the GPT-wipe regions.
 //! - [`firstboot`] (WS11-04.5/.6/.7) — the [`firstboot::FirstBootWizard`] linear
 //!   state machine (user → locale → network) producing the [`config::InitialConfig`].
+//! - [`ab`] (WS11-05.1/.2) — the A/B [`ab::Slot`] scheme and [`ab::AbState`]
+//!   boot-control block, plus [`slotwrite::write_image_to_slot`] (WS11-05.5),
+//!   the atomic image write to the inactive slot over the v3 `BlockDevice` seam.
 //!
 //! Creating the filesystems (`mkfs.fat` for the ESP, `mkfs.ncfs` for root),
 //! copying the system, and writing the bootloader + UEFI boot entry (WS11-03.3–.8)
@@ -60,5 +66,8 @@ pub mod detect;
 pub mod disk;
 pub mod firstboot;
 pub mod gpt;
+pub mod live;
+pub mod mkfs;
 pub mod mode;
 pub mod plan;
+pub mod slotwrite;

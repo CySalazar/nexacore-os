@@ -9,7 +9,7 @@
 //! secret. The wire format will allow a peer to advertise hybrid
 //! support; legacy peers continue to do `X25519` only. The Phase 4
 //! API will be additive (no breaking change) — see
-//! `/ncips/ncip-crypto-002.md` (P3.3 in `/todo.md`).
+//! `/ncips/ncip-crypto-002.md` (P3.3 in the backlog).
 
 use core::fmt;
 

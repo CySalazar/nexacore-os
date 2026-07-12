@@ -49,6 +49,10 @@ rng        = [
     "dep:getrandom",
     "dep:rand_core",
     "dep:argon2",
+    # Enables ML-DSA (FIPS 204) fresh keypair generation from the platform
+    # CSPRNG. `getrandom` transitively pulls `rand_core`. Bare-metal builds
+    # (`--no-default-features`) leave it off and use `from_seed` instead.
+    "ml-dsa/getrandom",
     "nexacore-types/id-generation",
 ]
 bare-metal = []
@@ -68,11 +72,21 @@ bare-metal = []
 nexacore-types       = { path = "../nexacore-types", version = "0.2.0", default-features = false }
 ed25519-dalek    = { workspace = true }
 x25519-dalek     = { workspace = true }
+# ML-DSA / FIPS 204 post-quantum signatures. Base features (`alloc`,
+# `zeroize`) come from the workspace entry; the CSPRNG `getrandom` path is
+# added only under this crate's `rng` feature (see `[features]` above).
+ml-dsa           = { workspace = true }
 chacha20poly1305 = { workspace = true }
 sha2             = { workspace = true }
 sha3             = { workspace = true }
 blake3           = { workspace = true }
 hkdf             = { workspace = true }
+# Post-quantum KEM: ML-KEM-768 (FIPS 203). RustCrypto `ml-kem` v0.3.2,
+# license Apache-2.0 OR MIT, MSRV 1.85 / edition 2024. Version + features are
+# pinned at the workspace level (`default-features = false`, `alloc`, `zeroize`,
+# no `getrandom`) so the deterministic keygen/encaps/decaps paths compile on
+# `x86_64-unknown-none`. See `mlkem` module + WS10-09.1.
+ml-kem           = { workspace = true }
 # `argon2` is RNG-adjacent (KDF for password hashing) — keep it behind
 # the `rng` feature for bare-metal builds that do not need it.
 argon2           = { workspace = true, optional = true }

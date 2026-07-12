@@ -47,6 +47,12 @@ use alloc::{string::String, vec::Vec};
 /// FAT16 formatter for the installer's ESP (WS11-03.3).
 pub mod mkfat;
 
+/// FAT16 write path (WS11-03.6).
+///
+/// Cluster allocation, directory creation, and file placement for staging the
+/// UEFI bootloader into a freshly formatted ESP.
+pub mod write;
+
 /// Errors from reading a FAT volume.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FatError {
@@ -60,6 +66,12 @@ pub enum FatError {
     ChainCycle,
     /// The referenced directory entry is not a directory.
     NotADirectory,
+    /// The volume has no free clusters or directory slots left (write path).
+    NoSpace,
+    /// A write path or file name is empty or does not fit an 8.3 short name.
+    InvalidPath,
+    /// The write path only supports FAT16 volumes (matching [`mkfat`]).
+    Unsupported,
 }
 
 /// The FAT width, determined by the count of data clusters (per the Microsoft

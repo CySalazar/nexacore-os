@@ -405,6 +405,8 @@ mod tests {
             net: &NoNet,
             output: Vec::new(),
             audit_log: crate::audit::AuditLog::new(),
+            stdin: Vec::new(),
+            stderr: Vec::new(),
         }
     }
 

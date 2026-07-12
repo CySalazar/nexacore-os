@@ -44,6 +44,12 @@ fn main() {
     // branch/hash through these env vars; prefer them when set.
     println!("cargo:rerun-if-env-changed=NEXACORE_GIT_HASH");
     println!("cargo:rerun-if-env-changed=NEXACORE_GIT_BRANCH");
+    // On `--remote-build` the target dir is cached across deploys and the
+    // `.git/` watches above don't exist in the tarball, so `SystemTime::now()`
+    // below can freeze at a *previous* build's date. `deploy-proxmox.sh` passes
+    // a fresh `NEXACORE_BUILD_DATE` on every run; because its value changes each
+    // time, this watch forces build.rs to re-run and re-embed a current date.
+    println!("cargo:rerun-if-env-changed=NEXACORE_BUILD_DATE");
 
     let git_hash = env_nonempty("NEXACORE_GIT_HASH")
         .or_else(|| run_git(&["rev-parse", "--short=7", "HEAD"]))
@@ -64,12 +70,24 @@ fn main() {
     };
     let git_desc = format!("{git_hash}{git_dirty}");
 
-    let build_date = format_utc_date(
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|d| d.as_secs())
-            .unwrap_or(0),
-    );
+    // Prefer an injected build date (the `--remote-build` deploy path passes a
+    // fresh one so the cached target dir can't serve a stale timestamp); fall
+    // back to the host wall clock for ordinary local builds. The env value may
+    // be either a preformatted `YYYY-MM-DD HH:MM UTC` string or a raw unix-secs
+    // integer — accept both.
+    let build_date = env_nonempty("NEXACORE_BUILD_DATE")
+        .map(|v| match v.parse::<u64>() {
+            Ok(secs) => format_utc_date(secs),
+            Err(_) => v,
+        })
+        .unwrap_or_else(|| {
+            format_utc_date(
+                SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0),
+            )
+        });
 
     let rustc_version = Command::new("rustc")
         .arg("-V")

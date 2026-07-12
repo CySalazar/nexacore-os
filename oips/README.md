@@ -4,6 +4,19 @@
 > **Process spec:** [`ncip-process-001.md`](./oip-process-001.md) (Active, ratified by BDFL fiat under Bootstrap clause; first formal vote deferred to the first non-Meta NCIP).
 > **Template:** [`ncip-template.md`](./oip-template.md) — copy this as `ncip-<slug>-<NNN>.md` for new proposals.
 
+> **Registry layout — why there are two directories.** "NCIP" (NexaCore Improvement Proposal) is
+> the name of the process. The `oip-` filename prefix and the `oips/` path are a **historical
+> artifact** from when the process was briefly called "OIP"; they are kept to preserve link and
+> signed-commit stability. Proposals live in two directories, split by *structural maturity*, not
+> by kind:
+> - **[`oips/`](.)** — this directory: the **process spec** ([`oip-process-001.md`](./oip-process-001.md)),
+>   governance and narrative proposals, and the **canonical registry index** (below) of every NCIP.
+> - **[`ncips/`](../ncips/)** — the **machine-lintable** normative specs, added once an NCIP's
+>   structure is frozen enough to validate in CI.
+>
+> They are **one process**. Always cross-reference an NCIP by its integer number (e.g. `NCIP-013`),
+> never by filename or directory.
+
 ---
 
 ## What is an NCIP?

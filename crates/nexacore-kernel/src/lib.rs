@@ -100,6 +100,13 @@ pub mod capabilities;
 pub mod capability_forward;
 /// Kernel console input ring buffer (T0.2).
 pub mod console_input;
+/// CPU frequency-scaling governor (WS12-06.6).
+///
+/// Not gated behind `bare-metal`: the P-state table, the ondemand step/hysteresis
+/// algorithm, and the policy selection are pure `core + alloc` and host-testable;
+/// the bare-metal kernel supplies only the [`cpufreq::FreqController`] seam that
+/// applies a selected frequency to the hardware (MSR / ACPI P-state write).
+pub mod cpufreq;
 pub mod driver_cap_issuer;
 pub mod driver_manifest;
 /// WS2-16 — PCI device → driver-pack matching + hotplug auto-loader.
@@ -123,6 +130,15 @@ pub mod entropy;
 /// Ungated: the FD types are useful in host-side tests and in the
 /// userspace syscall layer regardless of the `bare-metal` feature.
 pub mod fd;
+/// Hibernation memory-image serialization format (WS12-06.3).
+///
+/// Not gated behind `bare-metal`: the image layout, the `encode`/`decode`
+/// codec (zero-page elision, RLE, payload checksum), and the fail-closed
+/// validation are pure `core + alloc` and host-testable; the bare-metal
+/// kernel supplies only the [`hibernate::FrameSource`] / [`hibernate::FrameSink`]
+/// seam over the frame allocator. This is the format only — the ACPI S4 power
+/// transition (WS12-06.2) is out of scope.
+pub mod hibernate;
 /// Init process wiring — default args and environment for PID 1 (T6.2).
 ///
 /// Describes the boot sequence after initramfs is loaded: build
@@ -177,6 +193,13 @@ pub mod metrics;
 pub mod mm;
 /// Kernel pipe — unidirectional byte streams (T0.3).
 pub mod pipe;
+/// WS12-06.4 — device power-management suspend/resume callback framework.
+///
+/// Not gated behind `bare-metal`: the [`power::PowerCallback`] trait, the
+/// ordered [`power::PowerManager`] registry, and its suspend/resume
+/// orchestration (with mid-way rollback) are pure `core + alloc` and
+/// host-testable; the bare-metal kernel registers real driver callbacks.
+pub mod power;
 #[cfg(feature = "bare-metal")]
 pub mod process;
 /// Kernel process table — parent-child tracking and wait/exit bookkeeping (T0.5).

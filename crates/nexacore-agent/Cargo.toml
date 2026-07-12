@@ -28,6 +28,7 @@ workspace = true
 nexacore-types      = { workspace = true }
 nexacore-capability = { workspace = true }
 nexacore-runtime    = { workspace = true }
+nexacore-workflow   = { workspace = true }
 tokio           = { workspace = true }
 async-trait     = { workspace = true }
 serde           = { workspace = true }

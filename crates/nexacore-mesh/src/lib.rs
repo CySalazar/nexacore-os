@@ -41,9 +41,31 @@
 #![doc(html_root_url = "https://docs.nexacore-os.org/nexacore-mesh")]
 #![deny(missing_docs)]
 
+pub mod cluster_cert;
+
+pub mod cluster_onboarding;
+
+pub mod cluster_trust;
+
 pub mod discovery;
 
+pub mod handshake_attest;
+
+pub mod handshake_auth;
+
+pub mod handshake_fsm;
+
+pub mod handshake_kex;
+
+pub mod handshake_measurement;
+
+pub mod handshake_version;
+
+pub mod handshake_wire;
+
 pub mod mdns;
+
+pub mod mesh_handshake;
 
 /// QUIC + Noise transport layer.
 ///

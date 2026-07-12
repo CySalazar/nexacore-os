@@ -3,7 +3,7 @@
 //! This module provides the **type-level enforcement** that personally
 //! identifiable information (PII) cannot be handled in cleartext outside
 //! an attested TEE. The runtime construction of these values lives in
-//! the `nexacore-tokenization` crate (Phase 2 in `/todo.md`), which performs
+//! the `nexacore-tokenization` crate (Phase 2 in the backlog), which performs
 //! the actual encryption inside a verified TEE. This module exists in
 //! P1 because every other crate must already speak in terms of these
 //! types to prevent "cheat" code paths from being added later.

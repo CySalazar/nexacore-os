@@ -34,7 +34,7 @@
 //!
 //! Items 1–3 are enforced in this crate. Item 4 is enforced via the
 //! [`tee`] trait (placeholder; concrete `TeeBackend` impls land in
-//! `nexacore-tee` per P5 in `/todo.md`). Item 5 is enforced by
+//! `nexacore-tee` per P5 in the backlog). Item 5 is enforced by
 //! [`attenuation::verify_chain_link`] together with the per-caveat
 //! evaluator implementations the consumer registers.
 //!
@@ -65,13 +65,22 @@
 extern crate alloc;
 
 pub mod attenuation;
+pub mod clock;
+pub mod crl;
+pub mod enforcement;
 pub mod revocation;
+pub mod sandbox;
 pub mod scope;
 pub mod tee;
 pub mod token;
+pub mod ttl;
 
 // Re-export the most-used items at the crate root for ergonomic imports.
 pub use crate::{
+    clock::{Clock, FixedClock},
+    crl::{CRL_FORMAT_VERSION, CrlBody, SignedCrl},
+    enforcement::check_capability,
     scope::{Action, Caveat, Resource, Scope, TimeWindow},
     token::{CapabilityToken, TokenPayload},
+    ttl::ValidityWindow,
 };

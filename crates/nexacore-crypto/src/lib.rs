@@ -10,7 +10,7 @@
 //! ## ⚠️ Status: `AWAITING_CRYPTO_REVIEW`
 //!
 //! This crate has not yet been reviewed by an external cryptographer
-//! (P3.2 in `/todo.md`, blocked on funding via P4). The implementation
+//! (P3.2 in the backlog, blocked on funding via P4). The implementation
 //! follows established RustCrypto APIs with RFC test vectors for every
 //! primitive, but no public auditor has signed off on the composition
 //! layer. Do not use the output of this crate in adversarial settings
@@ -42,7 +42,10 @@
 //! |---|---|---|
 //! | [`aead`]    | P1.2 | Authenticated Encryption with Associated Data (`ChaCha20-Poly1305`, RFC 8439). |
 //! | [`signing`] | P1.2 | Digital signatures (`Ed25519`, RFC 8032). |
+//! | [`mldsa`]   | P4   | Post-quantum signatures (`ML-DSA-65`, FIPS 204). |
 //! | [`kex`]     | P1.2 | Key exchange (`X25519`, RFC 7748). Hybrid PQ in Phase 4. |
+//! | [`mlkem`]   | P4   | Post-quantum KEM (`ML-KEM-768`, FIPS 203). |
+//! | [`hybrid`]  | P4   | Hybrid KEM (`X25519 + ML-KEM-768`) with combiner KDF. |
 //! | [`hash`]    | P1.2 | Cryptographic hashes (`SHA-256`, `SHA3-256`, `BLAKE3`). |
 //! | [`kdf`]     | P1.2 | Key derivation (`HKDF-SHA-256`, `Argon2id`). |
 //! | [`fpe`]     | P4   | Format-preserving encryption (placeholder). |
@@ -75,8 +78,11 @@ extern crate alloc;
 
 pub mod aead;
 pub mod hash;
+pub mod hybrid;
 pub mod kdf;
 pub mod kex;
+pub mod mldsa;
+pub mod mlkem;
 pub mod signing;
 
 // Phase 4 placeholder modules. They exist as empty modules so downstream

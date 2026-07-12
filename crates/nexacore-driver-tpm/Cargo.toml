@@ -26,3 +26,9 @@ readme.workspace       = true
 workspace = true
 
 [dependencies]
+# TPM2_Quote attestation (WS10-05.7) computes the quoted `pcrDigest` with the
+# hash of the measured PCR bank (SHA-256). Pulled `default-features = false`
+# with the `bare-metal` alias so the verify-only crypto build compiles on
+# `x86_64-unknown-none` (mirrors `nexacore-kernel`); the quote path only needs
+# hashing, never the platform CSPRNG.
+nexacore-crypto = { path = "../nexacore-crypto", version = "0.2.0", default-features = false, features = ["bare-metal"] }

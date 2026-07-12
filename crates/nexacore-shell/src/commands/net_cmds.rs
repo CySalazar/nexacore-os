@@ -89,6 +89,8 @@ pub fn register(map: &mut BTreeMap<String, BuiltinFn>) {
 ///     net: &net,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code = nexacore_shell::commands::net_cmds::cmd_ifconfig_pub(&["ifconfig".into()], &mut ctx);
 /// assert_eq!(code, 0);
@@ -211,6 +213,8 @@ mod tests {
             net,
             output: Vec::new(),
             audit_log: AuditLog::new(),
+            stdin: Vec::new(),
+            stderr: Vec::new(),
         }
     }
 

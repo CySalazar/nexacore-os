@@ -34,3 +34,8 @@ workspace = true
 # The read-only FAT reader is used to detect existing OS loaders in the ESP
 # (WS11-04.1). Dep-free + no_std, so it keeps the bare-metal target building.
 nexacore-fatfs = { workspace = true }
+# The NCFS v3 formatter (`mkfs.ncfs`) creates the root filesystem on the root
+# partition's block device (WS11-03.4); its v3 `BlockDevice` seam is also the
+# substrate the installer streams a system image over when flashing an A/B slot
+# (WS11-05.5). no_std + alloc, builds for the bare-metal target.
+nexacore-fs = { workspace = true }

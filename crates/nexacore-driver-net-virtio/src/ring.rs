@@ -770,4 +770,34 @@ mod tests {
         assert!(vq.is_full());
         assert_eq!(vq.num_free(), 0);
     }
+
+    // ---- arm-time pre-consumed buffer recycling (WS2-02.6) ------------------
+
+    #[test]
+    fn pre_arm_completions_are_drained_and_recycled_not_skipped() {
+        // The DE-F-RXFLAKE fix defers the first RX doorbell to post-DRIVER_OK.
+        // In that window the device may proactively consume some posted buffers
+        // (bridge flood). The driver must DRAIN and RECYCLE those completions —
+        // NOT skip them by fast-forwarding its used cursor — otherwise their
+        // buffers never return to the ring and RX starves. This models that: a
+        // full ring, device consumes every buffer, then pop_used drains all and
+        // the descriptors return to the free list so the ring can be re-armed.
+        const Q: u16 = 4;
+        let mut vq = SplitVirtqueue::new(Q);
+        let idxs: Vec<u16> = (0..Q)
+            .map(|i| vq.add_buffer(0x1000 * u64::from(i + 1), 64, true).unwrap())
+            .collect();
+        assert_eq!(vq.num_free(), 0, "ring starts fully posted");
+        // Device consumes all Q buffers before the driver armed.
+        for &idx in &idxs {
+            vq.simulate_device_completion(idx, 0);
+        }
+        // Draining recycles every buffer back to the free list (no skip).
+        let mut drained = 0;
+        while vq.pop_used().is_some() {
+            drained += 1;
+        }
+        assert_eq!(drained, Q as usize, "every pre-arm completion is drained");
+        assert_eq!(vq.num_free(), Q, "all buffers recycled — ring can re-arm");
+    }
 }

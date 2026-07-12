@@ -73,6 +73,7 @@ pub mod font;
 pub mod font_stack;
 pub mod geometry;
 pub mod hint;
+pub mod ime;
 pub mod input;
 pub mod kerning;
 pub mod keymap;

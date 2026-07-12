@@ -91,6 +91,8 @@ pub fn register(map: &mut BTreeMap<String, BuiltinFn>) {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code = nexacore_shell::commands::fs_cmds::cmd_ls_pub(&["ls".into()], &mut ctx);
 /// assert_eq!(code, 0);
@@ -172,11 +174,17 @@ fn cmd_ls(args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 
 // ── cat ───────────────────────────────────────────────────────────────────────
 
-/// Concatenate and print files (Phase 1 stub).
+/// Concatenate and print files, or pass standard input through.
 ///
-/// Requires kernel filesystem read access which is not yet wired into the
-/// [`crate::glob::FsQuery`] trait. Prints an informational message and returns
-/// exit code `0`.
+/// - With **no file operands**, `cat` writes its standard input
+///   ([`crate::executor::ExecContext::stdin`], populated by the executor from a
+///   `<` redirect) to stdout — the POSIX stdin-passthrough behaviour.
+/// - With file operands, when the injected [`crate::glob::FsQuery`] backend
+///   reports [`supports_io`](crate::glob::FsQuery::supports_io), each file is
+///   read via [`read_file`](crate::glob::FsQuery::read_file); a read failure
+///   writes a diagnostic to stderr and yields exit code `1`.
+/// - With file operands but no I/O-capable backend, it falls back to the
+///   historical Phase 1 informational stub (exit code `0`).
 ///
 /// # Examples
 ///
@@ -200,9 +208,13 @@ fn cmd_ls(args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
-/// let code =
-///     nexacore_shell::commands::fs_cmds::cmd_cat_pub(&["cat".into(), "file.txt".into()], &mut ctx);
+/// let code = nexacore_shell::commands::fs_cmds::cmd_cat_pub(
+///     &["cat".into(), "file.txt".into()],
+///     &mut ctx,
+/// );
 /// assert_eq!(code, 0);
 /// let out = String::from_utf8(ctx.output).unwrap();
 /// assert!(out.contains("file read access"));
@@ -212,7 +224,31 @@ pub fn cmd_cat_pub(args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 }
 
 fn cmd_cat(args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
-    stub_requires_read(args, ctx)
+    // No file operands: behave like POSIX `cat` reading standard input, which
+    // the executor populates from a `<` redirect (empty otherwise).
+    if args.len() <= 1 {
+        // Disjoint field borrows: `output` mutably, `stdin` shared.
+        ctx.output.extend_from_slice(&ctx.stdin);
+        return 0;
+    }
+
+    // Without an I/O-capable backend, keep the historical Phase 1 stub.
+    if !ctx.fs.supports_io() {
+        return stub_requires_read(args, ctx);
+    }
+
+    let mut exit_code = 0i32;
+    for path in args.iter().skip(1) {
+        match ctx.fs.read_file(path) {
+            Ok(bytes) => ctx.output.extend_from_slice(&bytes),
+            Err(e) => {
+                ctx.stderr
+                    .extend_from_slice(format!("cat: {path}: {e}\n").as_bytes());
+                exit_code = 1;
+            }
+        }
+    }
+    exit_code
 }
 
 // ── cp ────────────────────────────────────────────────────────────────────────
@@ -244,6 +280,8 @@ fn cmd_cat(args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code = nexacore_shell::commands::fs_cmds::cmd_cp_pub(
 ///     &["cp".into(), "src".into(), "dst".into()],
@@ -290,6 +328,8 @@ fn cmd_cp(args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code = nexacore_shell::commands::fs_cmds::cmd_mv_pub(
 ///     &["mv".into(), "old".into(), "new".into()],
@@ -336,6 +376,8 @@ fn cmd_mv(args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code =
 ///     nexacore_shell::commands::fs_cmds::cmd_rm_pub(&["rm".into(), "file.txt".into()], &mut ctx);
@@ -380,9 +422,13 @@ fn cmd_rm(args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
-/// let code =
-///     nexacore_shell::commands::fs_cmds::cmd_mkdir_pub(&["mkdir".into(), "newdir".into()], &mut ctx);
+/// let code = nexacore_shell::commands::fs_cmds::cmd_mkdir_pub(
+///     &["mkdir".into(), "newdir".into()],
+///     &mut ctx,
+/// );
 /// assert_eq!(code, 0);
 /// let out = String::from_utf8(ctx.output).unwrap();
 /// assert!(out.contains("filesystem write access"));
@@ -424,9 +470,13 @@ fn cmd_mkdir(args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
-/// let code =
-///     nexacore_shell::commands::fs_cmds::cmd_touch_pub(&["touch".into(), "newfile".into()], &mut ctx);
+/// let code = nexacore_shell::commands::fs_cmds::cmd_touch_pub(
+///     &["touch".into(), "newfile".into()],
+///     &mut ctx,
+/// );
 /// assert_eq!(code, 0);
 /// let out = String::from_utf8(ctx.output).unwrap();
 /// assert!(out.contains("filesystem write access"));
@@ -531,6 +581,8 @@ mod tests {
             net: &NoNet,
             output: Vec::new(),
             audit_log: crate::audit::AuditLog::new(),
+            stdin: Vec::new(),
+            stderr: Vec::new(),
         }
     }
 
@@ -671,6 +723,18 @@ mod tests {
         assert_eq!(code, 0);
         let o = out(&ctx);
         assert!(o.contains("file read access"), "output: {o}");
+    }
+
+    #[test]
+    fn cat_no_operand_emits_stdin() {
+        // With no file operands `cat` passes standard input through to stdout.
+        let mut env = ShellEnv::new();
+        let fs = NoFs;
+        let mut ctx = make_ctx(&mut env, &fs);
+        ctx.stdin = b"from stdin\n".to_vec();
+        let code = cmd_cat(&["cat".into()], &mut ctx);
+        assert_eq!(code, 0);
+        assert_eq!(out(&ctx), "from stdin\n");
     }
 
     #[test]

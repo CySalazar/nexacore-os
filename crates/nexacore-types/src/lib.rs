@@ -11,7 +11,7 @@
 //! ## Crate-level guarantees
 //!
 //! 1. **`no_std + alloc`.** This crate compiles without the standard library.
-//!    The kernel (P6 in `/todo.md`) consumes these types directly, so any
+//!    The kernel (P6 in the backlog) consumes these types directly, so any
 //!    accidental dependence on `std` would force a downstream refactor.
 //! 2. **No `unsafe`.** The workspace lint `unsafe_code = "warn"` is upgraded
 //!    here to `forbid` — there is no situation in which a foundational types
@@ -32,7 +32,7 @@
 //! ## Status
 //!
 //! v0.1 — first implementation. Implements all P1.1 sub-tasks declared in
-//! `/todo.md`. The `encrypted` module exposes API surface only; concrete
+//! the backlog. The `encrypted` module exposes API surface only; concrete
 //! constructors land in P2 with the tokenization service.
 //!
 //! ## Modules

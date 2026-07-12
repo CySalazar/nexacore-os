@@ -4,7 +4,7 @@
 //!
 //! Empty module. The functional implementation lands in Phase 4 once
 //! the STARK-vs-SNARK decision is closed via `/ncips/ncip-crypto-002.md`
-//! (P3.3 in `/todo.md`).
+//! (P3.3 in the backlog).
 //!
 //! # Decision in flight
 //!

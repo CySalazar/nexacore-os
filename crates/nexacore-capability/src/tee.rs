@@ -3,7 +3,7 @@
 //! This module declares the trait surface used by [`crate::token`] to
 //! check that a capability's `subject` `NodeId` matches the
 //! attestation of the calling node. The concrete implementation lands
-//! in `nexacore-tee` (Phase 5 in `/todo.md`); this trait exists in P1 so
+//! in `nexacore-tee` (Phase 5 in the backlog); this trait exists in P1 so
 //! the capability layer's API is final.
 //!
 //! # Why a trait, not a concrete type?

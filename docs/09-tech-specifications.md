@@ -209,8 +209,9 @@ NexaCore OS targets a `no_std` future (P6 — kernel transition) where the found
 | `nexacore-driver-net-virtio`, `nexacore-driver-nvme`, `nexacore-driver-e1000e` | `#![cfg_attr(not(test), no_std)]` + `extern crate alloc` | Workspace-member driver libs (P6.7.8.2/4/6). Host build keeps `std` only for the test harness. |
 | `nexacore-driver-net-virtio-image`, `nexacore-driver-nvme-image`, `nexacore-driver-e1000e-image` | `#![no_std]` + `#![no_main]` | Workspace-excluded bootable Ring 3 ELF siblings (P6.7.8.3/5/7). Built on `x86_64-unknown-none`; defensive `PanicOnAlloc` global allocator. |
 | `nexacore-hal` | `#![no_std]` | HAL trait surface only. |
-| Service crates (`nexacore-runtime`, `nexacore-mesh`, `nexacore-tokenization`) | `std` allowed | Userspace daemons. |
-| User-facing crates (`nexacore-sdk`, `nexacore-agent`, `nexacore-shell`) | `std` | Userspace. |
+| Service crates (`nexacore-runtime`, `nexacore-mesh`, `nexacore-tokenization`) | `std` allowed on the host; the `nexacore-runtime` engine subset (`gguf`/`tensor_loader`/`bpe`/`engine`) is `no_std` and builds for `x86_64-unknown-none` (served by `nexacore-runtime-image`). | Userspace daemons. |
+| User-facing crates (`nexacore-sdk`, `nexacore-agent`) | `std` | Host userspace. |
+| Bare-metal userland (`nexacore-shell`, `nexacore-usys`, `nexacore-ui`, `nexacore-display`, `nexacore-text`, `nexacore-cmd-*`, …) | `#![no_std]` + `extern crate alloc` | Ring-3 apps loaded from the initramfs; `std` kept only for the host test harness. |
 
 Why this matters: every `no_std` violation in a foundational crate is a refactor hazard for P6. We pay the discipline cost up front rather than amortize it across a kernel rewrite.
 

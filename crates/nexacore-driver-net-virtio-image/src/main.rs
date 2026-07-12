@@ -1113,7 +1113,10 @@ impl RxEngine {
                 core::ptr::write_volatile((avail + 4 + u64::from(i) * 2) as *mut u16, i); // ring[i]=i
             }
         }
-        // Publish avail.idx = RX_RING_SIZE (all buffers available).
+        // Publish avail.idx = RX_RING_SIZE (all buffers available). The buffers
+        // are made visible in the avail ring BEFORE the queue is enabled; the
+        // doorbell that tells the device to scan them is deliberately DEFERRED
+        // to `arm` (called after DRIVER_OK) — see DE-F-RXFLAKE / WS2-02.5.
         // SAFETY: avail ring inside the RX DMA arena.
         unsafe { core::ptr::write_volatile((avail + 2) as *mut u16, RX_RING_SIZE) };
 
@@ -1130,19 +1133,65 @@ impl RxEngine {
         };
         let notify_addr = mmio_va + notify_off_in_bar + u64::from(q_notify_off) * notify_mult;
 
-        // Ring the doorbell so the device knows buffers are available.
-        // SAFETY: notify_addr inside the mapped BAR notify window.
-        unsafe { mmio_w16(notify_addr, RX_QUEUE_IDX) };
-
+        // Instrumentation (WS2-02.4): record the doorbell address and the avail
+        // index published. The doorbell itself is NOT rung here — deferred to
+        // `arm` so the device only sees the notify after DRIVER_OK.
         dbg("[virtio-img] RxEngine init notify_addr=");
         dbg_hex(notify_addr);
-        dbg("\n");
+        dbg(" avail_idx=");
+        dbg_hex(u64::from(RX_RING_SIZE));
+        dbg(" (doorbell deferred to arm)\n");
 
         Self {
             notify_addr,
             dma_va,
             last_used: 0,
         }
+    }
+
+    /// Arm the RX queue: sync the consumed cursor to the device's current
+    /// used-ring index, then ring the doorbell so the device starts filling
+    /// the posted buffers.
+    ///
+    /// MUST be called AFTER `DRIVER_OK` is set (virtio 1.0 § 4.1.5.2 — the
+    /// device is not required to honour queue notifications before
+    /// `DRIVER_OK`). Deferring the first doorbell to here, together with the
+    /// cursor sync, closes the DE-F-RXFLAKE bring-up race (WS2-02.5/.6): the
+    /// pre-`DRIVER_OK` doorbell used to be dropped by the device on ~50% of
+    /// fast boots, leaving RX permanently dark (endless ARP TX, no RX). The
+    /// host-side cursor-sync logic is unit-tested as
+    /// `SplitVirtqueue::sync_used_cursor`.
+    ///
+    /// # Safety
+    ///
+    /// Engine pointers must be valid (they are for the driver lifetime) and
+    /// `DRIVER_OK` must already be set on the device.
+    unsafe fn arm(&mut self) {
+        // Instrumentation (WS2-02.4/.6): read the device's current used index at
+        // arm time. During the init→DRIVER_OK window the device may already have
+        // proactively consumed posted buffers (bridge flood: broadcast ARP,
+        // mDNS, etc.). Crucially we do NOT advance `last_used` past them: leaving
+        // it at 0 lets the normal `poll()` path drain AND recycle every consumed
+        // buffer back into the avail ring, so the RX ring stays fully armed.
+        // Skipping them here would leave their buffers un-recycled and starve the
+        // ring — re-introducing the very RX death this task fixes.
+        let used = self.dma_va + OFF_USED;
+        // SAFETY: used ring inside the RX DMA arena.
+        let dev_used = unsafe { core::ptr::read_volatile((used + 2) as *const u16) };
+
+        dbg("[virtio-img] RxEngine arm used_idx=");
+        dbg_hex(u64::from(dev_used));
+        dbg(" last_used=");
+        dbg_hex(u64::from(self.last_used));
+        dbg(" -> ringing RX doorbell\n");
+
+        // Ring the doorbell now that DRIVER_OK is set: the device scans the
+        // avail ring and starts filling the posted RX buffers. Deferring the
+        // FIRST doorbell to here (post-DRIVER_OK) is the core DE-F-RXFLAKE fix
+        // (WS2-02.5): a doorbell rung before DRIVER_OK could be dropped by the
+        // device, leaving RX permanently dark on ~50% of fast boots.
+        // SAFETY: notify_addr inside the mapped BAR notify window.
+        unsafe { mmio_w16(self.notify_addr, RX_QUEUE_IDX) };
     }
 
     /// Poll for one received frame. Returns the Ethernet bytes (vnet header
@@ -1247,10 +1296,18 @@ unsafe fn nic_bringup(
         dbg("[virtio-img] NIC bringup abort: no device-info geometry\n");
         return (None, None);
     };
-    // RX queue 0 first (no DRIVER_OK), then TX queue 1 (sets DRIVER_OK).
-    // SAFETY: caller upholds the MmioMap/DmaMap contract for both arenas.
-    let rx = unsafe { RxEngine::init(mmio_va, common, info, rx_dma_va, rx_dma_phys) };
+    // RX queue 0 first (posts buffers, no DRIVER_OK, no doorbell), then TX
+    // queue 1 (sets DRIVER_OK). SAFETY: caller upholds the MmioMap/DmaMap
+    // contract for both arenas.
+    let mut rx = unsafe { RxEngine::init(mmio_va, common, info, rx_dma_va, rx_dma_phys) };
     let mut tx = unsafe { TxEngine::init(mmio_va, common, info, tx_dma_va, tx_dma_phys) };
+
+    // DE-F-RXFLAKE fix (WS2-02.5/.6): arm RX only NOW, after TxEngine::init has
+    // set DRIVER_OK — sync the used cursor and ring the RX doorbell. Ringing it
+    // pre-DRIVER_OK (as the old RxEngine::init did) let the device drop the
+    // notify on ~50% of fast boots, killing RX (endless ARP TX, no RX).
+    // SAFETY: DRIVER_OK is set; engine pointers are valid.
+    unsafe { rx.arm() };
 
     // Build a broadcast ARP-request: who-has 192.0.2.11 tell 192.0.2.50.
     let mut frame = [0u8; 42];

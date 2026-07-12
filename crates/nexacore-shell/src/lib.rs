@@ -183,6 +183,28 @@ pub mod repl;
 /// records every command processed by the REPL.
 pub mod audit;
 
+/// Bounded command-history ring buffer.
+///
+/// [`history::History`] is a fixed-capacity circular buffer with
+/// consecutive-duplicate deduplication, index lookup, and prev/next navigation
+/// (the model behind up/down-arrow recall). It complements the interactive
+/// [`line_editor::LineEditor`] and is owned by [`repl::Shell`].
+pub mod history;
+
+/// Job control — background job table over an injectable process seam.
+///
+/// [`job::JobTable`] tracks background jobs by id/pgid/state and implements the
+/// `jobs`, `fg`, and `bg` operations. Real signal/wait effects go through the
+/// [`job::ProcessControl`] seam so the table is fully host-testable.
+pub mod job;
+
+/// First-word alias expansion with a recursion loop-guard.
+///
+/// The alias table lives in [`env::ShellEnv`]; [`alias::expand_line`] expands
+/// the first word of a command line against it — never quoted or non-first
+/// tokens — and terminates on recursive alias chains.
+pub mod alias;
+
 /// Intent classification — lightweight agent integration.
 ///
 /// Given a raw command or natural-language string, [`intent::classify_intent`]

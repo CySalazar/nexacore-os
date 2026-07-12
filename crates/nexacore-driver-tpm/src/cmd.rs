@@ -148,7 +148,7 @@ pub fn build_pcr_extend(pcr_index: u32, alg: u16, digest: &[u8]) -> Vec<u8> {
 }
 
 /// A PCR selection over PCRs 0..24 (the standard 24-PCR platform bank).
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PcrSelection {
     bitmap: [u8; 3],
 }
@@ -160,6 +160,13 @@ impl PcrSelection {
         Self { bitmap: [0; 3] }
     }
 
+    /// Reconstruct a selection from a raw 3-byte bitmap (the inverse of
+    /// [`Self::bitmap`], used when parsing a `TPML_PCR_SELECTION` back).
+    #[must_use]
+    pub const fn from_bitmap(bitmap: [u8; 3]) -> Self {
+        Self { bitmap }
+    }
+
     /// Select PCR `index` (0..24). Out-of-range indices are ignored.
     pub fn select(&mut self, index: u8) {
         let byte = (index / 8) as usize;
@@ -167,6 +174,14 @@ impl PcrSelection {
         if let Some(slot) = self.bitmap.get_mut(byte) {
             *slot |= 1 << bit;
         }
+    }
+
+    /// Whether PCR `index` is selected. Out-of-range indices are never selected.
+    #[must_use]
+    pub fn is_selected(self, index: u8) -> bool {
+        let byte = (index / 8) as usize;
+        let bit = index % 8;
+        self.bitmap.get(byte).is_some_and(|b| b & (1 << bit) != 0)
     }
 
     /// The 3-byte selection bitmap.
@@ -344,6 +359,35 @@ mod tests {
         // Out-of-range ignored.
         sel.select(99);
         assert_eq!(sel.bitmap(), [0x01, 0x01, 0x80]);
+    }
+
+    #[test]
+    fn pcr_selection_is_selected_reports_membership() {
+        let mut sel = PcrSelection::new();
+        sel.select(0);
+        sel.select(8);
+        sel.select(23);
+        assert!(sel.is_selected(0));
+        assert!(sel.is_selected(8));
+        assert!(sel.is_selected(23));
+        assert!(!sel.is_selected(1));
+        assert!(!sel.is_selected(7));
+        // Out-of-range is never selected.
+        assert!(!sel.is_selected(24));
+        assert!(!sel.is_selected(255));
+    }
+
+    #[test]
+    fn pcr_selection_round_trips_through_its_bitmap() {
+        let mut sel = PcrSelection::new();
+        sel.select(3);
+        sel.select(15);
+        sel.select(22);
+        let rebuilt = PcrSelection::from_bitmap(sel.bitmap());
+        assert_eq!(rebuilt, sel);
+        assert!(rebuilt.is_selected(3));
+        assert!(rebuilt.is_selected(15));
+        assert!(rebuilt.is_selected(22));
     }
 
     #[test]

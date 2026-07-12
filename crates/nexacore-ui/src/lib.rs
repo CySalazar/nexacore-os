@@ -84,6 +84,7 @@ extern crate alloc;
 /// A11y tree, focus/keyboard navigation, screen reader, high contrast, and
 /// global text scaling.
 pub mod a11y;
+pub mod ai_actions;
 pub mod canvas;
 pub mod chat;
 pub mod chrome;
@@ -93,6 +94,8 @@ pub mod cursor;
 pub mod display_settings;
 pub mod dnd;
 pub mod dock;
+pub mod edit;
+pub mod i18n;
 pub mod icon;
 pub mod launcher;
 pub mod layout;

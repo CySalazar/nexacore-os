@@ -68,6 +68,8 @@ pub fn register(map: &mut BTreeMap<String, BuiltinFn>) {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code = nexacore_shell::commands::text_cmds::cmd_grep_pub(
 ///     &["grep".into(), "pattern".into(), "file.txt".into()],
@@ -114,6 +116,8 @@ fn cmd_grep(args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code = nexacore_shell::commands::text_cmds::cmd_head_pub(
 ///     &["head".into(), "file.txt".into()],
@@ -160,6 +164,8 @@ fn cmd_head(args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code = nexacore_shell::commands::text_cmds::cmd_tail_pub(
 ///     &["tail".into(), "file.txt".into()],
@@ -206,9 +212,13 @@ fn cmd_tail(args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
-/// let code =
-///     nexacore_shell::commands::text_cmds::cmd_wc_pub(&["wc".into(), "file.txt".into()], &mut ctx);
+/// let code = nexacore_shell::commands::text_cmds::cmd_wc_pub(
+///     &["wc".into(), "file.txt".into()],
+///     &mut ctx,
+/// );
 /// assert_eq!(code, 0);
 /// let out = String::from_utf8(ctx.output).unwrap();
 /// assert!(out.contains("wc"));
@@ -262,6 +272,8 @@ mod tests {
             net: &NoNet,
             output: Vec::new(),
             audit_log: crate::audit::AuditLog::new(),
+            stdin: Vec::new(),
+            stderr: Vec::new(),
         }
     }
 

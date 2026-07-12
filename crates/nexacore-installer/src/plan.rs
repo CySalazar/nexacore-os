@@ -29,7 +29,7 @@ pub struct InstallGuids {
 }
 
 /// Round `value` up to the next multiple of `align`.
-fn align_up(value: u64, align: u64) -> u64 {
+pub(crate) fn align_up(value: u64, align: u64) -> u64 {
     if align == 0 {
         return value;
     }

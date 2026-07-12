@@ -15,6 +15,7 @@
 //! | [`parse_scp_path`] | Parse `[[user@]host:]path` into [`ScpPath`] |
 //! | [`parse_args`] | Parse `scp <source> <destination>` |
 //! | [`ScpError`] | Typed errors |
+//! | [`protocol`] | rcp/SCP transfer protocol state machine over a stream seam |
 
 #![no_std]
 #![forbid(unsafe_code)]
@@ -31,6 +32,8 @@
 )]
 
 extern crate alloc;
+
+pub mod protocol;
 
 use alloc::string::{String, ToString};
 

@@ -58,6 +58,7 @@
 //! ## Modules
 //!
 //! - [`ner`] — Named Entity Recognition for PII spans.
+//! - [`nerpack`] — signed monolingual NER language-pack format + manifest.
 //! - [`detectors`] — extensible, user-defined detector registry (word/phrase
 //!   dictionaries and format templates) for domain-specific sensitive data.
 //! - [`vault`] — per-user token vault inside TEE.
@@ -86,6 +87,8 @@ pub mod egress;
 pub mod encrypted_pipeline;
 pub mod langid;
 pub mod ner;
+pub mod nerpack;
+pub mod pack_registry;
 pub mod policy;
 pub mod privacy;
 pub mod streaming;

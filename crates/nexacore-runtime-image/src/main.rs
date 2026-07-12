@@ -780,6 +780,29 @@ const STATUS_BUF_CAP: usize = 16;
 /// Sized generously; the actual encoded event is at most 3 bytes.
 static mut STATUS_BUF: [u8; STATUS_BUF_CAP] = [0; STATUS_BUF_CAP];
 
+/// Encodes `event` into [`STATUS_BUF`] and sends it on the `ai_status`
+/// notification channel.
+///
+/// Logs — but does not hard-fail on — an encode/send error: a dropped status
+/// update is cosmetic, and the periodic probe re-publishes on the next change.
+fn publish_backend_status(channel: u64, event: BackendStatusEvent) {
+    // SAFETY: STATUS_BUF is a static BSS buffer accessed only from this
+    // single-threaded task; no concurrent access.
+    let encode_result = nexacore_types::wire::encode_into_slice(&event, unsafe {
+        &mut *core::ptr::addr_of_mut!(STATUS_BUF)
+    });
+    match encode_result {
+        Ok(n) => {
+            // SAFETY: STATUS_BUF is valid; n ≤ STATUS_BUF_CAP.
+            let bytes = unsafe { &(*core::ptr::addr_of!(STATUS_BUF))[..n] };
+            if !sys_ipc_send(channel, IPC_KIND_NOTIFICATION, bytes) {
+                write("[ai-svc] status send FAILED\n");
+            }
+        }
+        Err(_) => write("[ai-svc] status encode FAILED\n"),
+    }
+}
+
 // =============================================================================
 // Config-read machinery (TASK-23, ADR-0045 D5)
 // =============================================================================
@@ -873,6 +896,23 @@ pub extern "C" fn _start() -> ! {
     write_hex_u64(ai_status_channel);
     write("\n");
 
+    // Announce the CPU engine as ready right away. The local fixture engine is
+    // already serving (above), so the honest initial status is LocalCpu — the
+    // assistant is up on the CPU fallback. The periodic probe below upgrades
+    // this to RemoteGpu if/when the Ollama endpoint answers. Publishing here,
+    // not only after the first probe, means the desktop AI badge shows the real
+    // "AI on CPU" state even when the remote probe is slow or the VM's route to
+    // the endpoint is unreachable — instead of a misleading "offline".
+    write("[ai-svc] status -> CPU (initial: local engine ready)\n");
+    publish_backend_status(
+        ai_status_channel,
+        BackendStatusEvent {
+            backend: BackendKind::LocalCpu,
+            healthy: true,
+            degraded: true,
+        },
+    );
+
     // ── Read the AI endpoint config from NCFS (TASK-23, ADR-0045 D5). ──
     //
     // This runs once at boot, AFTER our own channels are registered (so the
@@ -933,23 +973,7 @@ pub extern "C" fn _start() -> ! {
                     }
                 };
 
-                // Encode into the BSS buffer (no heap allocation needed for a
-                // 3-byte payload; encode_into_slice is the non-allocating path).
-                // SAFETY: STATUS_BUF is a static BSS buffer accessed only here
-                // (single-threaded task; no concurrent access).
-                let encode_result = nexacore_types::wire::encode_into_slice(&event, unsafe {
-                    &mut *core::ptr::addr_of_mut!(STATUS_BUF)
-                });
-                match encode_result {
-                    Ok(n) => {
-                        // SAFETY: STATUS_BUF is valid; n ≤ STATUS_BUF_CAP.
-                        let bytes = unsafe { &(*core::ptr::addr_of!(STATUS_BUF))[..n] };
-                        if !sys_ipc_send(ai_status_channel, IPC_KIND_NOTIFICATION, bytes) {
-                            write("[ai-svc] status send FAILED\n");
-                        }
-                    }
-                    Err(_) => write("[ai-svc] status encode FAILED\n"),
-                }
+                publish_backend_status(ai_status_channel, event);
             }
         }
 

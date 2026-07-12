@@ -11,9 +11,16 @@
 //! ## Variable expansion
 //!
 //! [`crate::env::ShellEnv::expand`] performs `$VAR`, `${VAR}`, and `${VAR:-default}`
-//! substitution on arbitrary strings. It is intentionally simple: it does not
-//! support arithmetic expansion, command substitution, or nested braces.
-//! Those features will be added in later sprint tasks.
+//! substitution on arbitrary strings. It is intentionally focused on variable
+//! expansion: it does not itself perform arithmetic expansion or nested braces.
+//!
+//! Command substitution `$(...)` **is** supported by the shell, but is resolved
+//! one stage earlier — at the token level by
+//! [`crate::executor::substitute_tokens`], which runs each inner command and
+//! captures its output. By the time a string reaches `expand`, any bare or
+//! double-quoted `$(...)` has already been replaced with its result; a `$(...)`
+//! that survives into `expand` is a single-quoted literal and is copied through
+//! verbatim (`expand` does not treat `$(` specially).
 //!
 //! ## Ordering
 //!

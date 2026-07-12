@@ -36,7 +36,7 @@ Key deliverables:
 - ✅ Memory management, scheduling, interrupt handling — MB1–MB14.
 - 🔄 Drivers (in user space): NVMe storage, Ethernet/Wi-Fi networking, TEE. virtio-net + NVMe + e1000e scaffolds + bootable image siblings landed (P6.7.8.0–7); `DriverLoad (73)` syscall handler + capability deposit trampoline landed (P6.7.8.8–9); next is the driver-shared SDK helper (P6.7.8.10) and live driver bring-up + Proxmox hardware smoke (P6.7.9). TEE backend gated on P5.2/P5.3.
 - ✅ Boot loader (UEFI-based) — `kernel-runner` + `bootloader 0.11`.
-- ⬜ Minimal shell sufficient for development — desktop demo + terminal echo are live; a real REPL is post-Phase-1.
+- ✅ Minimal shell sufficient for development — `nexacore-shell` is a full POSIX-style REPL (lexer/parser, expansion, pipelines, job control, builtins) integrated into the desktop terminal.
 - ✅ No AI yet — respected.
 - ⬜ First external security audit of kernel + capability system (P6.8, funding-dependent).
 

@@ -25,7 +25,7 @@
 //! This module makes **no cryptographic guarantees**. PII replacement is done
 //! in-process memory; a compromised runtime could observe the original values.
 //! Cryptographic PII tokenization (TEE-backed `TokenVault`) is tracked in
-//! `/todo.md` Phase 3.
+//! the backlog Phase 3.
 
 use tracing::{debug, instrument};
 

@@ -9,6 +9,11 @@ Specifications that have not yet been promoted to a lintable NCIP continue to li
 as Architecture Decision Records under [`docs/adr/`](../docs/adr/); this registry is
 the home for specs whose structure is frozen enough to lint.
 
+> **One process, two directories.** "NCIP" is the process; this directory holds only the
+> *machine-lintable* specs. The NCIP **process specification, governance, and the full registry
+> index** live in [`../oips/`](../oips/) (whose files keep a historical `oip-` prefix). Cross-reference
+> any proposal by its integer number (e.g. `NCIP-013`), never by filename or directory.
+
 ## Index
 
 | NCIP | Title | Track | Status |

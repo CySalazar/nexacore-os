@@ -9,6 +9,7 @@
 //! | Binary packet protocol + AEAD channel (RFC 4253 §6) | [`packet`] |
 //! | KEXINIT, negotiation, exchange hash, key derivation | [`kex`] |
 //! | Handshake state machine + encrypted session | [`transport`] |
+//! | Connection-protocol channels + flow control (RFC 4254) | [`channel`] |
 //!
 //! ## What this provides
 //!
@@ -18,8 +19,9 @@
 //! [`transport::client_handshake`] / [`transport::server_handshake`] run it end
 //! to end and return a [`transport::Session`] carrying application payloads.
 //!
-//! Authentication (`publickey`/`password`, WS4-06.2), channels (WS4-06.3), and
-//! the `ssh`/`scp` commands (WS4-06.4/.5) layer on top of this session.
+//! Authentication (`publickey`/`password`, WS4-06.2) and the `ssh`/`scp`
+//! commands (WS4-06.4/.5) layer on top of this session. Channel multiplexing
+//! and flow control (WS4-06.3) ride over it via [`channel::ChannelTable`].
 //!
 //! ## Cipher profile
 //!
@@ -40,11 +42,14 @@
 
 extern crate alloc;
 
+pub mod auth;
+pub mod channel;
 pub mod error;
 pub mod kex;
 pub mod packet;
 pub mod transport;
 pub mod wire;
 
+pub use channel::ChannelTable;
 pub use error::SshError;
 pub use transport::{Session, Transport, client_handshake, server_handshake};

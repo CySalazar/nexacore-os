@@ -19,6 +19,10 @@ pub enum SshError {
     BadIdentification,
     /// The underlying byte transport failed (I/O).
     Transport,
+    /// A channel operation referenced an id with no open channel.
+    UnknownChannel,
+    /// A channel send would exceed the peer's remaining flow-control window.
+    WindowExhausted,
 }
 
 impl fmt::Display for SshError {
@@ -31,6 +35,8 @@ impl fmt::Display for SshError {
             Self::Decrypt => write!(f, "packet decryption failed"),
             Self::BadIdentification => write!(f, "malformed identification string"),
             Self::Transport => write!(f, "transport I/O error"),
+            Self::UnknownChannel => write!(f, "unknown channel id"),
+            Self::WindowExhausted => write!(f, "channel send window exhausted"),
         }
     }
 }

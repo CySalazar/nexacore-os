@@ -24,5 +24,7 @@ readme.workspace       = true
 workspace = true
 
 [dependencies]
-serde     = { workspace = true }
-thiserror = { workspace = true }
+serde           = { workspace = true }
+thiserror       = { workspace = true }
+nexacore-crypto = { workspace = true }
+nexacore-types  = { workspace = true }

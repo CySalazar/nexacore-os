@@ -9,10 +9,15 @@
 
 use std::collections::BTreeMap;
 
+use serde::{Deserialize, Serialize};
+
 use crate::model::{ContextError, HistoryEntry, OptInDocument};
 
 /// The on-device store of personal context (WS16-05.2).
-#[derive(Debug, Clone, Default)]
+///
+/// Derives `serde` so the store can be encrypted at rest (WS16-05.3) and
+/// exported in full (WS16-05.9) through a single canonical encoding.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PersonalContextStore {
     preferences: BTreeMap<String, String>,
     documents: BTreeMap<String, OptInDocument>,
@@ -50,6 +55,13 @@ impl PersonalContextStore {
     #[must_use]
     pub fn preference(&self, key: &str) -> Option<&str> {
         self.preferences.get(key).map(String::as_str)
+    }
+
+    /// All preferences as `(key, value)` pairs, in key order.
+    pub fn preferences(&self) -> impl Iterator<Item = (&str, &str)> {
+        self.preferences
+            .iter()
+            .map(|(key, value)| (key.as_str(), value.as_str()))
     }
 
     /// Remove a preference. Returns whether it was present.

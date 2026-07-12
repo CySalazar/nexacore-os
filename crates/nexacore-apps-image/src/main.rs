@@ -142,7 +142,7 @@ use nexacore_display::{
 use nexacore_cmd_ifconfig::InterfaceDisplay;
 use nexacore_net::ifconfig::{InterfaceInfo, NetConfigRequest, NetConfigResponse};
 use nexacore_types::{
-    ai::{BackendKind, BackendStatusEvent},
+    ai::BackendStatusEvent,
     display_channel::DisplayInputEvent,
     fs_service::{FsErrno, FsRequest, FsResponse},
     wire::decode_canonical,
@@ -165,61 +165,138 @@ use gfx::{
 use shellsync::ShellSync;
 
 // =============================================================================
-// Bump allocator (64 MiB static heap)
+// Reclaiming free-list allocator (64 MiB static heap)
 // =============================================================================
 
-/// Size of the static heap backing the bump allocator (64 MiB).
+/// Size of the static heap backing the allocator (64 MiB).
 ///
 /// Covers: back buffer 1280×800×4 ≈ 4 MiB, four ~620×360 window surfaces
 /// ≈ 880 KiB each, compositor Vec internals, shell history (`Vec<String>`),
-/// file-manager entry list, per-render widget allocations, with generous
-/// headroom (was 48 MiB for 2 windows; 64 MiB for 4).
+/// file-manager entry list, per-render widget allocations. Unlike the previous
+/// never-freeing bump allocator, transient allocations are now reclaimed on
+/// `dealloc`, so a long interactive session no longer exhausts the arena.
 const HEAP_SIZE: usize = 64 * 1024 * 1024;
 
-/// Backing storage for the bump allocator (BSS).
+/// Backing storage for the allocator (BSS).
 static mut HEAP: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
 
-/// Current bump cursor (byte offset into [`HEAP`]).
+/// Bump cursor for *fresh* blocks (byte offset into [`HEAP`]).
 ///
-/// Single-threaded task; no atomics required.
+/// The cursor only ever advances; reclaimed blocks come back through
+/// [`FREE_LISTS`] instead. Single-threaded task; no atomics required.
 static mut HEAP_POS: usize = 0;
 
-/// Never-freeing bump allocator.
-///
-/// `dealloc` is a deliberate no-op: this is a display daemon whose allocation
-/// pressure is primarily at startup (back buffer + compositor + surfaces).
-/// The main loop appends to bounded buffers (history cap, chat input cap),
-/// so live allocation is small per iteration.
-struct BumpAllocator;
+/// Smallest size class: 2^4 = 16 bytes (≥ 8, so a freed block can store the
+/// intrusive `next` pointer in its first word).
+const MIN_CLASS_SHIFT: usize = 4;
 
-// SAFETY: single-threaded Ring 3 task; allocation is a bump on a static
-// arena; `dealloc` is a documented no-op (never-freeing by design).
-unsafe impl core::alloc::GlobalAlloc for BumpAllocator {
+/// Largest reclaimed size class: 2^21 = 2 MiB. Requests above this bump the
+/// cursor directly and are never reclaimed — in practice only the one-shot
+/// startup buffers (back buffer, window surfaces) land here.
+const MAX_CLASS_SHIFT: usize = 21;
+
+/// Number of power-of-two size classes tracked by [`FREE_LISTS`].
+const NUM_CLASSES: usize = MAX_CLASS_SHIFT - MIN_CLASS_SHIFT + 1;
+
+/// Per-size-class free-list heads (intrusive singly-linked lists through the
+/// freed blocks themselves). `null` = empty.
+static mut FREE_LISTS: [*mut u8; NUM_CLASSES] = [core::ptr::null_mut(); NUM_CLASSES];
+
+/// Map a `(size, align)` request to a size-class index, or `None` when the
+/// request is larger than the biggest tracked class (bump-only, never freed).
+///
+/// The class is the smallest power of two `≥ max(size, align, 16)`. Because the
+/// class is a power of two `≥ align`, and every block of class `c` is allocated
+/// aligned to `c` (see `alloc`), any block popped from that class satisfies the
+/// request's alignment.
+fn size_class(size: usize, align: usize) -> Option<usize> {
+    let need = size.max(align).max(1 << MIN_CLASS_SHIFT);
+    let shift = need.next_power_of_two().trailing_zeros() as usize;
+    if shift > MAX_CLASS_SHIFT {
+        None
+    } else {
+        // shift is in [MIN_CLASS_SHIFT, MAX_CLASS_SHIFT] since need ≥ 16.
+        Some(shift - MIN_CLASS_SHIFT)
+    }
+}
+
+/// Reclaiming free-list allocator over a fixed static arena.
+///
+/// Small/medium allocations are served from per-size-class free lists and
+/// returned to them on `dealloc`, keeping steady-state usage bounded across a
+/// long interactive session. Oversized allocations (> 2 MiB — only the one-shot
+/// startup surfaces) bump the cursor and are intentionally not reclaimed.
+struct FreeListAllocator;
+
+// SAFETY: single-threaded Ring 3 task. `HEAP_POS` and `FREE_LISTS` are only
+// mutated here; every block of class `c` is aligned to `c`, so reused blocks
+// always satisfy the requested alignment.
+unsafe impl core::alloc::GlobalAlloc for FreeListAllocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         let align = layout.align().max(1);
-        // SAFETY: single-threaded; HEAP_POS is only mutated here.
+        let size = layout.size();
+        // SAFETY: single-threaded; the arena statics are only touched here.
+        unsafe {
+            let base = core::ptr::addr_of_mut!(HEAP).cast::<u8>();
+            match size_class(size, align) {
+                Some(ci) => {
+                    // Reuse a reclaimed block of this class if one is available.
+                    let head = *core::ptr::addr_of!(FREE_LISTS[ci]);
+                    if !head.is_null() {
+                        // Pop: the block's first word holds the next pointer.
+                        let next = *head.cast::<*mut u8>();
+                        *core::ptr::addr_of_mut!(FREE_LISTS[ci]) = next;
+                        return head;
+                    }
+                    // Otherwise carve a fresh block sized/aligned to the class.
+                    let block = 1usize << (ci + MIN_CLASS_SHIFT);
+                    self.bump(base, block, block)
+                }
+                // Oversized: bump directly, honouring the requested alignment.
+                None => self.bump(base, size, align),
+            }
+        }
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
+        let align = layout.align().max(1);
+        // Oversized allocations (class None) are never reclaimed.
+        if let Some(ci) = size_class(layout.size(), align) {
+            // SAFETY: single-threaded; `ptr` came from `alloc` for this class,
+            // so it is ≥ 16 bytes and can hold the intrusive next pointer.
+            unsafe {
+                let head = *core::ptr::addr_of!(FREE_LISTS[ci]);
+                *ptr.cast::<*mut u8>() = head;
+                *core::ptr::addr_of_mut!(FREE_LISTS[ci]) = ptr;
+            }
+        }
+    }
+}
+
+impl FreeListAllocator {
+    /// Advance the bump cursor by a `size`-byte block aligned to `align`
+    /// (a power of two). Returns `null` on arena exhaustion.
+    ///
+    /// # Safety
+    /// Caller holds the single-threaded invariant; `base` is the start of
+    /// [`HEAP`] and `align` is a non-zero power of two.
+    unsafe fn bump(&self, base: *mut u8, size: usize, align: usize) -> *mut u8 {
+        // SAFETY: single-threaded; HEAP_POS is only mutated under this call.
         unsafe {
             let pos = *core::ptr::addr_of!(HEAP_POS);
-            let base = core::ptr::addr_of_mut!(HEAP).cast::<u8>();
             let aligned = (pos + align - 1) & !(align - 1);
-            let end = aligned.saturating_add(layout.size());
+            let end = aligned.saturating_add(size);
             if end > HEAP_SIZE {
                 return core::ptr::null_mut();
             }
             *core::ptr::addr_of_mut!(HEAP_POS) = end;
-            // SAFETY: `aligned` is within [0, HEAP_SIZE) and `base` is the
-            // start of the static HEAP array.
             base.add(aligned)
         }
-    }
-
-    unsafe fn dealloc(&self, _ptr: *mut u8, _layout: core::alloc::Layout) {
-        // Never-freeing bump allocator: dealloc is intentionally a no-op.
     }
 }
 
 #[global_allocator]
-static ALLOCATOR: BumpAllocator = BumpAllocator;
+static ALLOCATOR: FreeListAllocator = FreeListAllocator;
 
 // =============================================================================
 // Syscall numbers + ABI constants
@@ -595,8 +672,15 @@ fn sys_ipc_send(channel_id: u64, kind: u64, data: &[u8]) -> bool {
 // =============================================================================
 
 #[panic_handler]
-fn panic(_info: &PanicInfo<'_>) -> ! {
-    write("[nexacore-apps] PANIC\n");
+fn panic(info: &PanicInfo<'_>) -> ! {
+    write("[nexacore-apps] PANIC");
+    if let Some(loc) = info.location() {
+        write(" at ");
+        write(loc.file());
+        write(":");
+        write_dec(loc.line() as usize);
+    }
+    write("\n");
     exit(1)
 }
 
@@ -1427,22 +1511,16 @@ pub extern "C" fn _start() -> ! {
     let dock_model = shell_sync.dock_model();
     let mut chrome = ChromeState::new(fb_width, fb_height, dock_model);
 
-    // ── Step 9.6: marketing-capture seeding (AI status + System Info window) ──
+    // ── Step 9.6: open the System Info window ────────────────────────────────
     //
-    // Both are part of the same staged screenshot the Helper conversation and
-    // Terminal `ifconfig` transcript are seeded for (Step 11b): on the Proxmox
-    // capture rig no real `BackendStatusEvent` arrives (Ollama at OLLAMA_HOST is
-    // not reachable), so the AI strip would otherwise sit at `Unknown`
-    // ("offline") — unacceptable for an AI-native OS's hero image. Present it as
-    // online (GPU · NexyAI) from the very first frame. A genuine status event,
-    // should one arrive, still takes over via the `ai_status` handler in the
-    // input loop (it re-applies to `chat_bar` + `chrome`).
-    chat_bar.apply(BackendStatusEvent {
-        backend: BackendKind::RemoteGpu,
-        healthy: true,
-        degraded: false,
-    });
-    chrome.set_ai_state(BackendState::Gpu);
+    // The AI status badge is intentionally NOT seeded here: it stays at its
+    // honest default (`Unknown` — "status unavailable") until the `ai-svc`
+    // publishes a genuine `BackendStatusEvent`, which the boot seeding in
+    // Step 11b waits for and applies (RemoteGpu → "GPU", LocalCpu(degraded) →
+    // "CPU"). Earlier revisions forced a cosmetic "GPU · online" onto the very
+    // first frame for the hero screenshot; that misrepresented the real
+    // backend, which on this rig falls back to the local CPU engine whenever
+    // the remote GPU endpoint is unreachable.
 
     // Open the System Info window (launcher-only, hidden at boot by
     // `ShellSync::new`) so the OS identity/telemetry card is visible in the
@@ -1600,10 +1678,11 @@ pub extern "C" fn _start() -> ! {
     write(")\n");
 
     let mut empty_count: u32 = 0;
-    // Seeded to `Gpu` to match the boot-time AI-status seed above (Step 9.6),
-    // so the `ai_status` handler only reacts to a genuine *change* from that
-    // presented state rather than immediately re-applying it.
-    let mut last_ai_state: BackendState = BackendState::Gpu;
+    // The AI badge starts at its honest default (`Unknown`); the boot seeding
+    // in Step 11b below waits for the `ai-svc`'s first genuine status event and
+    // updates both the badge and this shadow, after which the `ai_status`
+    // handler in the input loop only reacts to real *changes*.
+    let mut last_ai_state: BackendState = BackendState::Unknown;
     let fs_query = IpcFsQuery;
     let net_query = IpcNetQuery;
 
@@ -1650,25 +1729,39 @@ pub extern "C" fn _start() -> ! {
             }
         }
 
-        // NexaCore Helper: a scripted conversation (not a live execution
-        // engine — see the final assistant turn's own wording) demonstrating
-        // the AI naming the real `ifconfig` command and asking to run it on
-        // the user's behalf.
-        chat_state.push_user("How do I check my IP address?");
-        chat_state.begin_assistant();
-        chat_state.append_chunk(
-            "Run `ifconfig` in the Terminal \u{2014} it lists each network \
-             interface with its IPv4 address and MAC. Want me to run it for you?",
-        );
-        chat_state.finish_assistant(BackendState::Gpu, 340);
-        chat_state.push_user("Yes, go ahead.");
-        chat_state.begin_assistant();
-        chat_state.append_chunk(
-            "Done \u{2014} see `eth0`'s IPv4 lease and MAC in the Terminal beside \
-             this window. (Scripted preview \u{2014} live on-your-behalf \
-             execution isn't wired in yet.)",
-        );
-        chat_state.finish_assistant(BackendState::Gpu, 410);
+        // NexaCore Helper: no scripted conversation is seeded — faking an AI
+        // exchange would misrepresent the assistant. The chat starts empty and
+        // is fully live on real user input (the send flow calls `AiInvoke`).
+        //
+        // Instead, reflect the REAL AI backend status: wait briefly (bounded,
+        // like the DHCP-lease wait above) for the `ai-svc`'s first genuine
+        // `BackendStatusEvent` on the `ai_status` channel and apply it to the
+        // badge — RemoteGpu → "GPU", LocalCpu(degraded) → "CPU". If none
+        // arrives within the budget the badge stays the honest `Unknown`; a
+        // later event still takes over via the `ai_status` handler in the
+        // input loop.
+        if ai_status_ch != 0 {
+            const AI_STATUS_SEED_RETRIES: u32 = 50_000;
+            // SAFETY: STATUS_BUF is a static BSS buffer; single-threaded.
+            let status_buf: &mut [u8; MAX_STATUS_EVENT_BYTES] =
+                unsafe { &mut *core::ptr::addr_of_mut!(STATUS_BUF) };
+            let mut attempts: u32 = 0;
+            loop {
+                if let Some(n) = sys_ipc_try_receive(ai_status_ch, status_buf) {
+                    if let Ok(event) = decode_canonical::<BackendStatusEvent>(&status_buf[..n]) {
+                        chat_bar.apply(event);
+                        last_ai_state = chat_bar.state();
+                        chrome.set_ai_state(last_ai_state);
+                        break;
+                    }
+                }
+                attempts = attempts.saturating_add(1);
+                if attempts >= AI_STATUS_SEED_RETRIES {
+                    break;
+                }
+                task_yield();
+            }
+        }
     }
 
     // Re-render Terminal and Helper now that the seeding block above populated
@@ -1678,7 +1771,8 @@ pub extern "C" fn _start() -> ! {
     // capture rig — never fires a re-render on its own. Without these two calls
     // the very first (and only) presented frame, and therefore any screenshot,
     // would show empty Terminal/Helper windows. Repaint just those two here so
-    // the seeded `ifconfig` transcript and scripted conversation are on screen.
+    // the seeded (real) `ifconfig` transcript and the genuine AI status badge
+    // are on screen.
     render_terminal(
         &term_history,
         &term_input,

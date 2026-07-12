@@ -2,7 +2,13 @@
 
 > An AI-native operating system. Local-first, privacy-by-construction, decentralized by design.
 
-**Status:** Phase 1 (Microkernel POC) — `v0.3.0-alpha.1` released 2026-05-20 — **P0/P1/P2 closed**, **Track A desktop M1–M5 complete + terminal shell** (nexacore-shell integrated), **Track B kernel MB1–MB14 cycle closed** (MP live INIT-SIPI, cross-CPU context switch, TLB shootdown), **P6.7 user-space driver framework active** (NVMe/virtio-net/e1000e live on Proxmox) — **Phase 2 Sprint 7 E2E complete** (transformer + GGUF + BPE). **79 crates, 6,700+ tests, 70 syscalls.** Next: BlkRequest/BlkResponse types, IRQ attach wiring, NVMe driver E2E IPC loop.
+[![CI](https://github.com/CySalazar/nexacore-os/actions/workflows/ci.yml/badge.svg)](https://github.com/CySalazar/nexacore-os/actions/workflows/ci.yml)
+[![QEMU boot smoke](https://github.com/CySalazar/nexacore-os/actions/workflows/qemu-boot-smoke.yml/badge.svg)](https://github.com/CySalazar/nexacore-os/actions/workflows/qemu-boot-smoke.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
+[![Release](https://img.shields.io/badge/release-v0.3.0--alpha.1-orange.svg)](https://github.com/CySalazar/nexacore-os/releases)
+[![Discussions](https://img.shields.io/badge/community-Discussions-8A2BE2.svg)](https://github.com/CySalazar/nexacore-os/discussions)
+
+**Status:** Phase 1→2 — a bare-metal Rust microkernel with a working userspace OS on top. **Kernel:** MB1–MB14 cycle closed (per-process CR3, IPC, live INIT-SIPI SMP, TLB shootdown, x2APIC), plus per-device IOMMU (VT-d + AMD-Vi), PCI ECAM scan, and S4 hibernate + device suspend/resume. **Networking:** full userspace dual-stack TCP/IP, TLS 1.3, SSH-2. **Storage:** native NCFS (on-disk v3) + read-only FAT/ext4/NTFS. **AI:** real `no_std` CPU inference (GGUF + BPE + transformer) and a five-agent framework. **Desktop:** userspace compositor/WM with native apps (terminal shell, text editor, file manager, media/image/PDF viewers). **Drivers:** NVMe / virtio-net / e1000e host cores live on Proxmox. **86 crate packages, ~7,700 tests, a 96-entry kernel syscall surface (ABI v2 frozen at 70).**
 
 NexaCore OS reimagines the operating system around AI as a first-class citizen. Inference, model orchestration, and intelligent agents are built into the kernel and runtime — not bolted on as cloud services. Privacy is enforced cryptographically, not by policy. The system can leverage other NexaCore OS instances as a peer-to-peer compute mesh, scaling computational power collectively without depending on commercial AI providers.
 
@@ -55,6 +61,20 @@ All technical documentation lives in [`/docs`](./docs/README.md). Highlights:
 | **License** | Apache-2.0 ([LICENSE](LICENSE)) |
 | **Governance** | 3-layer: cryptographic protocol / federated specification / legal entity (form under evaluation) |
 
+## Boot it in QEMU
+
+You don't need real hardware to watch NexaCore OS boot. On an **x86-64 Linux host** with a Rust toolchain:
+
+```bash
+# Prerequisites: QEMU + OVMF (UEFI firmware) — Debian/Ubuntu:
+sudo apt-get install -y qemu-system-x86 ovmf
+
+# Build the kernel-runner, wrap it in a UEFI disk image, boot it, assert the banner:
+bash scripts/qemu-boot-smoke.sh
+```
+
+This is the **same script CI runs on every push** (the [`qemu-boot-smoke`](./.github/workflows/qemu-boot-smoke.yml) workflow): it builds the `kernel-runner` ELF for `x86_64-unknown-none`, produces a UEFI image, boots it under QEMU+OVMF, and checks the canonical boot banner. The first run materializes the pinned toolchains (`rust-toolchain.toml`). For the graphical desktop smoke, real-hardware bring-up, and troubleshooting, see [`docs/user/src/installation.md`](./docs/user/src/installation.md) and [`kernel-runner/README.md`](./kernel-runner/README.md).
+
 ## Public commitments
 
 These are commitments the project makes in writing, in versioned files under `main`, with
@@ -85,17 +105,19 @@ signed commits — not in marketing copy that can be quietly walked back.
 
 ![NexaCore OS boot console on real UEFI hardware — framebuffer set up at 1280×800, boot services exited, four-level page tables built, the kernel ELF loaded, and the jump to the kernel entry point](./docs/assets/nexacore-os-boot.png)
 
-NexaCore OS is currently closing **Phase 1 (Microkernel PoC)** and has entered **Phase 2 (AI Runtime)** in parallel. The v0.1 design is complete, the foundational layer is implemented, the kernel bare-metal track has closed its MB1–MB14 cycle (including live INIT-SIPI multi-core, cross-CPU context switching, and TLB shootdown), the user-space driver framework is in active implementation, and the AI runtime has completed Sprint 7 E2E (transformer + GGUF + BPE tokenizer):
+NexaCore OS has closed **Phase 1 (Microkernel PoC)** and is deep into **Phase 2**: the microkernel boots bare-metal, drivers run in Ring 3, a full userspace network + storage + AI-runtime + desktop stack sits on top, and the whole thing runs on QEMU and on Proxmox. The table below is a snapshot; [`docs/02-architecture.md`](./docs/02-architecture.md) has the per-crate breakdown.
 
 | Layer | Crates | State |
 |---|---|---|
-| Foundational | `nexacore-types`, `nexacore-crypto`, `nexacore-capability` | **Implemented** (P1 closed 2026-05-10) — `no_std + alloc`, RFC test vectors for every cryptographic primitive, `cargo clippy -D warnings` and `cargo doc -D warnings` clean. Postcard canonical wire format per `NCIP-Serde-004`. |
-| TEE root of trust | `nexacore-tee` | Trait surface + `MockTeeBackend` implemented (P5 scaffolding); concrete TDX / SEV-SNP backends land in P5. |
-| **Kernel** | `nexacore-kernel` | **MB1–MB14 cycle closed (v0.3.0-alpha.1, 2026-05-20).** Boots bare-metal on x86_64 via UEFI (`bootloader` 0.11). **Track A complete:** GOP framebuffer, bitmap font, software cursor, PS/2 + VirtIO tablet, widget toolkit, desktop WM, RTC clock, ACPI S5 power-off, Build Info panel. **Track B complete:** frame allocator, page-table walker, IDT, SYSCALL/SYSRET, ELF64 loader, scheduler, LAPIC timer, Ring 3 + per-process CR3, IPC + multi-task, kernel-stack isolation, MP boot (AP INIT-SIPI live), TLB shootdown, per-CPU run queues, x2APIC, AP dispatch + cross-CPU context switch (MB14.h.2 + SCHED_LOCK). **P6.7 user-space driver framework active:** full `NCIP-013` syscall set (`MmioMap`/`DmaMap`/`IrqAttach`/`DriverLoad`) wired end-to-end, kernel CSPRNG (`RDRAND+RDTSC → ChaCha20Rng`), kernel-side Ed25519 capability issuer + 32 KiB read-only token deposit window at user-VA `0x0010_0000`, three first-party driver scaffolds (`nexacore-driver-net-virtio`, `nexacore-driver-nvme`, `nexacore-driver-e1000e`) + bootable image siblings landed. |
-| **Drivers (user-space)** | `nexacore-driver-net-virtio`, `nexacore-driver-nvme`, `nexacore-driver-e1000e` (+ bootable `*-image` siblings) | **Scaffold + bring-up FSM** (P6.7.8.0–9). Library crates host the auditable bring-up state machines; workspace-excluded `*-image` sibling crates produce the bootable Ring 3 ELFs that `DriverLoad (73)` ingests + verifies (NexaCore-Pack v1 envelope + Ed25519 manifest signature + BLAKE3 image hash). On successful load the kernel mints attenuated `CapabilityToken`s for every declared `Resource` and pre-installs them in the driver's address space; the per-driver token-lookup helper that consumes the deposit is the next step (P6.7.8.10). |
-| AI Runtime | `nexacore-hal`, `nexacore-runtime`, `nexacore-tokenization` | **Phase 2 Sprint 11 serving + `no_std` engine port** (2026-06-07, ADR-0034): transformer forward (multi-head attention + SwiGLU FFN + RMSNorm, fully synchronous core), GGUF tensor loading with F16/BF16→F32 dequantization, byte-level BPE tokenizer, E2E inference pipeline (tokenize→load→forward→decode). Provider stack (`InferenceProvider`, `OllamaProvider`, resilient `BackendRouter`, `LocalCpuProvider`) + AI-syscall IPC serving. The engine subset (`gguf`/`tensor_loader`/`bpe`/`engine`) builds for `x86_64-unknown-none`: the Ring 3 `nexacore-runtime-image` serves `AiInvoke` with the REAL CPU engine (verified on hardware, golden `"ab"`→`"dddd"`). |
-| Shell | `nexacore-shell`, `nexacore-shell-image` | **Functional** — `no_std + alloc` bare-metal shell, colored prompt `root@nexacore:/$`, integrated into desktop graphical terminal. Boot path: kmain → VFS `/bin/nexacore-shell` → `spawn_from_elf` → REPL. |
-| P2P Mesh & Agents | `nexacore-mesh`, `nexacore-sdk`, `nexacore-agent` | **Scaffolded** — NCIP-022 five-agent architecture (367 tests), mesh protocol spec, SDK stubs. |
+| Foundational | `nexacore-types`, `nexacore-crypto`, `nexacore-capability` | **Implemented** — `no_std + alloc`, RFC/KAT vectors per primitive, postcard canonical wire. Crypto composes the RustCrypto family plus post-quantum ML-DSA-65 / ML-KEM-768; still `AWAITING_CRYPTO_REVIEW`. Capabilities are Macaroons-style (attenuable, Ed25519, TTL, revocation). |
+| **Kernel** | `nexacore-kernel` | **Implemented (~74k LOC).** MB1–MB14 cycle closed (paging, IDT, SYSCALL/SYSRET, ELF64 loader, scheduler, Ring 3 + per-process CR3, IPC/pipes/fds, MP boot with live INIT-SIPI, TLB shootdown, x2APIC, cross-CPU context switch). Plus per-device IOMMU (VT-d + AMD-Vi), PCI ECAM scan, MSI-X, S4 hibernate + device PM, and the Track-A desktop stack (GOP framebuffer, fonts, cursor, PS/2 + USB HID tablet, WM). |
+| Drivers (user-space) | `nexacore-driver-{nvme,net-virtio,e1000e,wifi,ahci,tpm,audio,gpu,shared}` (+ bootable `*-image` siblings) | **Host cores implemented; hardware execution in the `*-image` siblings.** Full `NCIP-013` syscall set (`MmioMap`/`DmaMap`/`IrqAttach`/`DriverLoad`) wired end-to-end with a kernel CSPRNG, Ed25519 capability issuer, and a 32 KiB read-only token deposit window. NVMe / virtio-net / e1000e are live on Proxmox; `-ahci` is the least complete (byte-layout core only). |
+| Networking | `nexacore-net`, `nexacore-tls`, `nexacore-ssh`, `nexacore-mesh` | **Implemented** (mesh partial). Full userspace dual-stack TCP/IP (ARP, IPv4/IPv6, ICMP, UDP, RFC-793 TCP, DNS, DHCP, NDP/SLAAC, conntrack, firewall), TLS 1.3 client+server, SSH-2 (kex/auth/channels, NexaCore AEAD profile). `nexacore-mesh` has real discovery + handshake + cluster trust; transport/routing are Phase-4 stubs. |
+| Storage | `nexacore-fs`, `nexacore-fatfs`, `nexacore-extfs`, `nexacore-ntfs` | **Implemented.** Native NCFS service (on-disk v3: superblock, inodes, extents, B-tree, Merkle integrity, block crypto, snapshots) over a `BlockDevice` seam, plus read-only FAT12/16/32, ext2/3/4, and NTFS compatibility readers. |
+| AI runtime & agents | `nexacore-runtime`, `nexacore-hal`, `nexacore-tokenization`, `nexacore-context`, `nexacore-agent`, `nexacore-workflow` | **Implemented.** Real `no_std` CPU inference (GGUF + tensor dequant + byte-level BPE + transformer forward + greedy decode; golden `"ab"`→`"dddd"`) with `LocalCpu`/`Ollama` providers behind a resilient router; the Ring-3 `nexacore-runtime-image` serves `AiInvoke` on hardware. Five-agent framework, declarative workflow engine, on-device PII tokenization, and a local-first personal-context store. |
+| Desktop, UI & apps | `nexacore-display`, `nexacore-ui`, `nexacore-desktop-shell`, `nexacore-text`, `nexacore-media`, `nexacore-image`, `nexacore-doc`, `nexacore-fonts` | **Implemented.** Userspace compositor/WM (damage tracking, focus/input routing, glyf font raster/shaping, IME), retained-mode brand toolkit (dock/launcher/tray/chat/settings/i18n), and native apps: terminal, text editor (PieceTable + syntax + AI actions), file manager, media/image/PDF viewers. |
+| Userland & services | `nexacore-shell`, `nexacore-usys`, `nexacore-init`, `nexacore-installer`, `nexacore-print`, `nexacore-pkg`, `nexacore-cmd-*` | **Implemented** (some network commands parse-only). Full POSIX-style shell (454 tests), userspace syscall ABI, PID-1 supervisor, GPT installer with A/B slots, IPP printing, content-addressed federated package manager, and a family of `no_std` CLI tools. |
+| Container & TEE | `nexacore-container`, `nexacore-tee` | **Partial.** Micro-VM engine (KVM lifecycle, virtio backends, appbridge, Wine-in-container); confidential-VM (TDX/SEV-SNP) + attestation return `NotYetImplemented`. `nexacore-tee` ships a working `MockTeeBackend`; real TDX/SEV backends are feature-gated scaffolds. |
 
 ### Kernel milestone tracker (Phase 1, Track B)
 

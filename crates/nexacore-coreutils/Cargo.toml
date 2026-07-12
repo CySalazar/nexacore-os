@@ -1,0 +1,48 @@
+# =============================================================================
+# nexacore-coreutils — POSIX-like text-stream coreutils for NexaCore OS
+# =============================================================================
+# Pure text-stream implementations of the classic POSIX/GNU coreutils that
+# operate on in-memory text/lines (workstream WS8-10). No filesystem access:
+# every utility is a function/struct over `&str`/lines returning
+# `String`/`Vec<String>`, driven by an options struct parsed from Linux-style
+# flags. The filesystem seam (reading files, streaming stdin) lands in a later
+# subtask.
+#
+# Architecture:
+#   `no_std + alloc` library crate, fully unit-testable on the developer host
+#   and buildable for `x86_64-unknown-none` (proves the dependency-free
+#   no_std posture).
+#
+# Utilities:
+#   WS8-10.5 — sort, uniq, cut, tr, diff (LCS), xargs
+#   WS8-10.7 — sed-lite (s///), awk-lite ($N / NR / NF / print)
+#   WS8-10.6 — less/more pager logic (viewport state machine)
+#
+# Dependencies:
+#   Zero production dependencies. Zero dev dependencies. Pure logic only.
+# =============================================================================
+
+[package]
+name             = "nexacore-coreutils"
+description      = "POSIX-like text-stream coreutils for NexaCore OS — sort, uniq, cut, tr, diff, xargs, sed, awk, pager."
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+keywords.workspace     = true
+categories.workspace   = true
+readme.workspace       = true
+
+[lints]
+workspace = true
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+# Intentionally empty: this crate is dependency-free by design (pure text
+# logic over `core` + `alloc`). This keeps the `x86_64-unknown-none` build
+# trivially clean and the audit surface minimal.
+[dependencies]

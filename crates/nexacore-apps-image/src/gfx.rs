@@ -427,21 +427,16 @@ impl ChromeState {
 /// Current uptime in minutes, for the menu-bar clock, the System Monitor's
 /// Uptime tile, and the System Info window.
 ///
-/// The desktop image is a staged presentation (seeded Helper conversation and
-/// AI status — see `main.rs` Step 9.6/11b), captured moments after boot. To
-/// avoid a bare "0m" on those windows, uptime is reported from a small demo
-/// baseline ([`DEMO_UPTIME_BASE_MIN`]) added to the real monotonic uptime, so
-/// it still ticks up live from a lived-in value.
+/// Reports the real time since boot straight from the kernel's monotonic
+/// clock (`TimeMonotonicNanos`): a freshly-booted capture honestly shows a
+/// low value and ticks up from there. No cosmetic baseline is added — the
+/// number on screen is the machine's true uptime.
+#[allow(
+    clippy::cast_possible_truncation,
+    reason = "nanos / 60e9 comfortably fits u32 for any realistic uptime"
+)]
 pub(crate) fn uptime_minutes_now() -> u32 {
-    /// Demo baseline added to the real uptime so a freshly-booted capture
-    /// shows tens of minutes rather than "0m".
-    const DEMO_UPTIME_BASE_MIN: u32 = 37;
-    #[allow(
-        clippy::cast_possible_truncation,
-        reason = "nanos / 60e9 comfortably fits u32 for any realistic uptime"
-    )]
-    let real = (crate::time_monotonic_nanos() / 60_000_000_000) as u32;
-    DEMO_UPTIME_BASE_MIN.saturating_add(real)
+    (crate::time_monotonic_nanos() / 60_000_000_000) as u32
 }
 
 /// Clamps `rect` to the `w`×`h` screen bounds, returning `None` when the

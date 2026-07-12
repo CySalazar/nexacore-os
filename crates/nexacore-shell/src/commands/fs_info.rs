@@ -64,6 +64,8 @@ pub fn register(map: &mut BTreeMap<String, BuiltinFn>) {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
 /// let code = nexacore_shell::commands::fs_info::cmd_df_pub(&["df".into()], &mut ctx);
 /// assert_eq!(code, 0);
@@ -124,8 +126,11 @@ fn cmd_df(_args: &[String], ctx: &mut ExecContext<'_>) -> i32 {
 ///     net: &nexacore_shell::netquery::NoNet,
 ///     output: Vec::new(),
 ///     audit_log: nexacore_shell::audit::AuditLog::new(),
+///     stdin: Vec::new(),
+///     stderr: Vec::new(),
 /// };
-/// let code = nexacore_shell::commands::fs_info::cmd_find_pub(&["find".into(), "/".into()], &mut ctx);
+/// let code =
+///     nexacore_shell::commands::fs_info::cmd_find_pub(&["find".into(), "/".into()], &mut ctx);
 /// assert_eq!(code, 0);
 /// let out = String::from_utf8(ctx.output).unwrap();
 /// assert!(out.contains("/bin"));
@@ -233,6 +238,8 @@ mod tests {
             net: &NoNet,
             output: Vec::new(),
             audit_log: crate::audit::AuditLog::new(),
+            stdin: Vec::new(),
+            stderr: Vec::new(),
         }
     }
 

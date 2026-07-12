@@ -20,9 +20,19 @@
 //!
 //! - [`model`] — the personal-context schema (preferences, documents, history).
 //! - [`store`] — the local-first context store.
+//! - [`crypto`] — encryption at rest for the store (WS16-05.3).
+//! - [`tokenize`] — tokenizing context before agent exposure (WS16-05.4).
+//! - [`opt_in`] — the explicit document opt-in flow (WS16-05.5).
+//! - [`query`] — the capability + privacy-budget query gate (WS16-05.6/.7).
+//! - [`lifecycle`] — one-click export and erasure (WS16-05.9/.10).
 
 #![doc(html_root_url = "https://docs.nexacore-os.org/nexacore-context")]
 #![deny(missing_docs)]
 
+pub mod crypto;
+pub mod lifecycle;
 pub mod model;
+pub mod opt_in;
+pub mod query;
 pub mod store;
+pub mod tokenize;

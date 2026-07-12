@@ -13,6 +13,12 @@
 //!   the [`cmd::TpmCommand`] builder (big-endian header + back-patched size),
 //!   the password authorization area, [`cmd::build_pcr_extend`] (WS2-15.5),
 //!   [`cmd::build_quote`] (WS2-15.6), and [`cmd::parse_response_header`].
+//! * **[`pcr`]** — the measured-boot PCR bank, extend chain, and event log
+//!   (WS10-05.5 / .6 / .11).
+//! * **[`quote`]** — the `TPM2_Quote` attestation `TPMS_ATTEST` /
+//!   `TPMS_QUOTE_INFO`: `pcrDigest` over the measured bank
+//!   ([`nexacore_crypto`] hash), canonical marshalling, and the
+//!   [`quote::QuoteSigner`] signing seam (WS10-05.7).
 //!
 //! The locality acquire/release + command/response buffer transfer (WS2-15.3),
 //! the live command round-trip (WS2-15.4 hardware half), the `nexacore-tee`
@@ -40,6 +46,11 @@ extern crate alloc;
 
 pub mod cmd;
 pub mod pcr;
+pub mod quote;
 pub mod regs;
 
 pub use cmd::{TpmCommand, TpmError, build_pcr_extend, build_quote, parse_response_header};
+pub use quote::{
+    Attest, ClockInfo, Quote, QuoteError, QuoteRequest, QuoteSigner, generate_quote, pcr_digest,
+    selected_pcr_values,
+};
