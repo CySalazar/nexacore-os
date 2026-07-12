@@ -1,0 +1,36 @@
+# =============================================================================
+# NexaCore OS — canonical expected boot lines (shared assert file, plan WS0-03)
+# =============================================================================
+# Single source of truth for the boot markers asserted by:
+#   scripts/qemu-boot-smoke.sh   — QEMU/OVMF pre-check  (SKIPS '@hw-only' lines)
+#   scripts/qemu-desktop-demo.sh — reference checklist print (skips '@hw-only')
+#   scripts/vm103-assert.sh      — Proxmox VM 103 smoke (asserts ALL lines)
+#
+# Format:
+#   - one marker per line, matched byte-exact as a fixed-string substring
+#     (grep -F) against the captured serial log
+#   - blank lines and lines starting with '#' are ignored
+#   - a '@hw-only ' prefix (tag + single space) marks a marker that only
+#     appears on the Proxmox VM 103 rig (VT-d IOMMU, virtio-net/e1000e NICs)
+#     and MUST be skipped by QEMU consumers. The marker is everything after
+#     the first space. See docs/14-qemu-proxmox-parity.md for the rationale.
+#   - ORDER MATTERS: qemu-boot-smoke.sh asserts lines in order of appearance.
+#
+# Keep in sync with `kernel_entry` (kernel-runner/src/main.rs) and `kmain`
+# (crates/nexacore-kernel/src/lib.rs). Feature-gated probe lines (mb11/mb12
+# userprobe) remain in qemu-boot-smoke.sh — they depend on build features,
+# not on the execution platform.
+# =============================================================================
+
+# --- Baseline K5 banner (kernel_entry + kmain), common to QEMU and VM 103 ---
+[NexaCore OS] kernel-runner: entry_point reached.
+[NexaCore OS] early console (COM1) is live.
+[NexaCore OS] proceeding to heap init + kmain.
+[NexaCore OS] kmain entered.
+[NexaCore OS] halting (K4 scope ends here).
+
+# --- HW-only markers: Proxmox VM 103 rig (not reproducible in the bare
+# --- QEMU smoke rig: no IOMMU model, no NIC attached) ---
+@hw-only [iommu] vendor=intel units=1
+@hw-only [virtio-net] live bring-up complete
+@hw-only [e1000e] found on
