@@ -1,0 +1,28 @@
+# =============================================================================
+# NexaCore OS — workspace Cargo target configuration
+# =============================================================================
+# Force-soft SIMD backends for the RustCrypto primitives when building for the
+# bare-metal `x86_64-unknown-none` target.
+#
+# Rationale: crates such as `poly1305`, `chacha20`, `sha2` and
+# `curve25519-dalek` select a CPU-accelerated backend via runtime feature
+# detection that relies on `std`. On `x86_64-unknown-none` (no_std) that
+# detection is unavailable, and their AVX2/SIMD codegen paths trip an LLVM
+# backend bug ("Do not know how to split the result of this operator!") when
+# cross-compiled. Forcing the portable "soft" backends via these `--cfg`
+# flags keeps every crypto-bearing crate (`nexacore-crypto` and its
+# dependents: `nexacore-fs`, `nexacore-installer`, the kernel, …) buildable
+# for bare metal.
+#
+# The per-crate `*-image` and `kernel-runner` configs are intentionally
+# minimal (or only set an image base) so these workspace-level rustflags
+# merge in for the targets that do not override `rustflags` themselves.
+# =============================================================================
+
+[target.x86_64-unknown-none]
+rustflags = [
+    "--cfg", "poly1305_force_soft",
+    "--cfg", "chacha20_force_soft",
+    "--cfg", "sha2_backend=\"soft\"",
+    "--cfg", "curve25519_dalek_backend=\"serial\"",
+]
