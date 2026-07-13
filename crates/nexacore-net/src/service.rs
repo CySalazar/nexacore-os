@@ -615,6 +615,21 @@ impl NetworkService {
                     let mut out = Vec::new();
                     // Initiate TCP close; ignore errors (already closed is fine).
                     let _ = self.tcp.close(&key, &mut out);
+                    // Queue the FIN|ACK on `pending_tx` exactly like Connect
+                    // queues its SYN and Send its data segments. Previously
+                    // `out` was discarded here, so the FIN never reached the
+                    // wire: the peer saw the connection as open and kept
+                    // retransmitting unacked data into a TCB stranded in
+                    // FinWait1, which silently swallows payloads — the
+                    // unknown-connection RST path never fires because the
+                    // TCB still exists.
+                    let our_mac = self
+                        .interfaces
+                        .first()
+                        .map_or(MacAddress([0; 6]), |i| i.mac);
+                    let mut outs = Vec::new();
+                    self.emit_tcp_outputs(out, 0, our_mac, &mut outs);
+                    self.pending_tx.extend(outs);
                 } else {
                     // Fall back to UDP close using handle-derived port.
                     let port = u16::try_from(handle.0).unwrap_or(0);
@@ -1780,6 +1795,104 @@ mod tests {
         }
     }
 
+    /// Regression test: `Close` on an ESTABLISHED TCP socket must put the
+    /// FIN|ACK on `pending_tx` (the wire path). Before this fix the segment
+    /// was generated into a local `Vec` and discarded, so the peer never saw
+    /// the close: it kept retransmitting into a TCB stranded in `FinWait1`,
+    /// which silently swallowed the payloads (the unknown-connection RST
+    /// path never fires while the TCB exists). Same bug family as the
+    /// Connect-SYN and Send-data drops fixed in TASK-05.
+    #[test]
+    fn close_emits_fin_frame_on_pending_tx() {
+        use nexacore_types::net::{TcpFlags, TcpHeader};
+
+        use crate::tcp::TcpState;
+
+        let mut svc = make_m0_service();
+
+        // ── Reach ESTABLISHED (same flow as the M0 connect/send tests) ───
+        let SocketResponse::Handle(handle) = svc.handle_socket_request(SocketRequest::Socket {
+            domain: SocketDomain::Inet,
+            sock_type: SocketType::Stream,
+        }) else {
+            panic!("expected Handle");
+        };
+        let _ = svc.handle_socket_request(SocketRequest::Connect {
+            handle,
+            addr: SocketApiAddr {
+                ip: [192, 0, 2, 11],
+                port: 11434,
+            },
+        });
+        let key = *svc.socket_state.get(&handle.0).expect("key after Connect");
+        let (local_addr, _) = key;
+        let ephemeral_port = local_addr.port;
+        let client_iss = svc.tcp.conn_get(&key).expect("TCB").iss;
+
+        let server_iss = 0x6161_0000_u32;
+        let syn_ack_hdr = TcpHeader {
+            src_port: 11434,
+            dst_port: ephemeral_port,
+            seq_num: server_iss,
+            ack_num: client_iss.wrapping_add(1),
+            data_offset_flags: (5 << 12) | u16::from(TcpFlags::SYN) | u16::from(TcpFlags::ACK),
+            window: 65535,
+            checksum: 0,
+            urgent_ptr: 0,
+        };
+        let syn_ack_tcp_bytes = {
+            let mut buf = alloc::vec![0u8; TcpHeader::HEADER_LEN_MIN];
+            let _ = syn_ack_hdr.serialize(&mut buf);
+            buf
+        };
+        let syn_ack_ip = build_ipv4_packet(
+            Ipv4Addr([192, 168, 1, 11]),
+            Ipv4Addr([192, 168, 1, 50]),
+            IpProtocol::TCP,
+            64,
+            1,
+            &syn_ack_tcp_bytes,
+        );
+        let _ = svc.handle_frame(0, &wrap_eth(&syn_ack_ip), 0);
+        assert_eq!(
+            svc.tcp.conn_get(&key).expect("TCB").state,
+            TcpState::Established
+        );
+        // Discard the handshake frames so the drain below sees ONLY Close's.
+        let _ = svc.take_pending_tx();
+
+        // ── Close: the FIN|ACK must be on the wire path NOW ──────────────
+        let close_resp = svc.handle_socket_request(SocketRequest::Close { handle });
+        assert!(matches!(close_resp, SocketResponse::Ok(0)));
+
+        let pending = svc.take_pending_tx();
+        let fin_frames: Vec<&Vec<u8>> = pending
+            .iter()
+            .filter_map(|o| match o {
+                ServiceOutput::SendFrame { data, .. } => Some(data),
+                ServiceOutput::SocketResponse(_) => None,
+            })
+            .collect();
+        assert_eq!(fin_frames.len(), 1, "expected exactly the FIN frame");
+        let eth_payload = &fin_frames[0][14..];
+        let (ip_hdr, tcp_bytes) = crate::ip::parse_ipv4_packet(eth_payload).expect("IPv4");
+        assert_eq!(ip_hdr.dst, Ipv4Addr([192, 168, 1, 11]));
+        let (tcp_hdr, _) = TcpHeader::parse(tcp_bytes).expect("TCP");
+        assert_eq!(tcp_hdr.dst_port, 11434);
+        assert_ne!(
+            tcp_hdr.flags() & TcpFlags::FIN,
+            0,
+            "Close must emit a FIN segment on the wire path"
+        );
+        assert_eq!(tcp_hdr.seq_num, client_iss.wrapping_add(1));
+
+        // The TCB is mid active-close, awaiting the peer's ACK/FIN.
+        assert_eq!(
+            svc.tcp.conn_get(&key).expect("TCB").state,
+            TcpState::FinWait1
+        );
+    }
+
     /// Regression test: after Connect, the TCB key must be the real
     /// `(192.0.2.50:<ephemeral>, 192.0.2.11:11434)` and NOT the old
     /// loopback-derived key `(127.0.0.1:<handle>, 0.0.0.0:0)`.
@@ -1799,7 +1912,7 @@ mod tests {
         let _ = svc.handle_socket_request(SocketRequest::Connect {
             handle,
             addr: SocketApiAddr {
-                ip: [192, 0, 2, 11],
+                ip: [192, 168, 1, 11],
                 port: 11434,
             },
         });

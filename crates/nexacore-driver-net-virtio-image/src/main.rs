@@ -838,18 +838,34 @@ const TX_QUEUE_IDX: u16 = 1;
 const TX_RING_SIZE: u16 = 16;
 /// RX queue index for virtio-net (receiveq0), virtio-net § 5.1.2.
 const RX_QUEUE_IDX: u16 = 0;
-/// RX ring size: 4 receive buffers (power of two) — ample for the M0 ARP/SYN
-/// exchange and fits the one-page RX DMA arena alongside the rings.
-const RX_RING_SIZE: u16 = 4;
-/// Per-RX-buffer size within the RX arena. 4 × 0x300 = 0xC00, placed after the
-/// rings (which end well before OFF_RX_BUF), all inside one 4 KiB page.
-const RX_BUF_STRIDE: u64 = 0x300;
-/// Offset of the first RX buffer within the RX DMA page.
-const OFF_RX_BUF: u64 = 0x200;
+/// RX ring size: 16 receive buffers (power of two).
+///
+/// The original 4-buffer ring dropped every line-rate burst frame past the
+/// 4th (observed against Ollama: a ~6 KiB HTTP reply arrives as ~12
+/// back-to-back segments and only the first 4 were ever delivered). 16
+/// buffers of [`RX_BUF_STRIDE`] absorb a ~23 KiB burst before recycling has
+/// to keep up.
+const RX_RING_SIZE: u16 = 16;
+/// Per-RX-buffer size: 1536 B fits a full 1514-byte Ethernet frame plus the
+/// 12-byte virtio-net header — required now that the TCP stack advertises
+/// MSS 1460 (peers no longer drop to 536-byte segments).
+const RX_BUF_STRIDE: u64 = 0x600;
+/// RX buffers per 4 KiB buffer page (2 × 0x600 = 0xC00 used, 0x400 spare).
+const RX_BUFS_PER_PAGE: u64 = 2;
+/// Number of one-page RX buffer arenas ([`RX_BUFS_PER_PAGE`] buffers each).
+const RX_BUF_PAGES: usize = RX_RING_SIZE as usize / RX_BUFS_PER_PAGE as usize;
+/// IOVA base of the RX buffer pool: [`RX_BUF_PAGES`] one-page DmaMap arenas
+/// at consecutive iovas right after the RX ring page. The CPU reads buffers
+/// at VA == IOVA (the kernel identity-maps each arena into the user AS); the
+/// DEVICE addresses come from each call's returned bus base — NOT contiguous
+/// across calls — and are burned into the descriptors once at init.
+const RX_BUF_IOVA_BASE: u64 = RX_DMA_IOVA_BASE + 0x1000;
 
-// Ring sub-region offsets within the single 4 KiB DMA page. All 64-byte
-// aligned and non-overlapping; the frame buffer at 0x200 leaves 0xE00 bytes
-// for a frame (far more than the 1514-byte Ethernet max).
+// Ring sub-region offsets within the single 4 KiB ring page (TX page also
+// carries its frame at OFF_FRAME). All 64-byte aligned and non-overlapping
+// for 16 entries: desc 16×16 = 0x100, avail 4+16×2 = 0x24 (at 0x100), used
+// 4+16×8 = 0x84 (at 0x140, ends 0x1C4). RX buffers live in their own pages
+// (see RX_BUF_IOVA_BASE); the TX frame at 0x200 keeps 0xE00 bytes.
 const OFF_DESC: u64 = 0x000;
 const OFF_AVAIL: u64 = 0x100;
 const OFF_USED: u64 = 0x140;
@@ -1050,18 +1066,23 @@ impl TxEngine {
 /// buffers + ring the doorbell). [`RxEngine::poll`] returns the next received
 /// frame (Ethernet bytes, vnet header stripped) and recycles its buffer.
 ///
-/// Layout in the RX DMA page (CPU VA `dma_va` ⇔ device phys `dma_phys`):
+/// Layout: rings in one 4 KiB page (CPU VA `dma_va` ⇔ device phys
+/// `dma_phys`), buffers in [`RX_BUF_PAGES`] separate one-page arenas:
 /// ```text
-///   +0x000  desc[RX_RING_SIZE]   (4 × 16 = 64 B)
-///   +0x100  avail ring           (4 + 4×2 = 12 B)
-///   +0x140  used ring            (4 + 4×8 = 36 B)
-///   +0x200  buf[0..4]            (4 × 0x300 = 0xC00 B, ends 0xE00)
+///   ring page +0x000  desc[RX_RING_SIZE]   (16 × 16 = 0x100 B)
+///   ring page +0x100  avail ring           (4 + 16×2 = 0x24 B)
+///   ring page +0x140  used ring            (4 + 16×8 = 0x84 B)
+///   buf page k +0x000/+0x600  buf[2k]/buf[2k+1]   (2 × 0x600 per page)
 /// ```
+/// Buffer CPU reads use the flat identity VA `RX_BUF_IOVA_BASE + …`; buffer
+/// DEVICE addresses (per-page bus bases from each `DmaMap`) are burned into
+/// the descriptors once at init and never touched again — recycling
+/// re-publishes descriptor IDs only.
 struct RxEngine {
     /// Precomputed queue-0 notify doorbell address (re-armed on each recycle).
     notify_addr: u64,
-    /// RX DMA arena CPU VA (identity-mapped to the device-physical base used to
-    /// program the queue at init; all post-init access is via this VA).
+    /// RX ring-page CPU VA (identity-mapped to the device-physical base used
+    /// to program the queue at init; all post-init access is via this VA).
     dma_va: u64,
     /// Last used-ring index we consumed (to detect new completions).
     last_used: u16,
@@ -1074,15 +1095,18 @@ impl RxEngine {
     /// # Safety
     ///
     /// `common`/notify must be the live MmioMap'd BAR; `[dma_va, dma_va+0x1000)`
-    /// mapped writable, backed by phys `dma_phys`. Call AFTER the device-status
-    /// handshake reached FEATURES_OK and BEFORE DRIVER_OK (queues are set up in
-    /// virtio 1.0 § 3.1.1 step 7, just before step 8 DRIVER_OK).
+    /// mapped writable, backed by phys `dma_phys`; `rx_buf_phys[k]` must be the
+    /// bus base of the k-th mapped RX buffer page (identity-mapped at
+    /// `RX_BUF_IOVA_BASE + k*0x1000`). Call AFTER the device-status handshake
+    /// reached FEATURES_OK and BEFORE DRIVER_OK (queues are set up in virtio
+    /// 1.0 § 3.1.1 step 7, just before step 8 DRIVER_OK).
     unsafe fn init(
         mmio_va: u64,
         common: u64,
         info: &VirtioDeviceInfo,
         dma_va: u64,
         dma_phys: u64,
+        rx_buf_phys: &[u64; RX_BUF_PAGES],
     ) -> Self {
         let notify_off_in_bar = u64::from(info.notify_offset);
         let notify_mult = u64::from(info.notify_off_multiplier);
@@ -1099,9 +1123,17 @@ impl RxEngine {
 
         // Build RX_RING_SIZE descriptors, each pointing at its own buffer and
         // marked device-WRITABLE (VIRTQ_DESC_F_WRITE = 2). Publish all into the
-        // avail ring.
+        // avail ring. Buffer i lives in mapped page i/2 at slot i%2; the
+        // device-visible address is that page's bus base (NOT contiguous
+        // across pages — each one-page DmaMap allocates its own frame).
         for i in 0..RX_RING_SIZE {
-            let buf_phys = dma_phys + OFF_RX_BUF + u64::from(i) * RX_BUF_STRIDE;
+            #[allow(
+                clippy::indexing_slicing,
+                clippy::integer_division,
+                reason = "i < RX_RING_SIZE so i/2 < RX_BUF_PAGES by construction"
+            )]
+            let buf_phys = rx_buf_phys[usize::from(i / 2)]
+                + u64::from(i) % RX_BUFS_PER_PAGE * RX_BUF_STRIDE;
             let desc = dma_va + OFF_DESC + u64::from(i) * 16;
             // SAFETY: desc table + avail inside the RX DMA arena.
             unsafe {
@@ -1235,7 +1267,11 @@ impl RxEngine {
         // descriptor `desc_id`. Clamp to the per-buffer stride FIRST (a device
         // claiming wlen > stride must not make us read past this buffer into
         // the next slot or off the page), then strip the 12-byte vnet header.
-        let buf_va = self.dma_va + OFF_RX_BUF + desc_id * RX_BUF_STRIDE;
+        // CPU access uses the flat identity VA (page desc_id/2, slot
+        // desc_id%2); the per-page bus bases matter only to the device.
+        let buf_va = RX_BUF_IOVA_BASE
+            + desc_id / RX_BUFS_PER_PAGE * 0x1000
+            + desc_id % RX_BUFS_PER_PAGE * RX_BUF_STRIDE;
         #[allow(clippy::cast_possible_truncation, reason = "RX_BUF_STRIDE fits usize")]
         let total = (wlen as usize).min(RX_BUF_STRIDE as usize);
         let eth_len = total.saturating_sub(VNET_HDR_LEN).min(out.len());
@@ -1281,8 +1317,13 @@ impl RxEngine {
 ///
 /// # Safety
 ///
-/// Same contract as [`TxEngine::init`]; `tx_dma_*`/`rx_dma_*` are the two
-/// distinct one-page DMA arenas.
+/// Same contract as [`TxEngine::init`]; `tx_dma_*`/`rx_dma_*` are distinct
+/// one-page DMA arenas and `rx_buf_phys` holds the bus bases of the
+/// [`RX_BUF_PAGES`] mapped RX buffer pages.
+#[allow(
+    clippy::too_many_arguments,
+    reason = "one-shot bring-up plumbing: every argument is a distinct mapped resource"
+)]
 unsafe fn nic_bringup(
     mmio_va: u64,
     vinfo: &Option<VirtioDeviceInfo>,
@@ -1291,6 +1332,7 @@ unsafe fn nic_bringup(
     tx_dma_phys: u64,
     rx_dma_va: u64,
     rx_dma_phys: u64,
+    rx_buf_phys: &[u64; RX_BUF_PAGES],
 ) -> (Option<TxEngine>, Option<RxEngine>) {
     let Some(info) = vinfo.as_ref() else {
         dbg("[virtio-img] NIC bringup abort: no device-info geometry\n");
@@ -1298,8 +1340,9 @@ unsafe fn nic_bringup(
     };
     // RX queue 0 first (posts buffers, no DRIVER_OK, no doorbell), then TX
     // queue 1 (sets DRIVER_OK). SAFETY: caller upholds the MmioMap/DmaMap
-    // contract for both arenas.
-    let mut rx = unsafe { RxEngine::init(mmio_va, common, info, rx_dma_va, rx_dma_phys) };
+    // contract for all arenas.
+    let mut rx =
+        unsafe { RxEngine::init(mmio_va, common, info, rx_dma_va, rx_dma_phys, rx_buf_phys) };
     let mut tx = unsafe { TxEngine::init(mmio_va, common, info, tx_dma_va, tx_dma_phys) };
 
     // DE-F-RXFLAKE fix (WS2-02.5/.6): arm RX only NOW, after TxEngine::init has
@@ -1555,6 +1598,38 @@ pub extern "C" fn _start() -> ! {
         unsafe { sys_exit(EXIT_DMA_PHYS_NULL) };
     }
 
+    // ── Step 3a-ter: RX buffer pool — RX_BUF_PAGES more one-page DmaMaps. ──
+    // The Phase-1 dma_map contiguity limit caps every call at ONE page, so
+    // the 16 × 1536 B buffer pool is mapped as 8 individual pages at
+    // consecutive iovas (all inside the token's DMA window). The CPU reads
+    // buffers at VA == IOVA; the DEVICE addresses are each call's returned
+    // bus base — physically non-contiguous across calls — collected here and
+    // burned into the RX descriptors once at RxEngine::init.
+    let mut rx_buf_phys = [0u64; RX_BUF_PAGES];
+    for (k, slot) in rx_buf_phys.iter_mut().enumerate() {
+        let iova = RX_BUF_IOVA_BASE + (k as u64) * 0x1000;
+        let (page_phys, page_errno) = unsafe {
+            syscall5(
+                SYS_DMA_MAP,
+                iova,
+                DMA_LEN,
+                DMA_DIR_BIDIR,
+                dma_token.as_ptr() as u64,
+                dma_token.len() as u64,
+            )
+        };
+        if page_errno != 0 {
+            unsafe { sys_exit(EXIT_DMA_BASE + page_errno) };
+        }
+        if page_phys == 0 {
+            unsafe { sys_exit(EXIT_DMA_PHYS_NULL) };
+        }
+        *slot = page_phys;
+    }
+    dbg("[virtio-img] RX buf pages mapped n=");
+    dbg_hex(RX_BUF_PAGES as u64);
+    dbg("\n");
+
     // ── Step 3b: NIC bring-up — program RX queue 0 + TX queue 1, set DRIVER_OK,
     // and transmit one ARP probe. Real M0 datapath: split virtqueues in the DMA
     // pages, device-physical ring addresses via common_cfg, notify doorbell,
@@ -1574,6 +1649,7 @@ pub extern "C" fn _start() -> ! {
             dma_iova,
             RX_DMA_IOVA_BASE,
             rx_dma_iova,
+            &rx_buf_phys,
         )
     };
 

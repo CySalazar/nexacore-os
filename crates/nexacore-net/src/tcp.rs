@@ -255,6 +255,24 @@ pub fn encode_window_scale(shift: u8) -> [u8; 3] {
     [TCP_OPT_WSCALE, 3, shift.min(MAX_WINDOW_SCALE)]
 }
 
+/// Encode a Maximum Segment Size option (kind 2, length 4).
+///
+/// Already 4-byte aligned, so it needs no NOP padding when placed in the
+/// options area.
+///
+/// # Examples
+///
+/// ```
+/// use nexacore_net::tcp::encode_mss;
+///
+/// assert_eq!(encode_mss(1460), [2, 4, 0x05, 0xB4]);
+/// ```
+#[must_use]
+pub fn encode_mss(mss: u16) -> [u8; 4] {
+    let be = mss.to_be_bytes();
+    [TCP_OPT_MSS, 4, be[0], be[1]]
+}
+
 /// The effective window: the 16-bit header field left-shifted by `shift`
 /// (saturating; RFC 7323 caps the shift at 14 so this never overflows `u32`).
 #[must_use]
@@ -579,8 +597,11 @@ impl TcpSocketTable {
         let iss = self.next_isn();
         let mut tcb = TcpControlBlock::new_syn_sent(local, remote, iss);
 
-        // Build the SYN segment.
-        let syn_seg = build_tcp_segment(
+        // Build the SYN segment, advertising our MSS. Without the option the
+        // peer falls back to the RFC 1122 default of 536-byte segments
+        // (observed against Linux), tripling the frame count of every bulk
+        // reply for no reason.
+        let syn_seg = build_tcp_segment_with_options(
             Ipv4Addr(local.ip),
             Ipv4Addr(remote.ip),
             local.port,
@@ -589,6 +610,7 @@ impl TcpSocketTable {
             0,
             TcpFlags::SYN,
             tcb.rcv_wnd,
+            &encode_mss(DEFAULT_MSS),
             &[],
         );
 
@@ -852,8 +874,10 @@ impl TcpSocketTable {
                 let iss = self.next_isn();
                 let tcb = TcpControlBlock::new_syn_received(local, remote, header.seq_num, iss);
 
-                // Send SYN+ACK.
-                let syn_ack = build_tcp_segment(
+                // Send SYN+ACK, advertising our MSS (same rationale as the
+                // active-open SYN: an option-free SYN-ACK drops the peer to
+                // 536-byte segments).
+                let syn_ack = build_tcp_segment_with_options(
                     dst_ip,
                     src_ip,
                     header.dst_port,
@@ -862,6 +886,7 @@ impl TcpSocketTable {
                     tcb.rcv_nxt,
                     TcpFlags::SYN | TcpFlags::ACK,
                     tcb.rcv_wnd,
+                    &encode_mss(DEFAULT_MSS),
                     &[],
                 );
                 out.push(TcpOutput::SendSegment {
@@ -1453,9 +1478,44 @@ pub fn build_tcp_segment(
     window: u16,
     payload: &[u8],
 ) -> Vec<u8> {
-    // Total TCP length fits in u16: TCP header (20) + payload (≤ 65515 for MTU).
+    build_tcp_segment_with_options(
+        src_ip, dst_ip, src_port, dst_port, seq, ack, flags, window, &[], payload,
+    )
+}
+
+/// [`build_tcp_segment`] with a TCP options area.
+///
+/// `options` must already be padded to a 4-byte multiple (the MSS option is
+/// naturally aligned; pad others with `NOP`/`END`) and at most 40 bytes
+/// (RFC 793 caps the data offset at 15 words). Options longer than either
+/// bound are dropped and the segment is built option-free — a malformed
+/// options slice must never produce a malformed wire segment.
+#[must_use]
+#[allow(clippy::too_many_arguments)]
+pub fn build_tcp_segment_with_options(
+    src_ip: Ipv4Addr,
+    dst_ip: Ipv4Addr,
+    src_port: u16,
+    dst_port: u16,
+    seq: u32,
+    ack: u32,
+    flags: u8,
+    window: u16,
+    options: &[u8],
+    payload: &[u8],
+) -> Vec<u8> {
+    debug_assert!(options.len() % 4 == 0, "TCP options must be 4-byte padded");
+    debug_assert!(options.len() <= 40, "TCP options area caps at 40 bytes");
+    let options = if options.len() % 4 == 0 && options.len() <= 40 {
+        options
+    } else {
+        &[]
+    };
+
+    // Total TCP length fits in u16: header (20) + options (≤ 40) + payload
+    // (≤ 65515 for MTU).
     #[allow(clippy::cast_possible_truncation)]
-    let tcp_len = (TcpHeader::HEADER_LEN_MIN + payload.len()) as u16;
+    let tcp_len = (TcpHeader::HEADER_LEN_MIN + options.len() + payload.len()) as u16;
     let pseudo = TcpPseudoHeader {
         src_ip,
         dst_ip,
@@ -1463,24 +1523,34 @@ pub fn build_tcp_segment(
         protocol: IpProtocol::TCP.0,
         tcp_length: tcp_len,
     };
+    // Data offset in 32-bit words: 5 (bare header) + one per 4 option bytes.
+    #[allow(clippy::cast_possible_truncation, clippy::integer_division)]
+    let data_offset_words = (5 + options.len() / 4) as u16;
     let mut hdr = TcpHeader {
         src_port,
         dst_port,
         seq_num: seq,
         ack_num: ack,
-        data_offset_flags: (5u16 << 12) | u16::from(flags),
+        data_offset_flags: (data_offset_words << 12) | u16::from(flags),
         window,
         checksum: 0,
         urgent_ptr: 0,
     };
-    hdr.checksum = hdr.compute_checksum(pseudo, payload);
+    // The checksum covers the serialized header, the options, and the
+    // payload; `compute_checksum` serializes the 20-byte header itself, so
+    // options and payload together form its `payload` argument.
+    let mut rest = Vec::with_capacity(options.len() + payload.len());
+    rest.extend_from_slice(options);
+    rest.extend_from_slice(payload);
+    hdr.checksum = hdr.compute_checksum(pseudo, &rest);
 
-    let mut tcp_bytes = alloc::vec![0u8; TcpHeader::HEADER_LEN_MIN + payload.len()];
+    let mut tcp_bytes =
+        alloc::vec![0u8; TcpHeader::HEADER_LEN_MIN + options.len() + payload.len()];
     if let Some(hdr_slot) = tcp_bytes.get_mut(..TcpHeader::HEADER_LEN_MIN) {
         let _ = hdr.serialize(hdr_slot);
     }
     if let Some(dst) = tcp_bytes.get_mut(TcpHeader::HEADER_LEN_MIN..) {
-        dst.copy_from_slice(payload);
+        dst.copy_from_slice(&rest);
     }
     build_ipv4_packet(src_ip, dst_ip, IpProtocol::TCP, 64, 0, &tcp_bytes)
 }
@@ -1673,6 +1743,74 @@ mod tests {
         assert_eq!(tcp_hdr.flags() & TcpFlags::ACK, 0);
         let tcb = table.conn_get(&key).unwrap();
         assert_eq!(tcb.state, TcpState::SynSent);
+    }
+
+    /// Regression test: the active-open SYN must advertise our MSS. An
+    /// option-free SYN makes the peer fall back to the RFC 1122 default of
+    /// 536-byte segments (observed against Linux), tripling the frame count
+    /// of every bulk reply.
+    #[test]
+    fn active_open_syn_advertises_mss() {
+        let mut table = TcpSocketTable::new();
+        let mut out = Vec::new();
+        let _ = table
+            .connect(client_addr(), server_addr(), &mut out)
+            .unwrap();
+        let syn_pkt = match out.first().unwrap() {
+            TcpOutput::SendSegment { data, .. } => data.clone(),
+            _ => panic!("expected SendSegment"),
+        };
+
+        let (_, tcp_bytes) = crate::ip::parse_ipv4_packet(&syn_pkt).expect("IPv4");
+        let (tcp_hdr, _) = TcpHeader::parse(tcp_bytes).expect("TCP");
+        assert_eq!(
+            tcp_hdr.data_offset(),
+            24,
+            "SYN header must carry the 4-byte MSS option"
+        );
+        let options = &tcp_bytes[TcpHeader::HEADER_LEN_MIN..tcp_hdr.data_offset()];
+        assert!(
+            parse_tcp_options(options).contains(&TcpOption::Mss(DEFAULT_MSS)),
+            "SYN options must include Mss({DEFAULT_MSS})"
+        );
+
+        // Checksum must remain valid with the options included.
+        let pseudo = TcpPseudoHeader {
+            src_ip: Ipv4Addr(client_addr().ip),
+            dst_ip: Ipv4Addr(server_addr().ip),
+            zero: 0,
+            protocol: IpProtocol::TCP.0,
+            tcp_length: u16::try_from(tcp_bytes.len()).unwrap(),
+        };
+        assert!(
+            tcp_hdr.verify_checksum(pseudo, &tcp_bytes[TcpHeader::HEADER_LEN_MIN..]),
+            "SYN checksum must cover the options area"
+        );
+    }
+
+    /// The passive-open SYN-ACK must advertise our MSS too (same rationale
+    /// as the active-open SYN).
+    #[test]
+    fn passive_open_syn_ack_advertises_mss() {
+        let mut table = TcpSocketTable::new();
+        table.listen(80, 4).unwrap();
+        let syn = make_syn_header(54321, 80, 1000);
+        let out = table.handle_segment(&syn, &[], client_ip(), server_ip(), 0);
+        let syn_ack_pkt = out
+            .iter()
+            .find_map(|o| match o {
+                TcpOutput::SendSegment { data, .. } => Some(data.clone()),
+                _ => None,
+            })
+            .expect("SYN-ACK frame");
+
+        let (_, tcp_bytes) = crate::ip::parse_ipv4_packet(&syn_ack_pkt).expect("IPv4");
+        let (tcp_hdr, _) = TcpHeader::parse(tcp_bytes).expect("TCP");
+        assert_ne!(tcp_hdr.flags() & TcpFlags::SYN, 0);
+        assert_ne!(tcp_hdr.flags() & TcpFlags::ACK, 0);
+        assert_eq!(tcp_hdr.data_offset(), 24);
+        let options = &tcp_bytes[TcpHeader::HEADER_LEN_MIN..tcp_hdr.data_offset()];
+        assert!(parse_tcp_options(options).contains(&TcpOption::Mss(DEFAULT_MSS)));
     }
 
     #[test]

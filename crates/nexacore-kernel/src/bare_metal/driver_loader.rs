@@ -1363,15 +1363,17 @@ pub unsafe fn boot_load_virtio_net_image<const N: usize>(
         len: mmio_len,
     });
     caps.dma_windows.push(Resource::DmaWindow {
-        // Two-page DMA scope inside the kernel's driver-DMA window
+        // Ten-page DMA scope inside the kernel's driver-DMA window
         // (DRIVER_DMA_VA_BASE = 0x100_0000_0000): page 0 = TX virtqueue+frame,
-        // page 1 = RX virtqueue+buffers. The image issues TWO separate one-page
-        // DmaMap calls (TX iova 0x100_0000_0000, RX iova 0x100_0000_1000), each
-        // a subset of this scope and each individually contiguous (dodging the
-        // Phase-1 per-call contiguity limit). One token covers both so the
-        // image needs no postcard decode to pick a token.
+        // page 1 = RX virtqueue rings, pages 2..9 = RX buffer pool (16 buffers
+        // of 1536 B, two per page — a 4-buffer ring dropped every burst frame
+        // past the 4th at line rate). The image issues one-page DmaMap calls
+        // at consecutive iovas, each a subset of this scope and each
+        // individually contiguous (dodging the Phase-1 per-call contiguity
+        // limit). One token covers all pages so the image needs no postcard
+        // decode to pick a token.
         iova_base: 0x0000_0100_0000_0000,
-        len: 0x2000,
+        len: 0xA000,
     });
     caps.irq_lines.push(Resource::IrqLine(33));
     // WI-7b step 2 (NCIP-026, TASK-07): declare the device's PCI BDF so
