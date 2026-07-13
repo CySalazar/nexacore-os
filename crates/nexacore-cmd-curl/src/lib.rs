@@ -303,7 +303,7 @@ pub fn parse_response(data: &[u8]) -> Option<HttpResponse> {
     // Locate the end of the header section.
     let sep = find_double_crlf(data)?;
     let header_bytes = data.get(..sep)?;
-    let body = data.get(sep + 4..).unwrap_or(&[]).to_vec();
+    let raw_body = data.get(sep + 4..).unwrap_or(&[]);
 
     // Convert header block to UTF-8; HTTP headers must be ASCII/Latin-1 but we
     // accept valid UTF-8 as a superset.
@@ -331,12 +331,173 @@ pub fn parse_response(data: &[u8]) -> Option<HttpResponse> {
         }
     }
 
+    // De-chunk the body for `Transfer-Encoding: chunked` responses (RFC 7230
+    // §4.1). Servers — including Ollama for buffered, non-streamed replies —
+    // may frame the body as `<hex-size>\r\n…\r\n0\r\n\r\n` even with
+    // `Connection: close`; without de-framing the body would still carry the
+    // chunk sizes and fail to parse as JSON. An incomplete chunk stream yields
+    // `None`, matching the "incomplete response" contract so the caller keeps
+    // reading.
+    let body = if header_is_chunked(&headers) {
+        dechunk(raw_body)?
+    } else {
+        raw_body.to_vec()
+    };
+
     Some(HttpResponse {
         status_code,
         status_text: reason,
         headers,
         body,
     })
+}
+
+/// Whether the parsed `headers` declare `Transfer-Encoding: chunked`
+/// (case-insensitive; the last transfer coding is what matters per RFC 7230).
+fn header_is_chunked(headers: &[(String, String)]) -> bool {
+    headers.iter().any(|(name, value)| {
+        name.eq_ignore_ascii_case("transfer-encoding")
+            && value
+                .split(',')
+                .next_back()
+                .is_some_and(|coding| coding.trim().eq_ignore_ascii_case("chunked"))
+    })
+}
+
+/// De-chunk an HTTP/1.1 chunked transfer-encoding body (RFC 7230 §4.1).
+///
+/// Returns the concatenated chunk data, or `None` when the chunk stream is
+/// incomplete or malformed — a missing/short size line, a truncated chunk, or
+/// no terminating zero-length chunk. Chunk extensions (`;name=value`) and any
+/// trailer section are ignored.
+fn dechunk(mut data: &[u8]) -> Option<Vec<u8>> {
+    let mut out: Vec<u8> = Vec::new();
+    loop {
+        let nl = find_crlf(data)?;
+        let size_line = data.get(..nl)?;
+        // A chunk-size line may carry a `;chunk-ext`; the size is the prefix.
+        let hex = size_line.split(|&b| b == b';').next().unwrap_or(size_line);
+        let size = parse_hex_usize(trim_ascii_bytes(hex))?;
+        data = data.get(nl + 2..)?;
+        if size == 0 {
+            // Terminating chunk reached; the message body is complete.
+            return Some(out);
+        }
+        let chunk = data.get(..size)?;
+        out.extend_from_slice(chunk);
+        // Skip the chunk data and its trailing CRLF.
+        data = data.get(size + 2..)?;
+    }
+}
+
+/// Locate the byte offset of the first `\r\n` in `data`.
+fn find_crlf(data: &[u8]) -> Option<usize> {
+    data.windows(2).position(|w| w == b"\r\n")
+}
+
+/// Parse an ASCII lowercase/uppercase hexadecimal byte string into a `usize`.
+/// Returns `None` on an empty input, a non-hex digit, or overflow.
+fn parse_hex_usize(hex: &[u8]) -> Option<usize> {
+    if hex.is_empty() {
+        return None;
+    }
+    let mut n: usize = 0;
+    for &b in hex {
+        let digit = match b {
+            b'0'..=b'9' => b - b'0',
+            b'a'..=b'f' => b - b'a' + 10,
+            b'A'..=b'F' => b - b'A' + 10,
+            _ => return None,
+        };
+        n = n.checked_mul(16)?.checked_add(digit as usize)?;
+    }
+    Some(n)
+}
+
+/// Trim leading and trailing ASCII whitespace from a byte slice.
+fn trim_ascii_bytes(mut b: &[u8]) -> &[u8] {
+    while let [first, rest @ ..] = b {
+        if first.is_ascii_whitespace() {
+            b = rest;
+        } else {
+            break;
+        }
+    }
+    while let [rest @ .., last] = b {
+        if last.is_ascii_whitespace() {
+            b = rest;
+        } else {
+            break;
+        }
+    }
+    b
+}
+
+/// Whether `data` holds a *complete* HTTP/1.1 response message.
+///
+/// Completion requires the header terminator plus a fully delimited body — by
+/// `Content-Length` when advertised, or by the terminating zero-length chunk
+/// for `Transfer-Encoding: chunked`. This is the predicate a poll-until-complete
+/// reader uses to know when a buffered response has fully arrived.
+///
+/// A close-delimited reply (neither header present) reports `false`, because
+/// its completion is signalled by the connection closing, not by content — the
+/// caller decides on EOF.
+///
+/// # Examples
+///
+/// ```
+/// use nexacore_cmd_curl::response_is_complete;
+///
+/// let full = b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello";
+/// assert!(response_is_complete(full));
+/// let partial = b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHel";
+/// assert!(!response_is_complete(partial));
+/// let chunked = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nHello\r\n0\r\n\r\n";
+/// assert!(response_is_complete(chunked));
+/// ```
+#[must_use]
+pub fn response_is_complete(data: &[u8]) -> bool {
+    let Some(sep) = find_double_crlf(data) else {
+        return false;
+    };
+    let Some(header_bytes) = data.get(..sep) else {
+        return false;
+    };
+    let body = data.get(sep + 4..).unwrap_or(&[]);
+    let Ok(header_text) = core::str::from_utf8(header_bytes) else {
+        return false;
+    };
+
+    let mut content_length: Option<usize> = None;
+    let mut chunked = false;
+    for line in header_text.split("\r\n") {
+        if let Some(colon) = line.find(':') {
+            let name = line.get(..colon).unwrap_or("").trim();
+            let value = line.get(colon + 1..).unwrap_or("").trim();
+            if name.eq_ignore_ascii_case("content-length") {
+                content_length = value.parse::<usize>().ok();
+            } else if name.eq_ignore_ascii_case("transfer-encoding")
+                && value
+                    .split(',')
+                    .next_back()
+                    .is_some_and(|c| c.trim().eq_ignore_ascii_case("chunked"))
+            {
+                chunked = true;
+            }
+        }
+    }
+
+    if let Some(cl) = content_length {
+        return body.len() >= cl;
+    }
+    if chunked {
+        // Complete once the terminating zero-length chunk `0\r\n\r\n` arrives.
+        // The `dechunk` walker is the source of truth; a successful de-chunk
+        // means every chunk (including the terminator) is present.
+        return dechunk(body).is_some();
+    }
+    false
 }
 
 /// Locate the byte offset of `\r\n\r\n` in `data`.
@@ -782,6 +943,81 @@ mod tests {
     fn parse_response_invalid_status_line_returns_none() {
         let raw = b"BOGUS\r\n\r\n";
         assert!(parse_response(raw).is_none());
+    }
+
+    // -------------------------------------------------------------------------
+    // Chunked transfer-encoding
+    // -------------------------------------------------------------------------
+
+    #[test]
+    fn parse_response_dechunks_multi_chunk_body() {
+        let raw = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n\
+                    5\r\nHello\r\n6\r\n World\r\n0\r\n\r\n";
+        let resp = parse_response(raw).unwrap();
+        assert_eq!(resp.body, b"Hello World");
+    }
+
+    #[test]
+    fn parse_response_dechunks_json_reply() {
+        // A single-chunk JSON body (0xb = 11 bytes) framed as chunked, the
+        // exact shape Ollama returns for a buffered `/api/generate` reply.
+        let raw = b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\
+                    Transfer-Encoding: chunked\r\n\r\nb\r\n{\"a\":\"bcd\"}\r\n0\r\n\r\n";
+        let resp = parse_response(raw).unwrap();
+        assert_eq!(resp.body, b"{\"a\":\"bcd\"}");
+    }
+
+    #[test]
+    fn parse_response_chunk_extension_ignored() {
+        let raw = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n\
+                    5;foo=bar\r\nHello\r\n0\r\n\r\n";
+        let resp = parse_response(raw).unwrap();
+        assert_eq!(resp.body, b"Hello");
+    }
+
+    #[test]
+    fn parse_response_incomplete_chunk_stream_returns_none() {
+        // No terminating zero-length chunk yet — the reply is still arriving.
+        let raw = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nHello\r\n";
+        assert!(parse_response(raw).is_none());
+    }
+
+    #[test]
+    fn parse_response_truncated_chunk_data_returns_none() {
+        // Size line says 5 but only 3 data bytes are present.
+        let raw = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nHel";
+        assert!(parse_response(raw).is_none());
+    }
+
+    // -------------------------------------------------------------------------
+    // Response completion predicate
+    // -------------------------------------------------------------------------
+
+    #[test]
+    fn response_is_complete_content_length() {
+        assert!(response_is_complete(
+            b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello"
+        ));
+        assert!(!response_is_complete(
+            b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHel"
+        ));
+    }
+
+    #[test]
+    fn response_is_complete_chunked() {
+        // Terminated chunk stream is complete; the same stream without the
+        // terminating zero chunk (a partial first TCP segment) is not.
+        assert!(response_is_complete(
+            b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nHello\r\n0\r\n\r\n"
+        ));
+        assert!(!response_is_complete(
+            b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nHel"
+        ));
+    }
+
+    #[test]
+    fn response_is_complete_needs_header_terminator() {
+        assert!(!response_is_complete(b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\n"));
     }
 
     // -------------------------------------------------------------------------

@@ -42,7 +42,9 @@
 
 use alloc::string::String;
 
-use nexacore_cmd_curl::{HttpMethod, HttpRequest, build_request, parse_response};
+use nexacore_cmd_curl::{
+    HttpMethod, HttpRequest, build_request, parse_response, response_is_complete,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::{syscall2, task_yield, write};
@@ -758,11 +760,16 @@ fn recv_response(handle: u64) -> Result<usize, RemoteError> {
             )
         };
         if errno != 0 {
-            // Fatal errno: if we already hold a complete-looking response
-            // the parser will decide; otherwise it is a transport error.
-            // (Remote close after `Connection: close` may surface as an
-            // errno once the buffered bytes are drained.)
-            if acc_len > 0 && response_complete(acc_len) {
+            // The connection closed. A Content-Length / chunked reply is judged
+            // by `response_complete`; a close-delimited reply (neither header)
+            // is terminated by this very close, so accept whatever headers +
+            // body we buffered.
+            // SAFETY: single-threaded task; read-only view of ACC.
+            let raw = unsafe { &(*core::ptr::addr_of!(ACC))[..acc_len] };
+            if acc_len > 0
+                && (response_complete(acc_len)
+                    || find_double_crlf(raw).is_some_and(|sep| acc_len > sep + 4))
+            {
                 return Ok(acc_len);
             }
             write("[ai-svc] remote: recv errno=");
@@ -803,24 +810,18 @@ fn recv_response(handle: u64) -> Result<usize, RemoteError> {
     Err(RemoteError::Timeout)
 }
 
-/// Whether [`ACC`]`[..acc_len]` holds a complete HTTP response:
-/// header terminator present and, when a `Content-Length` header is
-/// readable, the body has reached it.  Without a `Content-Length` we
-/// require only the terminator plus a non-empty body and let the JSON
-/// parse decide (the remote uses `Connection: close`, so trailing bytes
-/// drain before the close errno).
+/// Whether [`ACC`]`[..acc_len]` holds a complete HTTP response, as judged by
+/// the shared HTTP codec ([`response_is_complete`]): the header terminator is
+/// present and the body is fully delimited by `Content-Length` or by the
+/// terminating chunk of a `Transfer-Encoding: chunked` reply.
+///
+/// A close-delimited reply (neither header) is reported incomplete here and is
+/// instead accepted on the recv close-errno — Ollama frames buffered
+/// `/api/generate` replies as chunked, so the chunked path is the live one.
 fn response_complete(acc_len: usize) -> bool {
     // SAFETY: single-threaded task; read-only view of ACC.
     let raw = unsafe { &(*core::ptr::addr_of!(ACC))[..acc_len] };
-    let Some(sep) = find_double_crlf(raw) else {
-        return false;
-    };
-    let body_len = acc_len - (sep + 4);
-
-    if let Some(cl) = content_length(raw.get(..sep).unwrap_or(&[])) {
-        return body_len >= cl;
-    }
-    body_len > 0
+    response_is_complete(raw)
 }
 
 /// Write a byte as two hex digits (diagnostic lines).
@@ -872,34 +873,4 @@ fn fmt_ipv4_into(buf: &mut [u8; 16], octets: [u8; 4]) -> usize {
         }
     }
     pos.min(buf.len())
-}
-
-/// Extract a `Content-Length` value from the raw header block
-/// (case-insensitive name match, ASCII digits only).
-fn content_length(headers: &[u8]) -> Option<usize> {
-    for line in headers.split(|&b| b == b'\n') {
-        let line = line.strip_suffix(b"\r").unwrap_or(line);
-        let Some(colon) = line.iter().position(|&b| b == b':') else {
-            continue;
-        };
-        let (name, rest) = line.split_at(colon);
-        if !name.eq_ignore_ascii_case(b"content-length") {
-            continue;
-        }
-        let value = rest.get(1..).unwrap_or(&[]);
-        let trimmed: &[u8] = {
-            let start = value.iter().position(|b| !b.is_ascii_whitespace())?;
-            let end = value.iter().rposition(|b| !b.is_ascii_whitespace())?;
-            value.get(start..=end).unwrap_or(&[])
-        };
-        let mut n: usize = 0;
-        for &b in trimmed {
-            if !b.is_ascii_digit() {
-                return None;
-            }
-            n = n.checked_mul(10)?.checked_add((b - b'0') as usize)?;
-        }
-        return Some(n);
-    }
-    None
 }
