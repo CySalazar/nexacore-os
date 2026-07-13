@@ -434,7 +434,14 @@ pub fn probe_ollama_reachable() -> bool {
     // The Host header is built at compile time using the default; for the
     // probe we only need any response back (the status line suffices), so
     // the Host value does not affect routing in typical LAN setups.
-    const PROBE_REQ: &[u8] = b"GET /api/tags HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n";
+    //
+    // Target the root path, NOT `/api/tags`: Ollama's root replies with a tiny
+    // fixed "Ollama is running" body, whereas `/api/tags` serialises the entire
+    // installed-model list, which on a busy backend easily exceeds a single
+    // receive window and would stall the liveness check (leaving the desktop AI
+    // badge stuck "offline" even though the endpoint is up). Liveness only needs
+    // any well-formed response, so the smallest one is the correct choice.
+    const PROBE_REQ: &[u8] = b"GET / HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n";
 
     // ── Send the probe request. ──
     if probe_send_all(handle, PROBE_REQ).is_err() {
