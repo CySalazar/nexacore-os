@@ -24,10 +24,11 @@ use crate::{PAD, SYSINFO_H, SYSINFO_W, exit, sysinfo::SysInfo, write};
 /// User-facing product version shown in the identity card.
 ///
 /// Deliberately NOT `env!("CARGO_PKG_VERSION")`: this image crate's Cargo
-/// version tracks the workspace (0.2.0), whereas the shipped product is
-/// versioned separately. Single source of truth for the string shown here;
-/// keep it in sync with `nexacoreos.com` (the site's "Current build" line).
-const PRODUCT_VERSION: &str = "0.3.0-alpha.1";
+/// version tracks the workspace crate version, whereas the shipped product
+/// carries its own user-facing release string. Single source of truth for
+/// the value shown here; keep it in sync with the GitHub release tag and
+/// `nexacoreos.com` (the site's "Current build" line).
+const PRODUCT_VERSION: &str = "0.3.0-alpha.2";
 
 /// Outer margin and inter-card gap (mirrors `apps::monitor`'s layout unit).
 const CARD_GAP: i32 = 12;
