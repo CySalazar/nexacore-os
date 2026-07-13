@@ -107,6 +107,8 @@ signed commits — not in marketing copy that can be quietly walked back.
 
 NexaCore OS has closed **Phase 1 (Microkernel PoC)** and is deep into **Phase 2**: the microkernel boots bare-metal, drivers run in Ring 3, a full userspace network + storage + AI-runtime + desktop stack sits on top, and the whole thing runs on QEMU and on Proxmox. The table below is a snapshot; [`docs/02-architecture.md`](./docs/02-architecture.md) has the per-crate breakdown.
 
+**Maturity legend** — the **State** column uses a consistent ladder, so "Implemented" is never mistaken for "done everywhere": *Implemented* = full logic, unit-tested (`no_std + alloc`); *Host core* = the auditable logic is complete and host-tested, with the privileged MMIO/DMA/IRQ path living in the Ring-3 `*-image` sibling; *live on Proxmox* = additionally boot-tested on real hardware; *Partial* / *scaffold* / *`NotYetImplemented`* = incomplete, and called out inline. No layer is *externally audited* or *production-ready* yet — the first external security audit is a tracked Phase-1 acceptance criterion, not a shipped property.
+
 | Layer | Crates | State |
 |---|---|---|
 | Foundational | `nexacore-types`, `nexacore-crypto`, `nexacore-capability` | **Implemented** — `no_std + alloc`, RFC/KAT vectors per primitive, postcard canonical wire. Crypto composes the RustCrypto family plus post-quantum ML-DSA-65 / ML-KEM-768; still `AWAITING_CRYPTO_REVIEW`. Capabilities are Macaroons-style (attenuable, Ed25519, TTL, revocation). |

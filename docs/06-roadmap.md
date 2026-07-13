@@ -26,7 +26,10 @@ Key deliverables:
 
 **Goal:** custom Rust microkernel boots on bare-metal x86_64 with TEE and basic services.
 
-**Tracking status (2026-05-20, post `v0.3.0-alpha.1` + P6.7.8.9):** ≈ 99.9 % closed. Remaining gaps are P6.7.8.10 (driver-shared SDK helper that consumes the capability deposit window), P6.7.9 driver live bring-up + Proxmox smoke, P5.2/P5.3 TEE backends (funding-dependent), and P6.8 external audit (funding-dependent).
+**Tracking status (updated 2026-07-12, post `v0.3.0-alpha.2`):** measured on two independent axes, because a single percentage conflates implementation effort with capability maturity.
+
+- **Engineering tasks:** ≈ 99 % of the planned Phase-1 implementation work is complete. The open items are P6.7.8.10 (driver-shared SDK helper that consumes the capability deposit window) and P6.7.9 (driver live bring-up + Proxmox hardware smoke).
+- **Phase-1 acceptance criteria:** 4 of 6 satisfied. The two open criteria are hardware TEE attestation (Intel TDX / AMD SEV-SNP, P5.2/P5.3) and the first external security audit (P6.8) — both funding-dependent, and both carrying architectural weight far above their task count. The project therefore does **not** claim Phase 1 "closed" on task-count alone.
 
 Key deliverables:
 
