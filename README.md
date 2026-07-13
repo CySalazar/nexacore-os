@@ -73,7 +73,7 @@ sudo apt-get install -y qemu-system-x86 ovmf
 bash scripts/qemu-boot-smoke.sh
 ```
 
-This is the **same script CI runs on every push** (the [`qemu-boot-smoke`](./.github/workflows/qemu-boot-smoke.yml) workflow): it builds the `kernel-runner` ELF for `x86_64-unknown-none`, produces a UEFI image, boots it under QEMU+OVMF, and checks the canonical boot banner. The first run materializes the pinned toolchains (`rust-toolchain.toml`). For the graphical desktop smoke, real-hardware bring-up, and troubleshooting, see [`docs/user/src/installation.md`](./docs/user/src/installation.md) and [`kernel-runner/README.md`](./kernel-runner/README.md).
+This is the **same script CI runs on every push** (the [`qemu-boot-smoke`](./.github/workflows/qemu-boot-smoke.yml) workflow): it builds the `kernel-runner` ELF for `x86_64-unknown-none`, produces a UEFI image, boots it under QEMU+OVMF, and checks the canonical boot banner. The first run materializes the pinned toolchains (`rust-toolchain.toml`). For the graphical desktop smoke, bare-metal bring-up, and troubleshooting, see [`docs/user/src/installation.md`](./docs/user/src/installation.md) and [`kernel-runner/README.md`](./kernel-runner/README.md).
 
 ## Public commitments
 
@@ -98,16 +98,16 @@ signed commits — not in marketing copy that can be quietly walked back.
 
 ## Status
 
-> **Graphical desktop demo — running on real hardware (VirtualBox + OVMF, 2026-05-16).**
+> **Graphical desktop demo — running under VirtualBox + OVMF, 2026-05-16.**
 > The kernel boots bare-metal via UEFI, renders a full interactive desktop (4 windows, live clock,
 > PS/2 mouse + keyboard, terminal echo, system info), and powers off cleanly via ACPI S5.
 > Physical-memory management, 4-level page-table walker, and IDT exception handlers are operational.
 
-![NexaCore OS boot console on real UEFI hardware — framebuffer set up at 1280×800, boot services exited, four-level page tables built, the kernel ELF loaded, and the jump to the kernel entry point](./docs/assets/nexacore-os-boot.png)
+![NexaCore OS boot console under OVMF/QEMU — framebuffer set up at 1280×800, boot services exited, four-level page tables built, the kernel ELF loaded, and the jump to the kernel entry point](./docs/assets/nexacore-os-boot.png)
 
-NexaCore OS has closed **Phase 1 (Microkernel PoC)** and is deep into **Phase 2**: the microkernel boots bare-metal, drivers run in Ring 3, a full userspace network + storage + AI-runtime + desktop stack sits on top, and the whole thing runs on QEMU and on Proxmox. The table below is a snapshot; [`docs/02-architecture.md`](./docs/02-architecture.md) has the per-crate breakdown.
+NexaCore OS has **completed the Phase 1 core implementation (Microkernel PoC)** — security acceptance (hardware TEE backends + external audit) is still pending — and is deep into **Phase 2**: the microkernel boots bare-metal, drivers run in Ring 3, a full userspace network + storage + AI-runtime + desktop stack sits on top, and the whole thing runs under QEMU and Proxmox. The table below is a snapshot; [`docs/02-architecture.md`](./docs/02-architecture.md) has the per-crate breakdown.
 
-**Maturity legend** — the **State** column uses a consistent ladder, so "Implemented" is never mistaken for "done everywhere": *Implemented* = full logic, unit-tested (`no_std + alloc`); *Host core* = the auditable logic is complete and host-tested, with the privileged MMIO/DMA/IRQ path living in the Ring-3 `*-image` sibling; *live on Proxmox* = additionally boot-tested on real hardware; *Partial* / *scaffold* / *`NotYetImplemented`* = incomplete, and called out inline. No layer is *externally audited* or *production-ready* yet — the first external security audit is a tracked Phase-1 acceptance criterion, not a shipped property.
+**Maturity legend** — the **State** column uses a consistent ladder, so "Implemented" is never mistaken for "done everywhere": *Implemented* = full logic, unit-tested (`no_std + alloc`); *Host core* = the auditable logic is complete and host-tested, with the privileged MMIO/DMA/IRQ path living in the Ring-3 `*-image` sibling; *live on Proxmox* = additionally boot-tested end-to-end on a Proxmox VM (a hypervisor, not physical bare metal — that bring-up is in progress); *Partial* / *scaffold* / *`NotYetImplemented`* = incomplete, and called out inline. No layer is *externally audited* or *production-ready* yet — the first external security audit is a tracked Phase-1 acceptance criterion, not a shipped property.
 
 | Layer | Crates | State |
 |---|---|---|

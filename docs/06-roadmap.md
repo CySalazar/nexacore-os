@@ -28,16 +28,16 @@ Key deliverables:
 
 **Tracking status (updated 2026-07-12, post `v0.3.0-alpha.2`):** measured on two independent axes, because a single percentage conflates implementation effort with capability maturity.
 
-- **Engineering tasks:** ≈ 99 % of the planned Phase-1 implementation work is complete. The open items are P6.7.8.10 (driver-shared SDK helper that consumes the capability deposit window) and P6.7.9 (driver live bring-up + Proxmox hardware smoke).
+- **Engineering tasks:** ≈ 99 % of the planned Phase-1 implementation work is complete. The NVMe / virtio-net / e1000e drivers are already live on Proxmox VMs; the open items are P6.7.8.10 (driver-shared SDK helper that consumes the capability deposit window) and physical bare-metal bring-up on non-virtualized hardware.
 - **Phase-1 acceptance criteria:** 4 of 6 satisfied. The two open criteria are hardware TEE attestation (Intel TDX / AMD SEV-SNP, P5.2/P5.3) and the first external security audit (P6.8) — both funding-dependent, and both carrying architectural weight far above their task count. The project therefore does **not** claim Phase 1 "closed" on task-count alone.
 
 Key deliverables:
 
-- ✅ Microkernel boots on x86_64 hardware (UEFI, `bootloader 0.11`); ⬜ Intel TDX / AMD SEV-SNP TEE attestation (funding-dependent, P5.2/P5.3).
+- ✅ Microkernel boots on x86_64 via UEFI (`bootloader 0.11`) under QEMU and Proxmox; ⬜ physical bare-metal bring-up in progress; ⬜ Intel TDX / AMD SEV-SNP TEE attestation (funding-dependent, P5.2/P5.3).
 - ✅ IPC primitives operational (typed message passing) — MB12.
 - ✅ Capability-based security primitives implemented — MB13 + P6.7.8.9 capability deposit trampoline.
 - ✅ Memory management, scheduling, interrupt handling — MB1–MB14.
-- 🔄 Drivers (in user space): NVMe storage, Ethernet/Wi-Fi networking, TEE. virtio-net + NVMe + e1000e scaffolds + bootable image siblings landed (P6.7.8.0–7); `DriverLoad (73)` syscall handler + capability deposit trampoline landed (P6.7.8.8–9); next is the driver-shared SDK helper (P6.7.8.10) and live driver bring-up + Proxmox hardware smoke (P6.7.9). TEE backend gated on P5.2/P5.3.
+- 🔄 Drivers (in user space): NVMe storage, Ethernet/Wi-Fi networking, TEE. NVMe + virtio-net + e1000e host cores are **live on Proxmox VMs** (P6.7.8.0–7); `DriverLoad (73)` syscall handler + capability deposit trampoline landed (P6.7.8.8–9); remaining: the driver-shared SDK helper (P6.7.8.10) and physical bare-metal bring-up. TEE backend gated on P5.2/P5.3.
 - ✅ Boot loader (UEFI-based) — `kernel-runner` + `bootloader 0.11`.
 - ✅ Minimal shell sufficient for development — `nexacore-shell` is a full POSIX-style REPL (lexer/parser, expansion, pipelines, job control, builtins) integrated into the desktop terminal.
 - ✅ No AI yet — respected.
